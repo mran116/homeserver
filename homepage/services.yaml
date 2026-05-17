@@ -1,0 +1,218 @@
+---
+# Homepage Services
+# https://gethomepage.dev/configs/services/
+# All IPs and ports pulled from .env via HOMEPAGE_VAR_* variables
+
+- Infrastructure:
+    - Portainer:
+        icon: portainer.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PORTAINER_PORT}}
+        description: Docker Management
+        widget:
+          type: portainer
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PORTAINER_PORT}}
+          env: 1
+          key: {{HOMEPAGE_VAR_PORTAINER_API_KEY}}
+
+    - Nginx Proxy Manager:
+        icon: nginx-proxy-manager.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NPM_PORT}}
+        description: Reverse Proxy & SSL
+        widget:
+          type: nginxproxymanager
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NPM_PORT}}
+          username: {{HOMEPAGE_VAR_NPM_EMAIL}}
+          password: {{HOMEPAGE_VAR_NPM_PASSWORD}}
+
+    - Tailscale:
+        icon: tailscale.png
+        href: https://login.tailscale.com/admin
+        description: Private VPN
+
+    - Cloudflare:
+        icon: cloudflare.png
+        href: https://dash.cloudflare.com
+        description: Tunnel & DNS
+
+- Monitoring:
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
+        description: Service Monitoring
+        widget:
+          type: uptimekuma
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
+          slug: all
+
+    - Dozzle:
+        icon: dozzle.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DOZZLE_PORT}}
+        description: Container Logs
+
+    - Notifiarr:
+        icon: notifiarr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NOTIFIARR_PORT}}
+        description: Media Notifications
+
+- Media:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_JELLYFIN_PORT}}
+        description: Media Server
+        widget:
+          type: jellyfin
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_JELLYFIN_PORT}}
+          key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
+          enableBlocks: true
+          enableNowPlaying: true
+
+    - Seerr:
+        icon: jellyseerr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SEERR_PORT}}
+        description: Media Requests
+        widget:
+          type: jellyseerr
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SEERR_PORT}}
+          key: {{HOMEPAGE_VAR_SEERR_API_KEY}}
+
+    - Navidrome:
+        icon: navidrome.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NAVIDROME_PORT}}
+        description: Music Server
+        widget:
+          type: navidrome
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NAVIDROME_PORT}}
+          user: {{HOMEPAGE_VAR_NAVIDROME_USER}}
+          token: {{HOMEPAGE_VAR_NAVIDROME_TOKEN}}
+          salt: {{HOMEPAGE_VAR_NAVIDROME_SALT}}
+
+    - Kavita:
+        icon: kavita.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_KAVITA_PORT}}
+        description: Books & Audiobooks
+        widget:
+          type: kavita
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_KAVITA_PORT}}
+          username: {{HOMEPAGE_VAR_KAVITA_USER}}
+          password: {{HOMEPAGE_VAR_KAVITA_PASSWORD}}
+
+- Downloads:
+    - qBittorrent:
+        icon: qbittorrent.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BITTORRENT_PORT}}
+        description: Torrent Client
+        widget:
+          type: qbittorrent
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BITTORRENT_PORT}}
+          username: {{HOMEPAGE_VAR_APP_USERNAME}}
+          password: {{HOMEPAGE_VAR_APP_PASSWORD}}
+
+    - SABnzbd:
+        icon: sabnzbd.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SABNZBD_PORT}}
+        description: Usenet Client
+        widget:
+          type: sabnzbd
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SABNZBD_PORT}}
+          key: {{HOMEPAGE_VAR_SABNZBD_API_KEY}}
+
+    - Sonarr:
+        icon: sonarr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SONARR_PORT}}
+        description: TV Shows
+        widget:
+          type: sonarr
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SONARR_PORT}}
+          key: {{HOMEPAGE_VAR_SONARR_API_KEY}}
+
+    - Radarr:
+        icon: radarr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_RADARR_PORT}}
+        description: Movies
+        widget:
+          type: radarr
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_RADARR_PORT}}
+          key: {{HOMEPAGE_VAR_RADARR_API_KEY}}
+
+    - Lidarr:
+        icon: lidarr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_LIDARR_PORT}}
+        description: Music
+        widget:
+          type: lidarr
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_LIDARR_PORT}}
+          key: {{HOMEPAGE_VAR_LIDARR_API_KEY}}
+
+    - Prowlarr:
+        icon: prowlarr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PROWLARR_PORT}}
+        description: Indexers
+        widget:
+          type: prowlarr
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PROWLARR_PORT}}
+          key: {{HOMEPAGE_VAR_PROWLARR_API_KEY}}
+
+    - Bazarr:
+        icon: bazarr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BAZARR_PORT}}
+        description: Subtitles
+        widget:
+          type: bazarr
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BAZARR_PORT}}
+          key: {{HOMEPAGE_VAR_BAZARR_API_KEY}}
+
+- Household:
+    - Mealie:
+        icon: mealie.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_MEALIE_PORT}}
+        description: Recipes & Meal Planning
+        widget:
+          type: mealie
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_MEALIE_PORT}}
+          key: {{HOMEPAGE_VAR_MEALIE_API_KEY}}
+
+    - KitchenOwl:
+        icon: kitchenowl.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_KITCHENOWL_PORT}}
+        description: Shopping Lists
+
+    - Donetick:
+        icon: donetick.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DONETICK_PORT}}
+        description: Chores & Tasks
+
+    - Actual Budget:
+        icon: actual-budget.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ACTUAL_PORT}}
+        description: Budget & Banking
+
+- Records:
+    - Paperless:
+        icon: paperless-ngx.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PAPERLESS_PORT}}
+        description: Document Management
+        widget:
+          type: paperlessngx
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PAPERLESS_PORT}}
+          username: {{HOMEPAGE_VAR_PAPERLESS_ADMIN_USER}}
+          password: {{HOMEPAGE_VAR_PAPERLESS_ADMIN_PASSWORD}}
+
+    - Stirling PDF:
+        icon: stirling-pdf.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_STIRLING_PORT}}
+        description: PDF Tools
+
+    - Vaultwarden:
+        icon: vaultwarden.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
+        description: Password Manager
+
+- Cloud:
+    - Immich:
+        icon: immich.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_IMMICH_PORT}}
+        description: Photo & Video Backup
+        widget:
+          type: immich
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_IMMICH_PORT}}
+          key: {{HOMEPAGE_VAR_IMMICH_API_KEY}}

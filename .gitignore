@@ -1,0 +1,18 @@
+# Never commit secrets
+.env
+*.env
+.env.*
+
+# Never commit these
+**/secrets/
+**/*secret*
+**/*password*
+**/*key*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup

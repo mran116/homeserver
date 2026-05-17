@@ -1,0 +1,90 @@
+services:
+
+  # ================================
+  # MEALIE - Recipes & Meal Planning
+  # http://${SERVER_IP}:${MEALIE_PORT}
+  # Default login: changeme@example.com / MyPassword
+  # Change immediately after first login!
+  # ================================
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:latest
+    container_name: mealie
+    restart: unless-stopped
+    ports:
+      - "${MEALIE_PORT}:9000"
+    volumes:
+      - ${CONFIG_PATH}/mealie:/app/data
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - MAX_WORKERS=1
+      - WEB_CONCURRENCY=1
+    networks:
+      - home
+
+  # ================================
+  # KITCHENOWL - Shopping Lists
+  # http://${SERVER_IP}:${KITCHENOWL_PORT}
+  # Mobile app: KitchenOwl (iOS/Android)
+  # ================================
+  kitchenowl:
+    image: tombursch/kitchenowl:latest
+    container_name: kitchenowl
+    restart: unless-stopped
+    ports:
+      - "${KITCHENOWL_PORT}:8080"
+    volumes:
+      - ${CONFIG_PATH}/kitchenowl:/data
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    networks:
+      - home
+
+  # ================================
+  # DONETICK - Chores & Tasks
+  # http://${SERVER_IP}:${DONETICK_PORT}
+  # Set up accounts for each family member
+  # Kids earn points for completing chores
+  # ================================
+  donetick:
+    image: donetick/donetick:latest
+    container_name: donetick
+    restart: unless-stopped
+    ports:
+      - "${DONETICK_PORT}:2021"
+    volumes:
+      - ${CONFIG_PATH}/donetick:/donetick-data
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - DT_ENV=selfhosted
+      - DT_SQLITE_PATH=/donetick-data/donetick.db
+    networks:
+      - home
+
+  # ================================
+  # ACTUAL BUDGET - Finance & Banking
+  # http://${SERVER_IP}:${ACTUAL_PORT}
+  # Connect SimpleFIN ($15/yr) for Regions + Citibank sync
+  # SimpleFIN setup: beta-bridge.simplefin.org
+  # ================================
+  actual-budget:
+    image: actualbudget/actual-server:latest
+    container_name: actual-budget
+    restart: unless-stopped
+    ports:
+      - "${ACTUAL_PORT}:5006"
+    volumes:
+      - ${CONFIG_PATH}/actual-budget:/data
+    environment:
+      - TZ=${TZ}
+    networks:
+      - home
+
+networks:
+  home:
+    external: true

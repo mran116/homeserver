@@ -1,0 +1,91 @@
+services:
+
+  # ===========================================================================
+  # UPTIME KUMA - Service monitoring and alerting
+  # http://${SERVER_IP}:${UPTIME_KUMA_PORT}
+  #
+  # After deploy - add monitors for every service:
+  #   Portainer, Homepage, Jellyfin, Sonarr, Radarr, Lidarr
+  #   Prowlarr, Bazarr, SABnzbd, qBittorrent, Navidrome
+  #   Mealie, KitchenOwl, Donetick, Actual Budget
+  #   Paperless, Vaultwarden, Immich
+  #
+  # Set up notifications: Discord, Telegram, email, Slack
+  # RAM: ~50MB
+  # ===========================================================================
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "${UPTIME_KUMA_PORT}:3001"
+    volumes:
+      - ${CONFIG_PATH}/uptime-kuma:/app/data
+    environment:
+      - TZ=${TZ}
+    networks:
+      - home
+
+  # ===========================================================================
+  # DOZZLE - Real time Docker log viewer
+  # http://${SERVER_IP}:${DOZZLE_PORT}
+  # No setup needed - shows logs from all containers instantly
+  # RAM: ~10MB
+  # ===========================================================================
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: unless-stopped
+    ports:
+      - "${DOZZLE_PORT}:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=${TZ}
+    networks:
+      - home
+
+  # ===========================================================================
+  # WATCHTOWER - Auto updates all containers nightly at 3am
+  # Monitors all stacks across entire Docker host
+  # ===========================================================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+      - WATCHTOWER_SCHEDULE=0 0 3 * * *
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - DOCKER_API_VERSION=${DOCKER_API_VERSION}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - home
+
+  # ===========================================================================
+  # NOTIFIARR - Media stack notifications
+  # http://${SERVER_IP}:${NOTIFIARR_PORT}
+  # Sign up free at notifiarr.com for API key
+  # Handles Sonarr, Radarr, Lidarr, Jellyfin event notifications
+  # ===========================================================================
+  notifiarr:
+    image: golift/notifiarr:latest
+    container_name: notifiarr
+    hostname: homeserver
+    restart: unless-stopped
+    ports:
+      - "${NOTIFIARR_PORT}:5454"
+    environment:
+      - TZ=${TZ}
+      - DN_API_KEY=${NOTIFIARR_API_KEY}
+    volumes:
+      - ${CONFIG_PATH}/notifiarr:/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - home
+
+networks:
+  home:
+    external: true

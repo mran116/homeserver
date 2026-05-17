@@ -1,0 +1,24 @@
+---
+# Homepage Widgets
+# Shows system stats at the top of the dashboard
+
+- resources:
+    cpu: true
+    memory: true
+    disk: /
+    label: Server
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: long
+      timeStyle: short
+      hour12: true
+
+- openmeteo:
+    label: Local Weather
+    latitude: YOUR_LATITUDE       # ← replace with your coordinates
+    longitude: YOUR_LONGITUDE     # ← replace with your coordinates
+    timezone: America/Chicago
+    units: imperial
+    cache: 5

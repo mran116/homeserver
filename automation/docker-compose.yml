@@ -1,0 +1,43 @@
+services:
+
+  # ===========================================================================
+  # N8N - Workflow Automation
+  # COMMENTED OUT - Set up after all other stacks are running
+  # Like Zapier but self hosted - connects all your services together
+  #
+  # Example automations:
+  #   - Bill arrives via email → logged in Actual Budget
+  #   - Document scanned → auto tagged in Paperless
+  #   - Chore completed in Donetick → notification sent
+  #   - New movie added to Jellyfin → notify family
+  #   - Shopping list low → reminder notification
+  #   - Mealie meal plan → KitchenOwl shopping list
+  #
+  # Setup:
+  #   1. Get all other stacks running first
+  #   2. Uncomment this service
+  #   3. Deploy
+  #   4. Connect your services via n8n UI
+  # ===========================================================================
+  # n8n:
+  #   image: n8nio/n8n:latest
+  #   container_name: n8n
+  #   restart: unless-stopped
+  #   ports:
+  #     - "${N8N_PORT}:5678"
+  #   volumes:
+  #     - ${CONFIG_PATH}/n8n:/home/node/.n8n
+  #   environment:
+  #     - TZ=${TZ}
+  #     - N8N_BASIC_AUTH_ACTIVE=true
+  #     - N8N_BASIC_AUTH_USER=${N8N_USER}
+  #     - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+  #     - N8N_HOST=${SERVER_IP}
+  #     - N8N_PORT=5678
+  #     - WEBHOOK_URL=http://${SERVER_IP}:${N8N_PORT}
+  #   networks:
+  #     - home
+
+networks:
+  home:
+    external: true

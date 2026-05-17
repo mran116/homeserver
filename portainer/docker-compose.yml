@@ -1,0 +1,25 @@
+services:
+
+  # ================================
+  # PORTAINER - Docker Management
+  # http://172.25.1.100:9000
+  # Always starts first, manages all other stacks
+  # ================================
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/docker/portainer:/data
+    environment:
+      - TZ=America/Chicago
+    networks:
+      - home
+
+networks:
+  home:
+    external: true

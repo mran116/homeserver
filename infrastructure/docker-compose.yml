@@ -1,0 +1,128 @@
+services:
+
+  # ===========================================================================
+  # NGINX PROXY MANAGER - Reverse proxy with SSL
+  # http://${SERVER_IP}:${NPM_PORT}
+  # Default login: admin@example.com / changeme
+  # Change immediately after first login!
+  # Provides:
+  #   - SSL certificates for all services
+  #   - Clean local URLs like jellyfin.home
+  #   - Works alongside Cloudflare Tunnel
+  # ===========================================================================
+  npm-db:
+    image: mariadb:lts
+    container_name: npm-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${NPM_DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=npm
+      - MYSQL_USER=npm
+      - MYSQL_PASSWORD=${NPM_DB_PASSWORD}
+    volumes:
+      - ${CONFIG_PATH}/npm/db:/var/lib/mysql
+    networks:
+      - home
+
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    depends_on:
+      - npm-db
+    ports:
+      - "${NPM_PORT}:81"        # Admin UI
+      - "80:80"                 # HTTP
+      - "443:443"               # HTTPS
+    volumes:
+      - ${CONFIG_PATH}/npm/data:/data
+      - ${CONFIG_PATH}/npm/letsencrypt:/etc/letsencrypt
+    environment:
+      - DB_MYSQL_HOST=npm-db
+      - DB_MYSQL_PORT=3306
+      - DB_MYSQL_USER=npm
+      - DB_MYSQL_PASSWORD=${NPM_DB_PASSWORD}
+      - DB_MYSQL_NAME=npm
+      - TZ=${TZ}
+    networks:
+      - home
+
+  # ===========================================================================
+  # BORGMATIC - Automated encrypted offsite backups
+  # COMMENTED OUT - Enable after setting up Backblaze B2
+  # Backups are useless if they live on the same machine!
+  # Setup:
+  #   1. Create Backblaze B2 account at backblaze.com (free 10GB)
+  #   2. Create a bucket and application key
+  #   3. Fill in B2 credentials in borgmatic-config/config.yaml
+  #   4. Fill in BORG_PASSPHRASE in .env
+  #   5. Uncomment this service
+  # ===========================================================================
+  # borgmatic:
+  #   image: ghcr.io/borgmatic-collective/borgmatic:latest
+  #   container_name: borgmatic
+  #   restart: unless-stopped
+  #   environment:
+  #     - TZ=${TZ}
+  #     - BORGMATIC_CRON=0 2 * * *
+  #     - BORG_PASSPHRASE=${BORG_PASSPHRASE}
+  #   volumes:
+  #     - ${CONFIG_PATH}/borgmatic/config:/etc/borgmatic.d
+  #     - ${CONFIG_PATH}/borgmatic/data:/root/.borgmatic
+  #     - ${CONFIG_PATH}:/mnt/source/docker:ro
+  #     - ${MEDIA_PATH}:/mnt/source/media:ro
+  #     - /root/.ssh:/root/.ssh:ro
+  #   networks:
+  #     - home
+
+  # ===========================================================================
+  # TAILSCALE - Private VPN access to entire network
+  # COMMENTED OUT - Enable after stack is tested and working
+  # Get auth key: https://login.tailscale.com/admin/settings/keys
+  # After deploy: approve subnet route in Tailscale admin panel
+  # ===========================================================================
+  # tailscale:
+  #   image: tailscale/tailscale:latest
+  #   container_name: tailscale-infra
+  #   hostname: ${TAILSCALE_HOSTNAME}
+  #   restart: unless-stopped
+  #   environment:
+  #     - TS_AUTHKEY=${TS_AUTHKEY}
+  #     - TS_STATE_DIR=/var/lib/tailscale
+  #     - TS_USERSPACE=false
+  #     - TS_ROUTES=${TAILSCALE_SUBNET}
+  #     - TS_EXTRA_ARGS=--advertise-routes=${TAILSCALE_SUBNET}
+  #   volumes:
+  #     - ${CONFIG_PATH}/tailscale-infra:/var/lib/tailscale
+  #     - /dev/net/tun:/dev/net/tun
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - NET_RAW
+  #   networks:
+  #     - home
+
+  # ===========================================================================
+  # CLOUDFLARE TUNNEL - Secure public access, zero open ports
+  # COMMENTED OUT - Enable after stack is tested and working
+  # Setup:
+  #   1. Buy domain at cloudflare.com (~$10/year)
+  #   2. Zero Trust → Networks → Tunnels → Create tunnel
+  #   3. Copy token to CLOUDFLARE_TUNNEL_TOKEN in .env
+  #   4. Add routes in Cloudflare dashboard:
+  #      jellyfin.yourdomain.com    → http://jellyfin:8096
+  #      vaultwarden.yourdomain.com → http://vaultwarden:80
+  #      navidrome.yourdomain.com   → http://navidrome:4533
+  # ===========================================================================
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: cloudflared
+  #   restart: unless-stopped
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+  #   environment:
+  #     - TZ=${TZ}
+  #   networks:
+  #     - home
+
+networks:
+  home:
+    external: true
