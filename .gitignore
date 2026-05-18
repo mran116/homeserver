@@ -1,7 +1,6 @@
 # Never commit secrets
 .env
 *.env
-.env.*
 
 # Never commit these
 **/secrets/
