@@ -1,17 +1,12 @@
 services:
 
   # ===========================================================================
-  # UPTIME KUMA - Service monitoring and alerting
+  # UPTIME KUMA - Service heartbeat monitoring
   # http://${SERVER_IP}:${UPTIME_KUMA_PORT}
   #
-  # After deploy - add monitors for every service:
-  #   Portainer, Homepage, Jellyfin, Sonarr, Radarr, Lidarr
-  #   Prowlarr, Bazarr, SABnzbd, qBittorrent, Navidrome
-  #   Mealie, KitchenOwl, Donetick, Actual Budget
-  #   Paperless, Vaultwarden, Immich
-  #
-  # Set up notifications: Discord, Telegram, email, Slack
-  # RAM: ~50MB
+  # Add a monitor for every service. Home Assistant reads Kuma's status
+  # via the Uptime Kuma integration, so this is the single source of
+  # truth for "is X up?" — HA surfaces it on the family dashboard.
   # ===========================================================================
   uptime-kuma:
     image: louislam/uptime-kuma:latest
@@ -27,10 +22,10 @@ services:
       - home
 
   # ===========================================================================
-  # DOZZLE - Real time Docker log viewer
+  # DOZZLE - Real-time container log viewer
   # http://${SERVER_IP}:${DOZZLE_PORT}
-  # No setup needed - shows logs from all containers instantly
-  # RAM: ~10MB
+  # Debugging tool — open it only when something is already known broken.
+  # Docker socket is read-only; Dozzle does not need write access.
   # ===========================================================================
   dozzle:
     image: amir20/dozzle:latest
@@ -39,50 +34,43 @@ services:
     ports:
       - "${DOZZLE_PORT}:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TZ=${TZ}
     networks:
       - home
 
   # ===========================================================================
-  # WATCHTOWER - Auto updates all containers nightly at 3am
-  # Monitors all stacks across entire Docker host
+  # DIUN - Docker Image Update Notifier
+  # http://${SERVER_IP}:${DIUN_PORT}  (metrics / healthcheck endpoint)
+  #
+  # NOTIFIES when image updates exist. Does NOT apply them — by design.
+  # Pair with Dockge for a one-click "pull + recreate" workflow.
+  #
+  # Notifications go to Home Assistant via webhook so all alerts land
+  # in one notification stream. Set DIUN_NOTIF_WEBHOOK_URL in .env to:
+  #   http://<ha-vm-ip>:8123/api/webhook/<your-webhook-id>
+  # Create the webhook in HA: Settings → Automations → New → Webhook trigger.
   # ===========================================================================
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower
+  diun:
+    image: crazymax/diun:latest
+    container_name: diun
     restart: unless-stopped
+    command: serve
+    volumes:
+      - ${CONFIG_PATH}/diun:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TZ=${TZ}
-      - WATCHTOWER_SCHEDULE=0 0 3 * * *
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_INCLUDE_STOPPED=false
-      - DOCKER_API_VERSION=${DOCKER_API_VERSION}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - home
-
-  # ===========================================================================
-  # NOTIFIARR - Media stack notifications
-  # http://${SERVER_IP}:${NOTIFIARR_PORT}
-  # Sign up free at notifiarr.com for API key
-  # Handles Sonarr, Radarr, Lidarr, Jellyfin event notifications
-  # ===========================================================================
-  notifiarr:
-    image: golift/notifiarr:latest
-    container_name: notifiarr
-    hostname: homeserver
-    restart: unless-stopped
-    ports:
-      - "${NOTIFIARR_PORT}:5454"
-    environment:
-      - TZ=${TZ}
-      - DN_API_KEY=${NOTIFIARR_API_KEY}
-    volumes:
-      - ${CONFIG_PATH}/notifiarr:/config
-      - /var/run/docker.sock:/var/run/docker.sock
+      - LOG_LEVEL=info
+      - LOG_JSON=false
+      - DIUN_WATCH_WORKERS=10
+      - DIUN_WATCH_SCHEDULE=0 0 6 * * *           # daily at 06:00 local
+      - DIUN_WATCH_JITTER=30s
+      - DIUN_PROVIDERS_DOCKER=true                # auto-discover every running container
+      - DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT=true # opt-out via label, not opt-in
+      - DIUN_NOTIF_WEBHOOK_ENDPOINT=${DIUN_NOTIF_WEBHOOK_URL}
+      - DIUN_NOTIF_WEBHOOK_METHOD=POST
     networks:
       - home
 

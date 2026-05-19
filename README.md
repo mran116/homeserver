@@ -1,6 +1,6 @@
 # 🏠 Homeserver Docker Stack
 
-A complete self-hosted homeserver stack built with Docker Compose and managed via Portainer. Designed for families who want to own their data, reduce reliance on cloud subscriptions, and run a capable home server with minimal ongoing maintenance.
+A complete self-hosted homeserver stack built with Docker Compose and managed via Dockge. Designed for families who want to own their data, reduce reliance on cloud subscriptions, and run a capable home server with minimal ongoing maintenance.
 
 Covers media streaming, household management, photo backup, document storage, password management, budget tracking, private messaging, monitoring, and automation — all self-hosted, all free (or nearly free).
 
@@ -13,7 +13,7 @@ Before you start you will need:
 - A server or VM running **Ubuntu 22.04+** or **Debian 12+**
 - **Docker 24+** and **Docker Compose v2** installed
 - **8GB RAM minimum** (16GB+ recommended)
-- **Portainer CE** for stack management
+- **Dockge** for stack management
 - A **GitHub account** for GitOps deployment
 - A **private IP address** for your server (e.g. `192.168.1.100`)
 - Optional: a domain name for external access via Cloudflare Tunnel (~$10/year)
@@ -25,7 +25,7 @@ Before you start you will need:
 ```
 /opt/docker/
 ├── stacks/              ← this repo — all compose files
-│   ├── portainer/          (will become dockge/)
+│   ├── dockge/
 │   ├── vaultwarden/
 │   ├── infrastructure/     (includes borgmatic/ configs)
 │   ├── monitoring/
@@ -34,7 +34,7 @@ Before you start you will need:
 │   ├── household/
 │   ├── records/
 │   ├── cloud/
-│   └── automation/
+│   └── devops/
 └── data/                ← all app config and data (bind mounts)
     ├── jellyfin/
     ├── sonarr/
@@ -52,12 +52,12 @@ All app data lives under `/opt/docker/data/` as bind mounts — easy to back up,
 
 ## 📦 Stacks
 
-### Portainer — Docker Management
-Manages all other stacks via a web UI. Deploy this first via SSH — everything else is deployed through Portainer.
+### Dockge — Stack Manager
+Compose-native stack manager. Deploy this first via SSH — every other stack is then managed through Dockge's UI, which reads and writes the compose files in this repo directly (no drift between UI and git).
 
 | Service | Purpose |
 |---|---|
-| Portainer CE | Web UI for managing Docker containers, stacks, images, volumes and networks |
+| Dockge | Web UI for managing Docker compose stacks. Edits the same files you commit to git. |
 
 ---
 
@@ -87,18 +87,22 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 
 | Service | Purpose |
 |---|---|
-| Uptime Kuma | Monitors all your services and sends alerts when something goes down. Supports Discord, Telegram, email and more. |
-| Dozzle | Real-time Docker log viewer. See logs from all containers in one clean web UI without SSH. |
-| Watchtower | Automatically updates all containers to latest images on a nightly schedule. |
-| Notifiarr | Sends rich notifications for media stack events — new downloads, import failures, health checks — to Discord/Slack/email. |
+| Uptime Kuma | Heartbeat monitor for every service. Home Assistant reads this via the Uptime Kuma integration so "is X up?" surfaces on the family HA dashboard. |
+| Dozzle | Real-time Docker log viewer. Debugging tool — opened only when something is already known broken. |
+| Diun | Docker Image Update Notifier. Watches every running container and notifies (via Home Assistant webhook) when a new image is published. Does not auto-apply — pair with Dockge for one-click updates. |
 
 ---
 
-### Management — Dashboard
+### Dashboard
 
 | Service | Purpose |
 |---|---|
-| Homepage | Central dashboard showing all your services with live stats widgets. Single bookmark to access everything. |
+| Homepage | Service launcher with live stats widgets. Single bookmark to reach everything. Health alerting lives in Home Assistant — Homepage is a launcher, not an alert console. |
+
+---
+
+### DevOps
+Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) — populated in Phase 3.
 
 ---
 
@@ -160,41 +164,36 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 
 ---
 
-### Automation — Workflow Automation
-
-| Service | Purpose |
-|---|---|
-| n8n* | Self-hosted Zapier alternative. Connects all your services together with automated workflows — e.g. bill arrives by email → logged in Actual Budget, meal planned in Mealie → shopping list updated in KitchenOwl. |
-
-*Commented out — enable after all other stacks are stable.
+### Automation
+Workflow automation lives in **Home Assistant** (separate VM), not in this Docker host. HA integrates natively with Sonarr/Radarr/Jellyfin/Mealie/KitchenOwl/Donetick/Immich/Uptime Kuma, so cross-service automations (and notifications) are built there.
 
 ---
 
 ## ⚙️ Environment Variables
 
-All environment variables are managed via **Portainer's environment system** — not committed to this repo.
+All vars are loaded from a single `.env` at the repo root, consumed by every stack's `docker-compose.yml`.
 
-1. Copy `.env.example` to see every required variable and description
-2. Add your values in **Portainer → Environments → your environment → Environment variables**
-3. Store actual secrets in **Vaultwarden** for backup and recovery
+1. `cp .env.example .env`
+2. Fill in values (ports + secrets); store actual secrets in **Vaultwarden** for backup
+3. Reload affected stacks from Dockge (or `docker compose up -d` per stack)
 
 Never commit `.env` to Git — it is blocked by `.gitignore`.
 
 ---
 
-## 🔄 How GitOps Works
+## 🔄 GitOps Workflow
 
-This repo is the single source of truth for all stack configurations:
+This repo is the single source of truth for every stack:
 
 ```
-Edit compose file locally in VSCode
-  → git commit and push to GitHub
-    → Portainer detects the change (polling every 5 minutes)
-      → Portainer automatically redeploys the stack
-        → New config is live
+Edit compose file locally in VS Code
+  → git commit and push
+    → on the host:  git pull
+      → in Dockge:  click "Update" on the affected stack
+        → new config is live
 ```
 
-To enable auto-updates in Portainer — when adding each stack choose **Repository** and enable **GitOps updates** with a polling interval of 5 minutes.
+Dockge edits the same files on disk, so anything changed in the UI shows up in `git status` and can be reviewed and committed back. No drift.
 
 ---
 
@@ -205,7 +204,7 @@ All stacks share a single Docker network called `home`. This allows containers i
 ```
 Unpackerr → calls http://sonarr:8989 (different stack, same network)
 Homepage  → calls http://jellyfin:8096 (different stack, same network)
-n8n       → calls http://mealie:9000  (different stack, same network)
+Home Assistant (separate VM) → calls http://mealie:9000 over LAN
 ```
 
 Create the network once before deploying anything:
@@ -225,7 +224,7 @@ sudo systemctl enable docker
 sudo usermod -aG docker $USER
 ```
 
-### 2 — Create structure and start Portainer
+### 2 — Create structure and start Dockge
 
 ```bash
 # Create shared network
@@ -234,41 +233,44 @@ docker network create home
 # Create directories
 sudo mkdir -p /opt/docker/stacks
 sudo mkdir -p /opt/docker/data
-sudo mkdir -p /opt/docker/homepage
+sudo mkdir -p /opt/docker/data/homepage
 sudo chown -R $USER:$USER /opt/docker
 
 # Clone repo
 git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
+cd /opt/docker/stacks
 
-# Copy homepage config files
-cp -r /opt/docker/stacks/homepage/* /opt/docker/homepage/
+# Configure environment
+cp .env.example .env
+$EDITOR .env
 
-# Start Portainer
-cd /opt/docker/stacks/portainer
-docker compose up -d
+# Seed Homepage config (source lives in repo; runtime copy is bind-mounted)
+cp -r dashboard/homepage/* /opt/docker/data/homepage/
+
+# Start Dockge
+cd dockge
+docker compose --env-file ../.env up -d
 ```
 
-### 3 — Configure Portainer
+### 3 — Configure Dockge
 
-Open `http://YOUR_SERVER_IP:9000`
+Open `http://YOUR_SERVER_IP:5001`
 
 1. Create admin account
-2. Go to **Settings → Authentication → Session lifetime** and increase to 8 hours
-3. Go to **Environments → your environment → Environment variables**
-4. Add all variables from `.env.example` with your values
+2. Dockge auto-discovers every stack under `/opt/docker/stacks` (mapped to `/opt/stacks` inside the container)
 
-### 4 — Deploy stacks via Portainer
+### 4 — Deploy stacks via Dockge
 
-Go to **Stacks → Add Stack → Repository** for each stack in this order:
+In the Dockge UI, start each stack in this order (click → Start):
 
-1. `vaultwarden` — path: `stacks/vaultwarden/docker-compose.yml`
-2. `infrastructure` — path: `stacks/infrastructure/docker-compose.yml`
-3. `monitoring` — path: `stacks/monitoring/docker-compose.yml`
-4. `dashboard` — path: `stacks/dashboard/docker-compose.yml`
-5. `mediastack` — path: `stacks/mediastack/docker-compose.yml`
-6. `household` — path: `stacks/household/docker-compose.yml`
-7. `records` — path: `stacks/records/docker-compose.yml`
-8. `cloud` — path: `stacks/cloud/docker-compose.yml`
+1. `vaultwarden`
+2. `infrastructure`
+3. `monitoring`
+4. `dashboard`
+5. `mediastack`
+6. `household`
+7. `records`
+8. `cloud`
 
 ---
 
@@ -277,7 +279,7 @@ Go to **Stacks → Add Stack → Repository** for each stack in this order:
 ### Vaultwarden
 - Create your account at `http://YOUR_SERVER_IP:9930`
 - Enable 2FA immediately
-- Set `VAULTWARDEN_SIGNUPS_ALLOWED=false` in Portainer env vars
+- Set `VAULTWARDEN_SIGNUPS_ALLOWED=false` in .env
 - Install the official **Bitwarden** app on all devices
 - Point server URL to your Vaultwarden instance
 - Store all secrets here going forward
@@ -299,12 +301,15 @@ Go to **Stacks → Add Stack → Repository** for each stack in this order:
 ### Actual Budget
 - Connect your bank via **SimpleFIN** at `beta-bridge.simplefin.org` (~$15/year)
 
-### Notifiarr
-- Sign up free at `notifiarr.com` to get your API key
-- Connects arr apps to Discord/Slack/email notifications
+### Diun
+- Set `DIUN_NOTIF_WEBHOOK_URL` in `.env` to a Home Assistant webhook
+- Create webhook in HA: Settings → Automations → New → Webhook trigger
+- HA then fans out the update notification to phone/email/Discord as you prefer
+- Diun runs daily at 06:00; opt a container out by labeling it `diun.enable=false`
 
 ### Homepage
-- Config files live at `/opt/docker/homepage/`
+- Config source lives in `dashboard/homepage/` (this repo)
+- Runtime copy: `/opt/docker/data/homepage/` (bind-mounted into the container)
 - Edit `services.yaml` to add API keys for live widget stats
 - Edit `widgets.yaml` to add your coordinates for the weather widget
 - Changes take effect immediately — no restart needed
@@ -316,9 +321,9 @@ Go to **Stacks → Add Stack → Repository** for each stack in this order:
 ### Tailscale — private VPN access
 ```
 1. Get a reusable auth key at: login.tailscale.com/admin/settings/keys
-2. Add TS_AUTHKEY to Portainer environment variables
+2. Add TS_AUTHKEY to .env
 3. Uncomment tailscale in infrastructure/docker-compose.yml
-4. Push to GitHub — Portainer auto-redeploys
+4. Push, `git pull` on host, redeploy in Dockge
 5. Approve the advertised subnet route in Tailscale admin panel
 ```
 
@@ -326,21 +331,21 @@ Go to **Stacks → Add Stack → Repository** for each stack in this order:
 ```
 1. Buy a domain at cloudflare.com (~$10/year)
 2. Zero Trust → Networks → Tunnels → Create tunnel → copy the token
-3. Add CLOUDFLARE_TUNNEL_TOKEN to Portainer environment variables
+3. Add CLOUDFLARE_TUNNEL_TOKEN to .env
 4. Uncomment cloudflared in infrastructure/docker-compose.yml
 5. Add hostname routes in the Cloudflare dashboard:
    jellyfin.yourdomain.com    → http://jellyfin:8096
    vaultwarden.yourdomain.com → http://vaultwarden:80
    navidrome.yourdomain.com   → http://navidrome:4533
-6. Push to GitHub — Portainer auto-redeploys
+6. Push, `git pull` on host, redeploy in Dockge
 ```
 
 ### Matrix — private encrypted messaging
 ```
 1. Requires a domain and Cloudflare Tunnel first
-2. Set MATRIX_SERVER_NAME=yourdomain.com in Portainer environment variables
+2. Set MATRIX_SERVER_NAME=yourdomain.com in .env
 3. Uncomment synapse in cloud/docker-compose.yml
-4. Push to GitHub — Portainer auto-redeploys
+4. Push, `git pull` on host, redeploy in Dockge
 5. Add matrix.yourdomain.com to Cloudflare tunnel routes
 6. Install the Element app on devices
 ```
@@ -349,26 +354,28 @@ Go to **Stacks → Add Stack → Repository** for each stack in this order:
 ```
 1. Requires a domain and SMTP setup first
 2. Set up Cloudflare Email Routing for your domain (free)
-3. Add Gmail SMTP credentials to Portainer environment variables
+3. Add Gmail SMTP credentials to .env
 4. Uncomment docuseal in records/docker-compose.yml
-5. Push to GitHub — Portainer auto-redeploys
+5. Push, `git pull` on host, redeploy in Dockge
 ```
 
 ### Borgmatic — automated offsite backups
 ```
 1. Create a Backblaze B2 account at backblaze.com (free 10GB, then $6/TB/month)
 2. Update infrastructure/borgmatic/config.yaml with your B2 bucket and credentials
-3. Add BORG_PASSPHRASE to Portainer environment variables
+3. Add BORG_PASSPHRASE to .env
 4. Uncomment borgmatic in infrastructure/docker-compose.yml
-5. Push to GitHub — Portainer auto-redeploys
+5. Push, `git pull` on host, redeploy in Dockge
 ```
 
-### n8n — workflow automation
+### Gitea + Actions runner — self-hosted devops (Phase 3)
 ```
-1. Set N8N_USER and N8N_PASSWORD in Portainer environment variables
-2. Uncomment n8n in automation/docker-compose.yml
-3. Push to GitHub — Portainer auto-redeploys
-4. Connect your services via the n8n UI
+1. Uncomment gitea, gitea-db, gitea-runner in devops/docker-compose.yml
+2. Set GITEA_HTTP_PORT, GITEA_SSH_PORT, GITEA_DB_PASSWORD in .env
+3. Start the stack from Dockge; create admin account at http://SERVER_IP:GITEA_HTTP_PORT
+4. In Gitea: Site Administration → Actions → Runners → New runner → copy token
+5. Set GITEA_RUNNER_TOKEN in .env and restart the runner container
+6. (Optional) Mirror this repo from GitHub for local-first GitOps
 ```
 
 ---
@@ -380,18 +387,6 @@ All stacks use an external Docker network called `home`. Create it once before d
 ```bash
 docker network create home
 ```
-
-**Docker API version mismatch**
-Watchtower requires the correct Docker API version or it won't start. Check yours with:
-```bash
-docker version | grep API
-```
-Update `DOCKER_API_VERSION` in Portainer environment variables to match.
-
-**Portainer session timeout**
-By default Portainer logs you out very quickly. Fix it at:
-**Settings → Authentication → Session lifetime**
-
 
 **qBittorrent routes through Gluetun**
 qBittorrent uses `network_mode: service:gluetun` — it shares Gluetun's network and has no direct network access of its own. If qBittorrent is unreachable always check Gluetun logs first.
@@ -417,14 +412,14 @@ Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on fir
 
 - [ ] Strong master password on Vaultwarden
 - [ ] 2FA enabled on Vaultwarden
-- [ ] 2FA enabled on Portainer
+- [ ] 2FA enabled on Dockge
 - [ ] 2FA enabled on Immich admin
 - [ ] `VAULTWARDEN_SIGNUPS_ALLOWED=false` after creating your account
 - [ ] NPM SSL certificates configured for local services
 - [ ] Tailscale enabled for remote access
 - [ ] Cloudflare Tunnel configured for public services only
-- [ ] Portainer, Paperless, Actual Budget never exposed publicly
-- [ ] Watchtower keeping all containers updated
+- [ ] Dockge, Paperless, Actual Budget never exposed publicly
+- [ ] Diun notifying on image updates (manual review before applying)
 - [ ] Uptime Kuma monitoring all services with notifications configured
 
 ---
@@ -435,7 +430,7 @@ Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on fir
 - Docker Compose v2
 - 8GB RAM minimum (16GB+ recommended for Immich ML)
 - Ubuntu 22.04+ or Debian 12+
-- Portainer CE
+- Dockge
 
 ---
 
@@ -540,16 +535,16 @@ Local Network (192.168.1.0/24)
   │
   ├── Server (192.168.1.x)
   │     └── Docker home network
-  │           ├── portainer
+  │           ├── dockge
   │           ├── vaultwarden
-  │           ├── infrastructure (NPM, Tailscale, Cloudflare)
-  │           ├── monitoring (Uptime Kuma, Dozzle, Watchtower)
-  │           ├── management (Homepage)
+  │           ├── infrastructure (NPM, Tailscale, Cloudflare, Borgmatic)
+  │           ├── monitoring (Uptime Kuma, Dozzle, Diun)
+  │           ├── dashboard (Homepage)
   │           ├── mediastack (Jellyfin, Sonarr, Radarr...)
   │           ├── household (Mealie, KitchenOwl, Donetick...)
   │           ├── records (Paperless, Stirling PDF...)
   │           ├── cloud (Immich, Matrix...)
-  │           └── automation (n8n...)
+  │           └── devops (Gitea + Actions — Phase 3)
   │
   ├── Home Assistant OS (separate device or VM)
   │     └── Wall tablet dashboard

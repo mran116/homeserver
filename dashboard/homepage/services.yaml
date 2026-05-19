@@ -4,15 +4,10 @@
 # All IPs and ports pulled from .env via HOMEPAGE_VAR_* variables
 
 - Infrastructure:
-    - Portainer:
-        icon: portainer.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PORTAINER_PORT}}
-        description: Docker Management
-        widget:
-          type: portainer
-          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PORTAINER_PORT}}
-          env: 1
-          key: {{HOMEPAGE_VAR_PORTAINER_API_KEY}}
+    - Dockge:
+        icon: dockge.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DOCKGE_PORT}}
+        description: Stack Manager
 
     - Nginx Proxy Manager:
         icon: nginx-proxy-manager.png
@@ -49,10 +44,10 @@
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DOZZLE_PORT}}
         description: Container Logs
 
-    - Notifiarr:
-        icon: notifiarr.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NOTIFIARR_PORT}}
-        description: Media Notifications
+    - Diun:
+        icon: diun.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DIUN_PORT}}
+        description: Image Update Notifier
 
 - Media:
     - Jellyfin:
