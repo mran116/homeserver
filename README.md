@@ -307,6 +307,17 @@ In the Dockge UI, start each stack in this order (click → Start):
 ### Actual Budget
 - Connect your bank via **SimpleFIN** at `beta-bridge.simplefin.org` (~$15/year)
 
+### Uptime Kuma
+- Import the pre-built monitor list: **Settings → Backup → Import** → select `monitoring/uptime-kuma/seed.json`
+- All ~25 service monitors appear instantly (using container DNS names on the `home` network)
+- Add a notification target (Discord, Gotify, ntfy, or your HA webhook) under **Settings → Notifications**, then **Apply on all existing monitors**
+
+### Recyclarr
+- A 1080p TRaSH-Guides config ships in `mediastack/recyclarr/recyclarr.yml` (HD Bluray + WEB for movies, WEB-1080p for TV)
+- Set `SONARR_API_KEY` and `RADARR_API_KEY` in `.env` (find them in each app under Settings → General)
+- First sync runs at the next `@daily` cron tick; force one now with `docker exec recyclarr recyclarr sync`
+- To switch to 4K later: edit the `include:` templates and `until_quality` in the yaml
+
 ### Diun
 - Set `DIUN_NOTIF_WEBHOOK_URL` in `.env` to a Home Assistant webhook
 - Create webhook in HA: Settings → Automations → New → Webhook trigger

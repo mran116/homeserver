@@ -314,8 +314,14 @@ services:
     environment:
       - TZ=${TZ}
       - CRON_SCHEDULE=@daily
+      # API keys for the !env_var lookups in recyclarr.yml
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - RADARR_API_KEY=${RADARR_API_KEY}
     volumes:
-      - ${CONFIG_PATH}/recyclarr:/config
+      # recyclarr.yml is version-controlled in this repo; runtime state
+      # (cache, logs) goes to ${CONFIG_PATH}/recyclarr.
+      - ./recyclarr/recyclarr.yml:/config/recyclarr.yml:ro
+      - ${CONFIG_PATH}/recyclarr:/config/cache
     networks:
       - home
     restart: unless-stopped

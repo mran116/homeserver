@@ -91,8 +91,52 @@ for k, v in subs.items():
 p.write_text(text)
 PY
 
-  say ".env written. Secrets are still blank — fill them in before starting"
-  say "any stack that needs them (Vaultwarden, Paperless, Immich, VPN...)."
+  # ---- auto-generate machine secrets ----------------------------------------
+  # Fill any blank password/token/secret line in .env with a random value.
+  # User-facing credentials (admin passwords, API keys from third parties, VPN
+  # keys) are left blank — they need a human decision or an external account.
+  say "Generating random secrets for empty DB passwords / admin tokens"
+  python3 - <<'PY'
+import pathlib, re, secrets, string
+
+# Lines we fill automatically when they are empty in .env.
+# Anything not in this list (VPN keys, API keys from notifiarr/cloudflare/etc.,
+# admin user passwords) is intentionally left for the human.
+AUTO_FILL = {
+    "NPM_DB_ROOT_PASSWORD",
+    "NPM_DB_PASSWORD",
+    "VAULTWARDEN_ADMIN_TOKEN",
+    "PAPERLESS_DB_PASSWORD",
+    "PAPERLESS_SECRET_KEY",
+    "PAPERLESS_ADMIN_PASSWORD",
+    "IMMICH_DB_PASSWORD",
+    "GITEA_DB_PASSWORD",
+}
+
+def gen(length=36):
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+p = pathlib.Path(".env")
+out = []
+filled = []
+for line in p.read_text().splitlines():
+    m = re.match(r"^([A-Z0-9_]+)=\s*$", line)
+    if m and m.group(1) in AUTO_FILL:
+        key = m.group(1)
+        out.append(f"{key}={gen()}")
+        filled.append(key)
+    else:
+        out.append(line)
+p.write_text("\n".join(out) + "\n")
+for k in filled:
+    print(f"   + {k}")
+PY
+
+  say ".env written. The remaining blank fields need a human:"
+  say "  - VPN (WIREGUARD_*, VPN_SERVER_COUNTRIES)"
+  say "  - third-party API keys (DIUN webhook, TS_AUTHKEY, CLOUDFLARE_TUNNEL_TOKEN)"
+  say "  - Homepage widget keys (HOMEPAGE_VAR_*_API_KEY) — gather after each app is up"
 fi
 
 # Load whatever is in .env now (whether we just wrote it or it pre-existed)

@@ -1,0 +1,36 @@
+{
+  "version": "1.23.0",
+  "notificationList": [],
+  "monitorList": [
+    { "name": "Dockge",          "type": "http", "url": "http://dockge:5001",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "expiryNotification": false, "ignoreTls": true, "upsideDown": false, "accepted_statuscodes": ["200-299","300-399","401"] },
+    { "name": "Homepage",        "type": "http", "url": "http://homepage:3000",              "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Nginx Proxy Mgr", "type": "http", "url": "http://nginx-proxy-manager:81",     "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","401"] },
+
+    { "name": "Uptime Kuma self","type": "http", "url": "http://uptime-kuma:3001",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Dozzle",          "type": "http", "url": "http://dozzle:8080",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+
+    { "name": "Vaultwarden",     "type": "http", "url": "http://vaultwarden:80/alive",       "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+
+    { "name": "Jellyfin",        "type": "http", "url": "http://jellyfin:8096/health",       "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Seerr",           "type": "http", "url": "http://seerr:5055/api/v1/status",   "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Sonarr",          "type": "http", "url": "http://sonarr:8989/ping",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Radarr",          "type": "http", "url": "http://radarr:7878/ping",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Lidarr",          "type": "http", "url": "http://lidarr:8686/ping",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Prowlarr",        "type": "http", "url": "http://prowlarr:9696/ping",         "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Bazarr",          "type": "http", "url": "http://bazarr:6767",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "SABnzbd",         "type": "http", "url": "http://sabnzbd:8080",               "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Gluetun (VPN)",   "type": "http", "url": "http://gluetun:8000/v1/openvpn/status","interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Navidrome",       "type": "http", "url": "http://navidrome:4533/ping",        "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Kavita",          "type": "http", "url": "http://kavita:5000",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+
+    { "name": "Mealie",          "type": "http", "url": "http://mealie:9000",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "KitchenOwl",      "type": "http", "url": "http://kitchenowl:8080",            "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Donetick",        "type": "http", "url": "http://donetick:2021",              "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Actual Budget",   "type": "http", "url": "http://actual:5006",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+
+    { "name": "Paperless",       "type": "http", "url": "http://paperless:8000",             "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
+    { "name": "Stirling PDF",    "type": "http", "url": "http://stirling-pdf:8080",          "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+
+    { "name": "Immich",          "type": "http", "url": "http://immich-server:3001/api/server-info/ping", "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] }
+  ]
+}
