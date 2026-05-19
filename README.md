@@ -25,22 +25,21 @@ Before you start you will need:
 ```
 /opt/docker/
 ├── stacks/              ← this repo — all compose files
-│   ├── portainer/
+│   ├── portainer/          (will become dockge/)
 │   ├── vaultwarden/
-│   ├── infrastructure/
+│   ├── infrastructure/     (includes borgmatic/ configs)
 │   ├── monitoring/
-│   ├── management/
+│   ├── dashboard/          (homepage compose + homepage/ configs)
 │   ├── mediastack/
 │   ├── household/
 │   ├── records/
 │   ├── cloud/
 │   └── automation/
-├── data/                ← all app config and data (bind mounts)
-│   ├── jellyfin/
-│   ├── sonarr/
-│   ├── radarr/
-│   └── etc...
-└── homepage/            ← Homepage dashboard config files
+└── data/                ← all app config and data (bind mounts)
+    ├── jellyfin/
+    ├── sonarr/
+    ├── radarr/
+    └── etc...
 
 /mnt/media/              ← Movies, TV, music, anime, books
 /mnt/photos/             ← Immich photo and video library
@@ -175,7 +174,7 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 
 All environment variables are managed via **Portainer's environment system** — not committed to this repo.
 
-1. Copy `.env.template` to see every required variable and description
+1. Copy `.env.example` to see every required variable and description
 2. Add your values in **Portainer → Environments → your environment → Environment variables**
 3. Store actual secrets in **Vaultwarden** for backup and recovery
 
@@ -256,7 +255,7 @@ Open `http://YOUR_SERVER_IP:9000`
 1. Create admin account
 2. Go to **Settings → Authentication → Session lifetime** and increase to 8 hours
 3. Go to **Environments → your environment → Environment variables**
-4. Add all variables from `.env.template` with your values
+4. Add all variables from `.env.example` with your values
 
 ### 4 — Deploy stacks via Portainer
 
@@ -265,7 +264,7 @@ Go to **Stacks → Add Stack → Repository** for each stack in this order:
 1. `vaultwarden` — path: `stacks/vaultwarden/docker-compose.yml`
 2. `infrastructure` — path: `stacks/infrastructure/docker-compose.yml`
 3. `monitoring` — path: `stacks/monitoring/docker-compose.yml`
-4. `management` — path: `stacks/management/docker-compose.yml`
+4. `dashboard` — path: `stacks/dashboard/docker-compose.yml`
 5. `mediastack` — path: `stacks/mediastack/docker-compose.yml`
 6. `household` — path: `stacks/household/docker-compose.yml`
 7. `records` — path: `stacks/records/docker-compose.yml`
@@ -358,7 +357,7 @@ Go to **Stacks → Add Stack → Repository** for each stack in this order:
 ### Borgmatic — automated offsite backups
 ```
 1. Create a Backblaze B2 account at backblaze.com (free 10GB, then $6/TB/month)
-2. Update borgmatic-config/config.yaml with your B2 bucket and credentials
+2. Update infrastructure/borgmatic/config.yaml with your B2 bucket and credentials
 3. Add BORG_PASSPHRASE to Portainer environment variables
 4. Uncomment borgmatic in infrastructure/docker-compose.yml
 5. Push to GitHub — Portainer auto-redeploys

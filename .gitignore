@@ -1,19 +1,17 @@
-Never commit secrets# =============================================================================
-# SECRETS - Never commit these
+# =============================================================================
+# SECRETS — never commit
 # =============================================================================
 .env
-*.env
 .env.*
-**/secrets/
-**/*secret*
-**/*password*
-**/*token*
+!.env.example
+*.local
+*.private
+.envrc
 
 # =============================================================================
-# CERTIFICATES & KEYS - Never commit these
+# CERTIFICATES & KEYS — never commit
 # =============================================================================
 *.pem
-*.key
 *.crt
 *.cert
 *.p12
@@ -22,59 +20,43 @@ Never commit secrets# ==========================================================
 *.cer
 id_rsa
 id_ed25519
-*.pub
 authorized_keys
 known_hosts
 
 # =============================================================================
-# SENSITIVE CONFIG FILES
+# RUNTIME CONFIG / STATE — never commit
 # =============================================================================
 **/letsencrypt/
 **/certs/
 **/ssl/
 **/tls/
-wp-config.php
+**/secrets/
 *.sqlite
+*.sqlite3
 *.db
 
 # =============================================================================
-# OS FILES
+# COMPOSE OVERRIDES — local-only customizations
+# =============================================================================
+compose.override.yml
+docker-compose.override.yml
+
+# =============================================================================
+# OS / EDITOR
 # =============================================================================
 .DS_Store
-.DS_Store?
 Thumbs.db
 desktop.ini
 $RECYCLE.BIN/
-
-# =============================================================================
-# EDITOR FILES
-# =============================================================================
 .vscode/settings.json
 .idea/
 *.swp
 *.swo
 
 # =============================================================================
-# BACKUP FILES
+# BACKUPS
 # =============================================================================
 *.bak
 *.backup
 *.old
 *.orig
-.env.* # Never commit secrets
-.env
-*.env
-
-# Never commit these
-**/secrets/
-**/*secret*
-**/*password*
-**/*key*
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Backup files
-*.bak
-*.backup
