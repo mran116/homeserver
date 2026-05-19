@@ -224,33 +224,39 @@ sudo systemctl enable docker
 sudo usermod -aG docker $USER
 ```
 
-### 2 — Create structure and start Dockge
+### 2 — Clone the repo and run bootstrap
 
 ```bash
-# Create shared network
-docker network create home
-
-# Create directories
-sudo mkdir -p /opt/docker/stacks
-sudo mkdir -p /opt/docker/data
-sudo mkdir -p /opt/docker/data/homepage
-sudo chown -R $USER:$USER /opt/docker
-
-# Clone repo
+sudo mkdir -p /opt/docker/stacks && sudo chown -R $USER:$USER /opt/docker
 git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
 cd /opt/docker/stacks
-
-# Configure environment
-cp .env.example .env
-$EDITOR .env
-
-# Seed Homepage config (source lives in repo; runtime copy is bind-mounted)
-cp -r dashboard/homepage/* /opt/docker/data/homepage/
-
-# Start Dockge
-cd dockge
-docker compose --env-file ../.env up -d
+./bootstrap.sh
 ```
+
+`bootstrap.sh` is interactive and idempotent. It will:
+
+- check Docker prereqs
+- prompt for SERVER_IP, timezone, PUID/PGID, and your storage paths (config, media, photos, documents) — defaults are autodetected
+- write `.env` (only if one doesn't already exist — it never overwrites)
+- create the directory layout and the `home` docker network
+- seed `dashboard/homepage/*.yaml` into your config dir
+- optionally start Dockge
+
+You'll still need to fill in the secret values in `.env` (Vaultwarden token, DB passwords, VPN keys, etc.) before starting stacks that need them.
+
+<details>
+<summary>Prefer to do it manually?</summary>
+
+```bash
+docker network create home
+sudo mkdir -p /opt/docker/{stacks,data,data/homepage} && sudo chown -R $USER:$USER /opt/docker
+git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
+cd /opt/docker/stacks
+cp .env.example .env && $EDITOR .env
+cp -r dashboard/homepage/* /opt/docker/data/homepage/
+cd dockge && docker compose --env-file ../.env up -d
+```
+</details>
 
 ### 3 — Configure Dockge
 
