@@ -324,6 +324,15 @@ In the Dockge UI, start each stack in this order (click → Start):
 - HA then fans out the update notification to phone/email/Discord as you prefer
 - Diun runs daily at 06:00; opt a container out by labeling it `diun.enable=false`
 
+### Homepage widget API keys (the harvest script)
+Filling in API keys for ~15 services by hand is the worst part of any first run. Instead:
+
+```bash
+./scripts/harvest-keys.sh
+```
+
+Walks every external key the stack uses, shows you the exact URL + click path to find it (e.g. *"Open `http://server:8989`, Settings → General → Security"*), prompts once, writes straight to `.env`. Re-runnable; existing values are skipped unless you pass `--force`.
+
 ### Homepage
 - Config source lives in `dashboard/homepage/` (this repo)
 - Runtime copy: `/opt/docker/data/homepage/` (bind-mounted into the container)
