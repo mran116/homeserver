@@ -64,3 +64,9 @@ $RECYCLE.BIN/
 *.backup
 *.old
 *.orig
+
+# =============================================================================
+# PRIVATE LOCAL NOTES — never published (personal roadmap, scratch notes)
+# =============================================================================
+*.local.md
+ROADMAP.local.md
