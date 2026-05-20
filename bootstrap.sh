@@ -213,15 +213,25 @@ XML
   printf '   + %s  (seeded %s)\n' "$envvar" "$cfg"
 }
 
-if command -v openssl >/dev/null; then
-  say "Pre-seeding *arr API keys (skips any app that already has config.xml)"
-  seed_arr sonarr   8989 Sonarr   SONARR_API_KEY
-  seed_arr radarr   7878 Radarr   RADARR_API_KEY
-  seed_arr lidarr   8686 Lidarr   LIDARR_API_KEY
-  seed_arr whisparr 6969 Whisparr WHISPARR_API_KEY
-  seed_arr prowlarr 9696 Prowlarr HOMEPAGE_VAR_PROWLARR_API_KEY
-else
+if ! command -v openssl >/dev/null; then
   warn "openssl not found — skipping *arr key pre-seed; use scripts/harvest-keys.sh later."
+else
+  echo
+  say "Optional: pre-seed *arr API keys"
+  echo "  Generates each *arr's API key now and writes a config.xml so Sonarr/Radarr/"
+  echo "  Lidarr/Whisparr/Prowlarr boot ready for Recyclarr/Unpackerr/Homepage with no"
+  echo "  manual key copying. NOTE: the stub config sets local access with NO login"
+  echo "  (AuthenticationMethod=External) — fine on a trusted LAN, and you can switch"
+  echo "  to Forms/password auth in each app afterwards. Skips any app already set up."
+  if ask_yn "Pre-seed *arr API keys?" Y; then
+    seed_arr sonarr   8989 Sonarr   SONARR_API_KEY
+    seed_arr radarr   7878 Radarr   RADARR_API_KEY
+    seed_arr lidarr   8686 Lidarr   LIDARR_API_KEY
+    seed_arr whisparr 6969 Whisparr WHISPARR_API_KEY
+    seed_arr prowlarr 9696 Prowlarr HOMEPAGE_VAR_PROWLARR_API_KEY
+  else
+    say "Skipped — set up each *arr in its UI, then run scripts/harvest-keys.sh."
+  fi
 fi
 
 # ---- link root .env into each stack folder ----------------------------------

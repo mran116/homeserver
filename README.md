@@ -256,7 +256,7 @@ cd /opt/docker/stacks
 - check Docker prereqs
 - prompt for SERVER_IP, timezone, PUID/PGID, and your storage paths (config, media, photos, documents) — defaults are autodetected
 - **generate** `.env` from `.env.example` (only if one doesn't exist — it never overwrites): port defaults come pre-filled, your answers are written in, and machine secrets are auto-generated (DB passwords, Vaultwarden/Paperless tokens, Immich/Gitea DB passwords)
-- **pre-seed the *arr API keys** (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr): generates a key, writes it to `.env`, and stubs each app's `config.xml` so they boot already matching. Skips any app that already has a `config.xml`, so it's safe over an existing install
+- **offer to pre-seed the *arr API keys** (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) — a yes/no prompt (default yes): generates a key, writes it to `.env`, and stubs each app's `config.xml` so they boot already matching. The stub sets local access with no login (fine on a trusted LAN; switch to password auth in-app afterwards). Skips any app that already has a `config.xml`. Say no if you'd rather configure the *arrs yourself and `harvest-keys.sh` the keys later
 - **symlink the root `.env` into every stack folder** so Dockge and CLI both find it with no `--env-file` flag on reload
 - create the directory layout and the `home` docker network
 - seed `dashboard/homepage/*.yaml` into your config dir
