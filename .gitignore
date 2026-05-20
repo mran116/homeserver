@@ -48,10 +48,14 @@ docker-compose.override.yml
 Thumbs.db
 desktop.ini
 $RECYCLE.BIN/
-.vscode/settings.json
 .idea/
 *.swp
 *.swo
+
+# Ignore personal VS Code files but keep shared project settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # =============================================================================
 # BACKUPS
