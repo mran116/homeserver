@@ -251,7 +251,12 @@ cd /opt/docker/stacks
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` is interactive and idempotent. It will:
+`bootstrap.sh` is interactive and idempotent. It first asks whether this is a **new install** or a **migration**:
+
+- **new** — does everything below (generates secrets, optionally pre-seeds *arr keys)
+- **migrate** — for a box whose apps/data are already configured: it **never** generates secrets (new random DB passwords wouldn't match your existing databases) and **never** touches *arr config. It only does the safe, idempotent steps: create dirs, the `home` network, and the per-stack `.env` symlinks. You bring your existing `.env` / paste your existing secrets.
+
+In **new** mode it will:
 
 - check Docker prereqs
 - prompt for SERVER_IP, timezone, PUID/PGID, and your storage paths (config, media, photos, documents) — defaults are autodetected

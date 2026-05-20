@@ -57,6 +57,22 @@ command -v docker >/dev/null || die "docker not found. Install Docker first: htt
 docker compose version >/dev/null 2>&1 || die "docker compose v2 not found. Upgrade Docker to a recent version."
 docker info >/dev/null 2>&1 || die "Cannot talk to the docker daemon. Is your user in the 'docker' group? (Try: sudo usermod -aG docker \$USER, then log out and back in.)"
 
+# ---- install mode -----------------------------------------------------------
+# A migration must NEVER generate fresh secrets (new random DB passwords would
+# not match existing databases) and must NEVER pre-seed *arr config (your apps
+# are already configured). Both are gated on MODE below.
+echo
+say "Is this a NEW install or a MIGRATION of an existing setup?"
+echo "  new      — fresh box: generate .env + random secrets, optionally pre-seed *arr keys"
+echo "  migrate  — apps/data already configured: do NOT generate secrets or touch app"
+echo "             config; only create dirs, the docker network, and the .env symlinks"
+read -r -p "  Type 'new' or 'migrate' [new]: " MODE || true
+case "${MODE:-new}" in
+  [Mm]*) MODE=migrate ;;
+  *)     MODE=new ;;
+esac
+say "Mode: $MODE"
+
 # ---- gather config ----------------------------------------------------------
 if [[ -f .env ]]; then
   warn ".env already exists — skipping interactive setup."
@@ -106,10 +122,18 @@ for k, v in subs.items():
 p.write_text(text)
 PY
 
-  # ---- auto-generate machine secrets ----------------------------------------
+  # ---- auto-generate machine secrets (NEW installs only) --------------------
   # Fill any blank password/token/secret line in .env with a random value.
   # User-facing credentials (admin passwords, API keys from third parties, VPN
   # keys) are left blank — they need a human decision or an external account.
+  #
+  # Skipped entirely for migrations: generating new random DB passwords would
+  # not match your existing databases and would break those apps.
+  if [[ "$MODE" != "new" ]]; then
+    warn "Migration mode — NOT generating secrets."
+    warn "Edit .env now and paste your EXISTING values (DB passwords, admin tokens,"
+    warn "API keys) from your current setup before starting any stack."
+  else
   say "Generating random secrets for empty DB passwords / admin tokens"
   python3 - <<'PY'
 import pathlib, re, secrets, string
@@ -154,6 +178,7 @@ PY
   say "  - VPN (WIREGUARD_*, VPN_SERVER_COUNTRIES)"
   say "  - third-party API keys (DIUN webhook, TS_AUTHKEY, CLOUDFLARE_TUNNEL_TOKEN)"
   say "  - Homepage widget keys (HOMEPAGE_VAR_*_API_KEY) — gather after each app is up"
+  fi
 fi
 
 # Load whatever is in .env now (whether we just wrote it or it pre-existed)
@@ -213,7 +238,9 @@ XML
   printf '   + %s  (seeded %s)\n' "$envvar" "$cfg"
 }
 
-if ! command -v openssl >/dev/null; then
+if [[ "$MODE" != "new" ]]; then
+  say "Migration mode — skipping *arr pre-seed (your apps keep their existing config)."
+elif ! command -v openssl >/dev/null; then
   warn "openssl not found — skipping *arr key pre-seed; use scripts/harvest-keys.sh later."
 else
   echo
