@@ -58,12 +58,13 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 # =============================================================================
-# BACKUPS
+# BACKUPS / LOGS
 # =============================================================================
 *.bak
 *.backup
 *.old
 *.orig
+*.log
 
 # =============================================================================
 # PRIVATE LOCAL NOTES — never published (personal roadmap, scratch notes)

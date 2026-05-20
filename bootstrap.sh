@@ -240,6 +240,32 @@ else
   say "Docker network 'home' already exists"
 fi
 
+# ---- optional: nightly *arr key auto-sync (cron) ----------------------------
+# Installs a crontab entry so harvest-keys.sh --sync runs nightly and self-heals
+# if an *arr key ever changes — no need to add cron by hand. Idempotent: keyed
+# off a marker comment so re-running bootstrap won't duplicate it.
+echo
+if command -v crontab >/dev/null 2>&1; then
+  if ask_yn "Install a nightly cron job to auto-sync *arr API keys?" Y; then
+    marker="# homestack-key-sync"
+    cron_line="0 4 * * * cd $REPO_DIR && ./scripts/harvest-keys.sh --sync >> $REPO_DIR/key-sync.log 2>&1 $marker"
+    # rebuild crontab without any previous version of our line, then append
+    new_cron="$( { crontab -l 2>/dev/null | grep -vF "$marker"; echo "$cron_line"; } )"
+    if printf '%s\n' "$new_cron" | crontab -; then
+      say "Installed nightly key-sync (04:00). Logs: $REPO_DIR/key-sync.log"
+      say "Remove later with:  crontab -e   (delete the homestack-key-sync line)"
+    else
+      warn "Could not write crontab — add this line yourself:"
+      warn "  $cron_line"
+    fi
+  else
+    say "Skipped — you can run ./scripts/harvest-keys.sh --sync manually anytime."
+  fi
+else
+  warn "cron not found — to automate key-sync, add a scheduler that runs:"
+  warn "  cd $REPO_DIR && ./scripts/harvest-keys.sh --sync"
+fi
+
 # ---- optional: start Dockge -------------------------------------------------
 echo
 if ask_yn "Start Dockge now? (deploy every other stack from its UI afterwards)" Y; then

@@ -376,14 +376,16 @@ The *arr keys rarely change, but if you ever regenerate one, you don't want to r
 ./scripts/harvest-keys.sh --sync
 ```
 
-Schedule it so it self-heals. Either a host cron entry:
+**`bootstrap.sh` offers to install this for you** — it prompts "Install a nightly cron job to auto-sync *arr API keys?" and, if you accept, adds the entry to your crontab (idempotently, keyed off a `# homestack-key-sync` marker so re-running won't duplicate it). So you don't have to touch cron by hand.
+
+If you'd rather add it yourself, the entry is just:
 
 ```cron
-# check nightly at 4am; no-op unless an *arr key actually changed
-0 4 * * * cd /opt/docker/stacks && ./scripts/harvest-keys.sh --sync >> /var/log/key-sync.log 2>&1
+# nightly at 4am; no-op unless an *arr key actually changed
+0 4 * * * cd /opt/docker/stacks && ./scripts/harvest-keys.sh --sync >> /opt/docker/stacks/key-sync.log 2>&1
 ```
 
-…or a systemd timer (`key-sync.service` + `key-sync.timer`) if you prefer. It only needs `CONFIG_PATH` and Docker access — no ports, no prompts. On a normal night it detects no change and does nothing.
+It only needs `CONFIG_PATH` and Docker access — no ports, no prompts. On a normal night it detects no change and does nothing. Remove it anytime with `crontab -e` (delete the `homestack-key-sync` line).
 
 ### Homepage
 - Config source lives in `dashboard/homepage/` (this repo)
