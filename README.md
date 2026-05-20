@@ -216,6 +216,28 @@ docker network create home
 
 ## 🚀 Quick Start
 
+### At a glance
+
+The whole journey, start to finish, so you know where you're headed:
+
+```
+1. Install Docker                         (one command)
+2. Clone the repo to /opt/docker/stacks
+3. Run ./bootstrap.sh                      → generates .env, secrets, *arr keys,
+                                             dirs, network, symlinks, starts Dockge
+4. Open Dockge → create admin
+5. Start the stacks in order from Dockge   → vaultwarden first, cloud last
+6. Create your accounts in each app's UI   (Vaultwarden, Immich, Mealie, NPM…)
+7. Run ./scripts/harvest-keys.sh           → collects the UI-only API keys into .env
+8. Verify on Homepage + Uptime Kuma        → everything green
+```
+
+Most people are running in **under an hour**, most of it waiting for containers to pull.
+
+> **Already running Portainer?** Don't start from scratch — jump to
+> [Migrating from Portainer](#-migrating-from-portainer) below. Your data is safe;
+> you only swap the management layer.
+
 ### 1 — Install Docker
 
 ```bash
@@ -271,16 +293,63 @@ Open `http://YOUR_SERVER_IP:5001`
 
 ### 4 — Deploy stacks via Dockge
 
-In the Dockge UI, start each stack in this order (click → Start):
+In the Dockge UI, start each stack in this order (click → Start). The order matters:
 
-1. `vaultwarden`
-2. `infrastructure`
-3. `monitoring`
-4. `dashboard`
+1. `vaultwarden` — your password vault; stand it up first so you have somewhere to store the secrets bootstrap generated
+2. `infrastructure` — reverse proxy + networking; other services sit behind it
+3. `monitoring` — Uptime Kuma / Dozzle / Diun start watching everything else
+4. `dashboard` — Homepage; depends on the rest existing, so it comes after
 5. `mediastack`
 6. `household`
 7. `records`
 8. `cloud`
+
+After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
+
+### 5 — Verify it worked
+
+```bash
+# Every container should show "running" (and healthy where a healthcheck exists)
+docker ps --format 'table {{.Names}}\t{{.Status}}'
+```
+
+Then in the browser:
+- **Homepage** (`http://YOUR_SERVER_IP:3000`) — tiles load; widgets show live data once you've added API keys (step 7)
+- **Uptime Kuma** (`http://YOUR_SERVER_IP:3001`) — import `monitoring/uptime-kuma/seed.json` (Settings → Backup → Import) and watch the monitors go green
+- If a container is restarting, check its logs in **Dozzle** (`http://YOUR_SERVER_IP:3002`) — usually a missing secret in `.env`
+
+---
+
+## 🔁 Migrating from Portainer
+
+If you already run this stack under Portainer, **don't `rm -rf` anything** — your app data lives in `/opt/docker/data` (bind mounts) and is never touched by the steps below. You're only swapping the management layer.
+
+**Before you start:**
+1. **Snapshot the VM** (Proxmox/etc.) — instant rollback if anything goes sideways.
+2. **Save your secrets.** If you have a `.env` in the stacks dir, copy it somewhere safe. If your env vars lived in Portainer's UI instead, export them now (Settings → Environments → Variables) — you'll paste them into `.env`.
+3. Back up `/opt/docker/data` to your NAS/B2 as well (belt and suspenders).
+
+**Update the repo in place** (handles all the folder renames, keeps your `.env`):
+
+```bash
+cd /opt/docker/stacks
+git stash -u           # park any local edits just in case
+git fetch origin
+git reset --hard origin/main
+# recreate the per-stack .env symlinks (bootstrap does this, or do it manually):
+for d in */docker-compose.yml; do ln -sf ../.env "$(dirname "$d")/.env"; done
+```
+
+If you didn't have a `.env`, create one now from your Portainer export: `cp .env.example .env && $EDITOR .env` (use your **existing** DB passwords / tokens — generating new ones would orphan your databases).
+
+**Cut over one stack at a time** (run Dockge alongside Portainer for the switch):
+
+1. Start Dockge: `cd dockge && docker compose up -d`, open `http://SERVER_IP:5001`, create admin.
+2. For each stack (`vaultwarden` → `cloud`): in **Portainer** stop + delete the stack (containers go, bind-mounted data stays), then in **Dockge** click the stack → **Start**. Verify it comes up on the same port with the same data before moving on.
+3. Remove the retired containers: `docker rm -f watchtower notifiarr` (replaced by Diun / Home Assistant).
+4. Once everything runs under Dockge for a day, remove Portainer: `docker rm -f portainer` (and its volume when you're confident).
+
+**Then** continue from [Post-Deploy Setup](#-post-deploy-setup) — but skip the Uptime Kuma seed import (you already have monitors) and back up any custom `recyclarr.yml` first, since the repo now ships one.
 
 ---
 
