@@ -100,6 +100,35 @@ current_value() {
   grep -E "^${1}=" .env | head -n1 | cut -d= -f2-
 }
 
+# -----------------------------------------------------------------------------
+# Auto-detect *arr API keys from the config.xml each app generates on first
+# boot. We only READ the file — never write app config — so this can't corrupt
+# an app. config.xml is identical across Sonarr/Radarr/Lidarr/Whisparr/Prowlarr.
+# Detected keys are written to .env, so the manual loop below then shows them as
+# already set.
+detect_arr() {
+  local dir="$1" envvar="$2"
+  local cfg="${CONFIG_PATH:-/opt/docker/data}/$dir/config.xml"
+  [[ -f "$cfg" ]] || { printf '  %s·%s %-18s no config.xml yet (start the app first)\n' "$c_d" "$c_r" "$dir"; return 0; }
+  local key
+  key="$(grep -oE '<ApiKey>[^<]+</ApiKey>' "$cfg" | sed -E 's#</?ApiKey>##g' | head -n1)"
+  [[ -n "$key" ]] || { printf '  %s·%s %-18s config.xml has no ApiKey yet\n' "$c_d" "$c_r" "$dir"; return 0; }
+  if [[ "$(current_value "$envvar")" == "$key" ]]; then
+    printf '  %s✓%s %-18s already in .env\n' "$c_g" "$c_r" "$envvar"
+  else
+    update_env "$envvar" "$key"
+    printf '  %s+%s %-18s detected from %s/config.xml\n' "$c_g" "$c_r" "$envvar" "$dir"
+  fi
+}
+
+printf '%s\n' "${c_b}Auto-detecting *arr API keys from config.xml${c_r}"
+detect_arr sonarr   SONARR_API_KEY
+detect_arr radarr   RADARR_API_KEY
+detect_arr lidarr   LIDARR_API_KEY
+detect_arr whisparr WHISPARR_API_KEY
+detect_arr prowlarr PROWLARR_API_KEY
+echo
+
 printf '%s\n' "${c_b}Homestack key harvester${c_r}"
 printf '%s\n\n' "${c_d}Press Enter to keep current value, type new value to replace, '-' to clear.${c_r}"
 

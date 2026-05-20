@@ -228,7 +228,7 @@ The whole journey, start to finish, so you know where you're headed:
 4. Open Dockge → create admin
 5. Start the stacks in order from Dockge   → vaultwarden first, cloud last
 6. Create your accounts in each app's UI   (Vaultwarden, Immich, Mealie, NPM…)
-7. Run ./scripts/harvest-keys.sh           → collects the UI-only API keys into .env
+7. Run ./scripts/harvest-keys.sh           → auto-detects *arr keys + collects UI-only keys, then redeploy consumers
 8. Verify on Homepage + Uptime Kuma        → everything green
 ```
 
@@ -256,13 +256,13 @@ cd /opt/docker/stacks
 - check Docker prereqs
 - **create `.env`** from `.env.example` if one doesn't exist yet (prompts for SERVER_IP, timezone, PUID/PGID, storage paths — defaults autodetected). If a `.env` already exists it's kept as-is.
 - **fill only the blank machine secrets** (DB passwords, Vaultwarden/Paperless tokens, Immich DB password) with random values — a yes/no prompt that tells you how many are blank. Anything you've already set is left untouched, so on a partial setup only the not-yet-used stacks get secrets. If your real secrets live outside this `.env` (e.g. still in Portainer), it warns you to paste them first so new random values don't clash with existing databases.
-- **offer to pre-seed the *arr API keys** (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) — a yes/no prompt (default yes): generates a key, writes it to `.env`, and stubs each app's `config.xml` so they boot already matching. The stub sets local access with no login (fine on a trusted LAN; switch to password auth in-app afterwards). Skips any app that already has a `config.xml`. Say no if you'd rather configure the *arrs yourself and `harvest-keys.sh` the keys later
+- **never generates or pre-seeds app API keys.** Each *arr creates its own key on first boot — bootstrap doesn't touch app config at all. You collect the keys *after* the apps are up (next step), which is safer: the script only ever reads app config, never writes it
 - **symlink the root `.env` into every stack folder** so Dockge and CLI both find it with no `--env-file` flag on reload
 - create the directory layout and the `home` docker network
 - seed `dashboard/homepage/*.yaml` into your config dir
 - optionally start Dockge
 
-After the apps are up, run `./scripts/harvest-keys.sh` for the keys that can only come from each app's UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) still need to be pasted in by hand.
+After the apps are up, run `./scripts/harvest-keys.sh`. It **auto-detects** the *arr API keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) straight from each app's generated `config.xml` and writes them to `.env`, then prompts you for the keys that can only come from a UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) are pasted in by hand. Then **redeploy** the consumers (Recyclarr, Unpackerr, Homepage) so they pick up the new keys.
 
 <details>
 <summary>Prefer to do it manually?</summary>

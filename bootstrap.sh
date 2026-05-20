@@ -215,64 +215,11 @@ else
   warn "Homepage config dir not empty — leaving it alone."
 fi
 
-# ---- pre-seed *arr API keys (prompted; per-app guarded) ---------------------
-# Each *arr reads its API key from config.xml on first boot. We generate the
-# key now and write BOTH .env and a stub config.xml so the app comes up already
-# matching — no UI copy/paste. The internal <Port> is the image default (the
-# right-hand side of the compose port mapping), NOT the host port from .env.
-#
-# Guarded twice: we skip if config.xml already exists (existing/migrated
-# install) OR if the .env key is already set. Safe to run on top of a live
-# setup — it will simply do nothing for apps you've already configured.
-seed_arr() {
-  local dir="$1" internal_port="$2" name="$3" envvar="$4"
-  local cfg="$CONFIG_PATH/$dir/config.xml"
-  [[ -f "$cfg" ]] && return 0
-  local existing; existing="$(grep -E "^${envvar}=" .env | head -n1 | cut -d= -f2-)"
-  [[ -n "$existing" ]] && return 0
-
-  local key; key="$(openssl rand -hex 16)"
-  mkdir -p "$CONFIG_PATH/$dir"
-  cat > "$cfg" <<XML
-<Config>
-  <BindAddress>*</BindAddress>
-  <Port>$internal_port</Port>
-  <EnableSsl>False</EnableSsl>
-  <LaunchBrowser>False</LaunchBrowser>
-  <ApiKey>$key</ApiKey>
-  <AuthenticationMethod>External</AuthenticationMethod>
-  <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
-  <Branch>main</Branch>
-  <LogLevel>info</LogLevel>
-  <UrlBase></UrlBase>
-  <InstanceName>$name</InstanceName>
-</Config>
-XML
-  chown "$PUID:$PGID" "$cfg" 2>/dev/null || true
-  update_env "$envvar" "$key"
-  printf '   + %s  (seeded %s)\n' "$envvar" "$cfg"
-}
-
-if ! command -v openssl >/dev/null; then
-  warn "openssl not found — skipping *arr key pre-seed; use scripts/harvest-keys.sh later."
-else
-  echo
-  say "Optional: pre-seed *arr API keys"
-  echo "  Generates each *arr's API key now and writes a config.xml so Sonarr/Radarr/"
-  echo "  Lidarr/Whisparr/Prowlarr boot ready for Recyclarr/Unpackerr/Homepage with no"
-  echo "  manual key copying. NOTE: the stub config sets local access with NO login"
-  echo "  (AuthenticationMethod=External) — fine on a trusted LAN, and you can switch"
-  echo "  to Forms/password auth in each app afterwards. Skips any app already set up."
-  if ask_yn "Pre-seed *arr API keys?" Y; then
-    seed_arr sonarr   8989 Sonarr   SONARR_API_KEY
-    seed_arr radarr   7878 Radarr   RADARR_API_KEY
-    seed_arr lidarr   8686 Lidarr   LIDARR_API_KEY
-    seed_arr whisparr 6969 Whisparr WHISPARR_API_KEY
-    seed_arr prowlarr 9696 Prowlarr HOMEPAGE_VAR_PROWLARR_API_KEY
-  else
-    say "Skipped — set up each *arr in its UI, then run scripts/harvest-keys.sh."
-  fi
-fi
+# NOTE: we deliberately do NOT generate or pre-seed any app API keys. Each app
+# (Sonarr/Radarr/etc.) creates its own key on first boot. After the apps are up,
+# run ./scripts/harvest-keys.sh — it DETECTS the *arr keys from their generated
+# config.xml and writes them to .env, then you redeploy the consumers. We only
+# ever read app config, never write it, so we can't corrupt an app's setup.
 
 # ---- link root .env into each stack folder ----------------------------------
 # Compose only auto-loads .env from the stack's own directory, and Dockge runs
