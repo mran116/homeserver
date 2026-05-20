@@ -251,16 +251,11 @@ cd /opt/docker/stacks
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` is interactive and idempotent. It first asks whether this is a **new install** or a **migration**:
-
-- **new** — does everything below (generates secrets, optionally pre-seeds *arr keys)
-- **migrate** — for a box whose apps/data are already configured: it **never** generates secrets (new random DB passwords wouldn't match your existing databases) and **never** touches *arr config. It only does the safe, idempotent steps: create dirs, the `home` network, and the per-stack `.env` symlinks. You bring your existing `.env` / paste your existing secrets.
-
-In **new** mode it will:
+`bootstrap.sh` is interactive and idempotent — safe on a brand-new box, a **partial** setup (e.g. mediastack already configured but the other stacks not), or a fully configured one. It never overwrites anything you've already set. It will:
 
 - check Docker prereqs
-- prompt for SERVER_IP, timezone, PUID/PGID, and your storage paths (config, media, photos, documents) — defaults are autodetected
-- **generate** `.env` from `.env.example` (only if one doesn't exist — it never overwrites): port defaults come pre-filled, your answers are written in, and machine secrets are auto-generated (DB passwords, Vaultwarden/Paperless tokens, Immich/Gitea DB passwords)
+- **create `.env`** from `.env.example` if one doesn't exist yet (prompts for SERVER_IP, timezone, PUID/PGID, storage paths — defaults autodetected). If a `.env` already exists it's kept as-is.
+- **fill only the blank machine secrets** (DB passwords, Vaultwarden/Paperless tokens, Immich DB password) with random values — a yes/no prompt that tells you how many are blank. Anything you've already set is left untouched, so on a partial setup only the not-yet-used stacks get secrets. If your real secrets live outside this `.env` (e.g. still in Portainer), it warns you to paste them first so new random values don't clash with existing databases.
 - **offer to pre-seed the *arr API keys** (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) — a yes/no prompt (default yes): generates a key, writes it to `.env`, and stubs each app's `config.xml` so they boot already matching. The stub sets local access with no login (fine on a trusted LAN; switch to password auth in-app afterwards). Skips any app that already has a `config.xml`. Say no if you'd rather configure the *arrs yourself and `harvest-keys.sh` the keys later
 - **symlink the root `.env` into every stack folder** so Dockge and CLI both find it with no `--env-file` flag on reload
 - create the directory layout and the `home` docker network

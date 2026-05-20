@@ -57,26 +57,16 @@ command -v docker >/dev/null || die "docker not found. Install Docker first: htt
 docker compose version >/dev/null 2>&1 || die "docker compose v2 not found. Upgrade Docker to a recent version."
 docker info >/dev/null 2>&1 || die "Cannot talk to the docker daemon. Is your user in the 'docker' group? (Try: sudo usermod -aG docker \$USER, then log out and back in.)"
 
-# ---- install mode -----------------------------------------------------------
-# A migration must NEVER generate fresh secrets (new random DB passwords would
-# not match existing databases) and must NEVER pre-seed *arr config (your apps
-# are already configured). Both are gated on MODE below.
-echo
-say "Is this a NEW install or a MIGRATION of an existing setup?"
-echo "  new      — fresh box: generate .env + random secrets, optionally pre-seed *arr keys"
-echo "  migrate  — apps/data already configured: do NOT generate secrets or touch app"
-echo "             config; only create dirs, the docker network, and the .env symlinks"
-read -r -p "  Type 'new' or 'migrate' [new]: " MODE || true
-case "${MODE:-new}" in
-  [Mm]*) MODE=migrate ;;
-  *)     MODE=new ;;
-esac
-say "Mode: $MODE"
-
 # ---- gather config ----------------------------------------------------------
+# Two independent, both-safe steps:
+#   1. Create .env from the template if it doesn't exist yet (asks system vars).
+#   2. Fill ONLY blank machine secrets, never overwriting existing values.
+# This handles a fresh box, a partial setup (e.g. mediastack done but other
+# stacks not), and a full migration (nothing blank -> nothing changes) without
+# needing to declare a "mode".
 if [[ -f .env ]]; then
-  warn ".env already exists — skipping interactive setup."
-  warn "Delete or back up .env first if you want to reconfigure."
+  say "Existing .env found — keeping it. System values left as-is."
+  say "(Only blank secrets will be offered for generation below.)"
 else
   say "Configuring .env (press Enter to accept each default)"
   echo
@@ -122,64 +112,61 @@ for k, v in subs.items():
 p.write_text(text)
 PY
 
-  # ---- auto-generate machine secrets (NEW installs only) --------------------
-  # Fill any blank password/token/secret line in .env with a random value.
-  # User-facing credentials (admin passwords, API keys from third parties, VPN
-  # keys) are left blank — they need a human decision or an external account.
-  #
-  # Skipped entirely for migrations: generating new random DB passwords would
-  # not match your existing databases and would break those apps.
-  if [[ "$MODE" != "new" ]]; then
-    warn "Migration mode — NOT generating secrets."
-    warn "Edit .env now and paste your EXISTING values (DB passwords, admin tokens,"
-    warn "API keys) from your current setup before starting any stack."
-  else
-  say "Generating random secrets for empty DB passwords / admin tokens"
-  python3 - <<'PY'
-import pathlib, re, secrets, string
+fi
 
-# Lines we fill automatically when they are empty in .env.
-# Anything not in this list (VPN keys, API keys from notifiarr/cloudflare/etc.,
-# admin user passwords) is intentionally left for the human.
-AUTO_FILL = {
-    "NPM_DB_ROOT_PASSWORD",
-    "NPM_DB_PASSWORD",
-    "VAULTWARDEN_ADMIN_TOKEN",
-    "PAPERLESS_DB_PASSWORD",
-    "PAPERLESS_SECRET_KEY",
-    "PAPERLESS_ADMIN_PASSWORD",
-    "IMMICH_DB_PASSWORD",
-    "GITEA_DB_PASSWORD",
+# ---- fill blank machine secrets (safe: never overwrites) --------------------
+# Runs in every case. Only lines that are still blank get a random value, so a
+# partial setup (e.g. mediastack already configured) keeps everything you've set
+# and only the not-yet-used stacks get fresh secrets. A fully configured box has
+# no blanks, so nothing changes.
+#
+# User-facing / external credentials (VPN keys, third-party API keys, admin
+# user passwords) are deliberately NOT in this list — they need a human or an
+# external account.
+SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD'
+
+count_blank_secrets() {
+  python3 - "$SECRET_KEYS" <<'PY'
+import sys, re, pathlib
+keys = sys.argv[1].split()
+text = pathlib.Path(".env").read_text()
+print(sum(1 for k in keys if re.search(rf"(?m)^{k}=\s*(#.*)?$", text)))
+PY
 }
 
-def gen(length=36):
-    alphabet = string.ascii_letters + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(length))
-
-p = pathlib.Path(".env")
-out = []
-filled = []
+blanks="$(count_blank_secrets)"
+if [[ "$blanks" -gt 0 ]]; then
+  echo
+  say "$blanks machine secret(s) are still blank (DB passwords / admin tokens)."
+  echo "  Generating fills ONLY the blank ones — anything already set is left alone,"
+  echo "  so this is safe on a partial or existing setup."
+  warn "If your real secrets live OUTSIDE this .env (e.g. still in Portainer), paste"
+  warn "them in first — new random values would not match your existing databases."
+  if ask_yn "Generate the $blanks blank secret(s) now?" Y; then
+    python3 - "$SECRET_KEYS" <<'PY'
+import sys, pathlib, re, secrets, string
+keys = set(sys.argv[1].split())
+gen = lambda n=36: "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(n))
+p = pathlib.Path(".env"); out = []; filled = []
 for line in p.read_text().splitlines():
-    # Match KEY= with an empty value, tolerating trailing whitespace and an
-    # inline "# comment" (e.g. PAPERLESS_SECRET_KEY=   # Generate with: ...).
     m = re.match(r"^([A-Z0-9_]+)=\s*(#.*)?$", line)
-    if m and m.group(1) in AUTO_FILL:
-        key = m.group(1)
-        out.append(f"{key}={gen()}")
-        filled.append(key)
+    if m and m.group(1) in keys:
+        out.append(f"{m.group(1)}={gen()}"); filled.append(m.group(1))
     else:
         out.append(line)
 p.write_text("\n".join(out) + "\n")
 for k in filled:
     print(f"   + {k}")
 PY
-
-  say ".env written. The remaining blank fields need a human:"
-  say "  - VPN (WIREGUARD_*, VPN_SERVER_COUNTRIES)"
-  say "  - third-party API keys (DIUN webhook, TS_AUTHKEY, CLOUDFLARE_TUNNEL_TOKEN)"
-  say "  - Homepage widget keys (HOMEPAGE_VAR_*_API_KEY) — gather after each app is up"
+  else
+    say "Skipped — set those secrets in .env yourself before starting those stacks."
   fi
+else
+  say "No blank machine secrets — nothing to generate."
 fi
+
+say "Reminder: VPN keys, third-party tokens (Diun/Tailscale/Cloudflare) and"
+say "Homepage widget keys still need filling — run ./scripts/harvest-keys.sh later."
 
 # Load whatever is in .env now (whether we just wrote it or it pre-existed)
 set -a
@@ -200,7 +187,7 @@ else
   warn "Homepage config dir not empty — leaving it alone."
 fi
 
-# ---- pre-seed *arr API keys (fresh installs only) ---------------------------
+# ---- pre-seed *arr API keys (prompted; per-app guarded) ---------------------
 # Each *arr reads its API key from config.xml on first boot. We generate the
 # key now and write BOTH .env and a stub config.xml so the app comes up already
 # matching — no UI copy/paste. The internal <Port> is the image default (the
@@ -238,9 +225,7 @@ XML
   printf '   + %s  (seeded %s)\n' "$envvar" "$cfg"
 }
 
-if [[ "$MODE" != "new" ]]; then
-  say "Migration mode — skipping *arr pre-seed (your apps keep their existing config)."
-elif ! command -v openssl >/dev/null; then
+if ! command -v openssl >/dev/null; then
   warn "openssl not found — skipping *arr key pre-seed; use scripts/harvest-keys.sh later."
 else
   echo
