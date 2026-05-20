@@ -144,19 +144,47 @@ if [[ "$blanks" -gt 0 ]]; then
   warn "them in first — new random values would not match your existing databases."
   if ask_yn "Generate the $blanks blank secret(s) now?" Y; then
     python3 - "$SECRET_KEYS" <<'PY'
-import sys, pathlib, re, secrets, string
+import sys, os, pathlib, re, secrets, string
 keys = set(sys.argv[1].split())
+
+# DB-password keys whose value MUST match an already-created database. A
+# Postgres/MariaDB container only honours its password env var on first init
+# (empty data dir); once the database exists it keeps the original password.
+# So if the data dir already exists we must NOT invent a new password — that
+# would orphan the DB and break the app. Leave it blank for the human instead.
+DB_DIRS = {
+    "NPM_DB_ROOT_PASSWORD":  "npm/db",
+    "NPM_DB_PASSWORD":       "npm/db",
+    "IMMICH_DB_PASSWORD":    "immich/db",
+    "PAPERLESS_DB_PASSWORD": "paperless/db",
+    "GITEA_DB_PASSWORD":     "gitea/db",
+}
+text = pathlib.Path(".env").read_text()
+m = re.search(r"(?m)^CONFIG_PATH=(.*)$", text)
+config_path = (m.group(1).strip() if m else "") or "/opt/docker/data"
+
+def db_exists(sub):
+    d = os.path.join(config_path, sub)
+    return os.path.isdir(d) and any(os.scandir(d))
+
 gen = lambda n=36: "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(n))
-p = pathlib.Path(".env"); out = []; filled = []
-for line in p.read_text().splitlines():
-    m = re.match(r"^([A-Z0-9_]+)=\s*(#.*)?$", line)
-    if m and m.group(1) in keys:
-        out.append(f"{m.group(1)}={gen()}"); filled.append(m.group(1))
+out, filled, guarded = [], [], []
+for line in text.splitlines():
+    mm = re.match(r"^([A-Z0-9_]+)=\s*(#.*)?$", line)
+    if mm and mm.group(1) in keys:
+        k = mm.group(1)
+        if k in DB_DIRS and db_exists(DB_DIRS[k]):
+            out.append(line); guarded.append(k)        # existing DB -> leave blank
+        else:
+            out.append(f"{k}={gen()}"); filled.append(k)
     else:
         out.append(line)
-p.write_text("\n".join(out) + "\n")
+pathlib.Path(".env").write_text("\n".join(out) + "\n")
 for k in filled:
     print(f"   + {k}")
+for k in guarded:
+    print(f"   ! {k}  EXISTING DATABASE FOUND ({DB_DIRS[k]}) — left blank.")
+    print(f"     Paste the password this database was created with, or the app won't connect.")
 PY
   else
     say "Skipped — set those secrets in .env yourself before starting those stacks."
