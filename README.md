@@ -237,12 +237,14 @@ cd /opt/docker/stacks
 
 - check Docker prereqs
 - prompt for SERVER_IP, timezone, PUID/PGID, and your storage paths (config, media, photos, documents) — defaults are autodetected
-- write `.env` (only if one doesn't already exist — it never overwrites)
+- **generate** `.env` from `.env.example` (only if one doesn't exist — it never overwrites): port defaults come pre-filled, your answers are written in, and machine secrets are auto-generated (DB passwords, Vaultwarden/Paperless tokens, Immich/Gitea DB passwords)
+- **pre-seed the *arr API keys** (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr): generates a key, writes it to `.env`, and stubs each app's `config.xml` so they boot already matching. Skips any app that already has a `config.xml`, so it's safe over an existing install
+- **symlink the root `.env` into every stack folder** so Dockge and CLI both find it with no `--env-file` flag on reload
 - create the directory layout and the `home` docker network
 - seed `dashboard/homepage/*.yaml` into your config dir
 - optionally start Dockge
 
-You'll still need to fill in the secret values in `.env` (Vaultwarden token, DB passwords, VPN keys, etc.) before starting stacks that need them.
+After the apps are up, run `./scripts/harvest-keys.sh` for the keys that can only come from each app's UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) still need to be pasted in by hand.
 
 <details>
 <summary>Prefer to do it manually?</summary>
@@ -254,7 +256,9 @@ git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
 cd /opt/docker/stacks
 cp .env.example .env && $EDITOR .env
 cp -r dashboard/homepage/* /opt/docker/data/homepage/
-cd dockge && docker compose --env-file ../.env up -d
+# Link the root .env into every stack folder so Dockge/CLI find it without --env-file
+for d in */docker-compose.yml; do ln -sf ../.env "$(dirname "$d")/.env"; done
+cd dockge && docker compose up -d
 ```
 </details>
 

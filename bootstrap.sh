@@ -36,6 +36,21 @@ ask_yn() {
   [[ "$answer" =~ ^[Yy]$ ]]
 }
 
+update_env() {
+  # update_env KEY VALUE — set (or append) KEY=VALUE in .env, in place
+  python3 - "$1" "$2" <<'PY'
+import sys, re, pathlib
+key, value = sys.argv[1], sys.argv[2]
+p = pathlib.Path(".env")
+text = p.read_text()
+if re.search(rf"(?m)^{re.escape(key)}=", text):
+    text = re.sub(rf"(?m)^{re.escape(key)}=.*$", f"{key}={value}", text, count=1)
+else:
+    text = text.rstrip() + f"\n{key}={value}\n"
+p.write_text(text)
+PY
+}
+
 # ---- prereqs ----------------------------------------------------------------
 say "Checking prerequisites"
 command -v docker >/dev/null || die "docker not found. Install Docker first: https://docs.docker.com/engine/install/"
@@ -158,6 +173,66 @@ else
   warn "Homepage config dir not empty — leaving it alone."
 fi
 
+# ---- pre-seed *arr API keys (fresh installs only) ---------------------------
+# Each *arr reads its API key from config.xml on first boot. We generate the
+# key now and write BOTH .env and a stub config.xml so the app comes up already
+# matching — no UI copy/paste. The internal <Port> is the image default (the
+# right-hand side of the compose port mapping), NOT the host port from .env.
+#
+# Guarded twice: we skip if config.xml already exists (existing/migrated
+# install) OR if the .env key is already set. Safe to run on top of a live
+# setup — it will simply do nothing for apps you've already configured.
+seed_arr() {
+  local dir="$1" internal_port="$2" name="$3" envvar="$4"
+  local cfg="$CONFIG_PATH/$dir/config.xml"
+  [[ -f "$cfg" ]] && return 0
+  local existing; existing="$(grep -E "^${envvar}=" .env | head -n1 | cut -d= -f2-)"
+  [[ -n "$existing" ]] && return 0
+
+  local key; key="$(openssl rand -hex 16)"
+  mkdir -p "$CONFIG_PATH/$dir"
+  cat > "$cfg" <<XML
+<Config>
+  <BindAddress>*</BindAddress>
+  <Port>$internal_port</Port>
+  <EnableSsl>False</EnableSsl>
+  <LaunchBrowser>False</LaunchBrowser>
+  <ApiKey>$key</ApiKey>
+  <AuthenticationMethod>External</AuthenticationMethod>
+  <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
+  <Branch>main</Branch>
+  <LogLevel>info</LogLevel>
+  <UrlBase></UrlBase>
+  <InstanceName>$name</InstanceName>
+</Config>
+XML
+  chown "$PUID:$PGID" "$cfg" 2>/dev/null || true
+  update_env "$envvar" "$key"
+  printf '   + %s  (seeded %s)\n' "$envvar" "$cfg"
+}
+
+if command -v openssl >/dev/null; then
+  say "Pre-seeding *arr API keys (skips any app that already has config.xml)"
+  seed_arr sonarr   8989 Sonarr   SONARR_API_KEY
+  seed_arr radarr   7878 Radarr   RADARR_API_KEY
+  seed_arr lidarr   8686 Lidarr   LIDARR_API_KEY
+  seed_arr whisparr 6969 Whisparr WHISPARR_API_KEY
+  seed_arr prowlarr 9696 Prowlarr HOMEPAGE_VAR_PROWLARR_API_KEY
+else
+  warn "openssl not found — skipping *arr key pre-seed; use scripts/harvest-keys.sh later."
+fi
+
+# ---- link root .env into each stack folder ----------------------------------
+# Compose only auto-loads .env from the stack's own directory, and Dockge runs
+# `docker compose up` inside each stack folder with no --env-file flag. A
+# symlink per folder means every stack reads this single root .env — no
+# duplication, and no flag needed on reload (UI or CLI). Idempotent.
+say "Linking root .env into each stack folder"
+for compose in */docker-compose.yml; do
+  d="$(dirname "$compose")"
+  ln -sf ../.env "$d/.env"
+done
+
 # ---- docker network ---------------------------------------------------------
 if ! docker network inspect home >/dev/null 2>&1; then
   say "Creating shared docker network 'home'"
@@ -183,8 +258,11 @@ Next steps:
   2. Deploy stacks in this order from the Dockge UI:
        vaultwarden → infrastructure → monitoring → dashboard
        → mediastack → household → records → cloud
-  3. Fill any remaining secrets in .env (Vaultwarden, Paperless, Immich, VPN, etc.)
-     then redeploy the affected stack(s).
+  3. After the apps are up, gather the keys that must come from each UI
+     (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.):
+       ./scripts/harvest-keys.sh
+     The *arr keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) are already
+     pre-seeded and live in .env.
   4. Create a Home Assistant webhook and set DIUN_NOTIF_WEBHOOK_URL in .env
      so update notifications land in your HA notification stream.
 EOF
