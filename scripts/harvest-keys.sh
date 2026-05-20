@@ -35,42 +35,42 @@ c_b=$'\033[1m'; c_d=$'\033[2m'; c_g=$'\033[32m'; c_y=$'\033[33m'; c_r=$'\033[0m'
 # -----------------------------------------------------------------------------
 KEYS=$(cat <<EOF
 # ---- *arr stack (Settings → General → Security → API Key) ----
-SONARR_API_KEY                       | http://${SERVER_IP}:${SONARR_PORT}        | Settings → General → Security
-RADARR_API_KEY                       | http://${SERVER_IP}:${RADARR_PORT}        | Settings → General → Security
-LIDARR_API_KEY                       | http://${SERVER_IP}:${LIDARR_PORT}        | Settings → General → Security
-WHISPARR_API_KEY                     | http://${SERVER_IP}:${WHISPARR_PORT}      | Settings → General → Security
-HOMEPAGE_VAR_PROWLARR_API_KEY        | http://${SERVER_IP}:${PROWLARR_PORT}      | Settings → General → Security
-HOMEPAGE_VAR_BAZARR_API_KEY          | http://${SERVER_IP}:${BAZARR_PORT}        | Settings → General → Security
-HOMEPAGE_VAR_SABNZBD_API_KEY         | http://${SERVER_IP}:${SABNZBD_PORT}       | Config → General → Security
+SONARR_API_KEY           | http://${SERVER_IP}:${SONARR_PORT}     | Settings → General → Security
+RADARR_API_KEY           | http://${SERVER_IP}:${RADARR_PORT}     | Settings → General → Security
+LIDARR_API_KEY           | http://${SERVER_IP}:${LIDARR_PORT}     | Settings → General → Security
+WHISPARR_API_KEY         | http://${SERVER_IP}:${WHISPARR_PORT}   | Settings → General → Security
+PROWLARR_API_KEY         | http://${SERVER_IP}:${PROWLARR_PORT}   | Settings → General → Security
+BAZARR_API_KEY           | http://${SERVER_IP}:${BAZARR_PORT}     | Settings → General → Security
+SABNZBD_API_KEY          | http://${SERVER_IP}:${SABNZBD_PORT}    | Config → General → Security
 
 # ---- Media servers ----
-HOMEPAGE_VAR_JELLYFIN_API_KEY        | http://${SERVER_IP}:${JELLYFIN_PORT}      | Dashboard → API Keys → "+" (any name)
-HOMEPAGE_VAR_SEERR_API_KEY           | http://${SERVER_IP}:${SEERR_PORT}         | Settings → General → API Key
-HOMEPAGE_VAR_KAVITA_USER             | http://${SERVER_IP}:${KAVITA_PORT}        | Your Kavita username
-HOMEPAGE_VAR_KAVITA_PASSWORD         | http://${SERVER_IP}:${KAVITA_PORT}        | Your Kavita password
+JELLYFIN_API_KEY         | http://${SERVER_IP}:${JELLYFIN_PORT}   | Dashboard → API Keys → "+" (any name)
+SEERR_API_KEY            | http://${SERVER_IP}:${SEERR_PORT}      | Settings → General → API Key
+KAVITA_USER              | http://${SERVER_IP}:${KAVITA_PORT}     | Your Kavita username
+KAVITA_PASSWORD          | http://${SERVER_IP}:${KAVITA_PORT}     | Your Kavita password
 
 # ---- Navidrome (token + salt are derived; see https://gethomepage.dev/widgets/services/navidrome/) ----
-HOMEPAGE_VAR_NAVIDROME_USER          | http://${SERVER_IP}:${NAVIDROME_PORT}     | Your Navidrome username
-HOMEPAGE_VAR_NAVIDROME_TOKEN         | http://${SERVER_IP}:${NAVIDROME_PORT}     | md5(password + salt)  — see Homepage docs
-HOMEPAGE_VAR_NAVIDROME_SALT          | http://${SERVER_IP}:${NAVIDROME_PORT}     | Random salt you pick (any string)
+NAVIDROME_USER           | http://${SERVER_IP}:${NAVIDROME_PORT}  | Your Navidrome username
+NAVIDROME_TOKEN          | http://${SERVER_IP}:${NAVIDROME_PORT}  | md5(password + salt)  — see Homepage docs
+NAVIDROME_SALT           | http://${SERVER_IP}:${NAVIDROME_PORT}  | Random salt you pick (any string)
 
 # ---- Downloader credentials ----
-APP_USERNAME                         | http://${SERVER_IP}:${BITTORRENT_PORT}    | qBittorrent username (default: admin)
-APP_PASSWORD                         | http://${SERVER_IP}:${BITTORRENT_PORT}    | qBittorrent password (default: adminadmin — change in WebUI)
+APP_USERNAME             | http://${SERVER_IP}:${BITTORRENT_PORT} | qBittorrent username (default: admin)
+APP_PASSWORD             | http://${SERVER_IP}:${BITTORRENT_PORT} | qBittorrent password (default: adminadmin — change in WebUI)
 
 # ---- Household ----
-HOMEPAGE_VAR_MEALIE_API_KEY          | http://${SERVER_IP}:${MEALIE_PORT}        | User profile (top-right) → API Tokens → Generate
+MEALIE_API_KEY           | http://${SERVER_IP}:${MEALIE_PORT}     | User profile (top-right) → API Tokens → Generate
 
-# ---- Records ----
-HOMEPAGE_VAR_PAPERLESS_ADMIN_USER    | http://${SERVER_IP}:${PAPERLESS_PORT}     | Set in .env at install time (default: admin)
-HOMEPAGE_VAR_PAPERLESS_ADMIN_PASSWORD| http://${SERVER_IP}:${PAPERLESS_PORT}     | Set in .env at install time
+# ---- Records (admin user/pass are set at install; press Enter to keep) ----
+PAPERLESS_ADMIN_USER     | http://${SERVER_IP}:${PAPERLESS_PORT}  | Set in .env at install time (default: admin)
+PAPERLESS_ADMIN_PASSWORD | http://${SERVER_IP}:${PAPERLESS_PORT}  | Set in .env at install time
 
 # ---- Cloud ----
-HOMEPAGE_VAR_IMMICH_API_KEY          | http://${SERVER_IP}:${IMMICH_PORT}        | Account Settings → API Keys → New API Key
+IMMICH_API_KEY           | http://${SERVER_IP}:${IMMICH_PORT}     | Account Settings → API Keys → New API Key
 
 # ---- Infrastructure ----
-HOMEPAGE_VAR_NPM_EMAIL               | http://${SERVER_IP}:${NPM_PORT}           | Your NPM login email
-HOMEPAGE_VAR_NPM_PASSWORD            | http://${SERVER_IP}:${NPM_PORT}           | Your NPM login password
+NPM_EMAIL                | http://${SERVER_IP}:${NPM_PORT}        | Your NPM login email
+NPM_PASSWORD             | http://${SERVER_IP}:${NPM_PORT}        | Your NPM login password
 
 # ---- Notifications / external ----
 DIUN_NOTIF_WEBHOOK_URL               | (Home Assistant)                          | HA → Settings → Automations → New → Webhook trigger
