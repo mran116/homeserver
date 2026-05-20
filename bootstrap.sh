@@ -136,7 +136,9 @@ p = pathlib.Path(".env")
 out = []
 filled = []
 for line in p.read_text().splitlines():
-    m = re.match(r"^([A-Z0-9_]+)=\s*$", line)
+    # Match KEY= with an empty value, tolerating trailing whitespace and an
+    # inline "# comment" (e.g. PAPERLESS_SECRET_KEY=   # Generate with: ...).
+    m = re.match(r"^([A-Z0-9_]+)=\s*(#.*)?$", line)
     if m and m.group(1) in AUTO_FILL:
         key = m.group(1)
         out.append(f"{key}={gen()}")
