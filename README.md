@@ -385,7 +385,9 @@ If you'd rather add it yourself, the entry is just:
 0 4 * * * cd /opt/docker/stacks && ./scripts/harvest-keys.sh --sync >> /opt/docker/stacks/key-sync.log 2>&1
 ```
 
-It only needs `CONFIG_PATH` and Docker access — no ports, no prompts. On a normal night it detects no change and does nothing. Remove it anytime with `crontab -e` (delete the `homestack-key-sync` line).
+It only needs `CONFIG_PATH` and Docker access — no ports, no prompts. On a normal night it detects no change and does nothing. The log **self-caps at ~1 MB** (truncated in place, so it never grows unbounded). Remove the job anytime with `crontab -e` (delete the `homestack-key-sync` line).
+
+Both scripts are **location-independent** — they resolve the repo root from their own path and `cd` there, so you can run them from any directory.
 
 ### Homepage
 - Config source lives in `dashboard/homepage/` (this repo)

@@ -27,6 +27,15 @@ for arg in "$@"; do
   esac
 done
 
+# Keep the cron log bounded. The scheduled job redirects to key-sync.log; cap it
+# at ~1 MB by truncating IN PLACE (same inode) so cron's open append-fd keeps
+# working — safe, unlike a tail-to-temp+mv which would orphan that fd. Truncate
+# before producing any output so this run's lines are preserved.
+LOG="$REPO_DIR/key-sync.log"
+if [[ $SYNC -eq 1 && -f "$LOG" && "$(wc -c < "$LOG" 2>/dev/null || echo 0)" -gt 1048576 ]]; then
+  : > "$LOG"
+fi
+
 # shellcheck disable=SC1091
 set -a; source .env; set +a
 : "${SERVER_IP:?SERVER_IP missing from .env}"
