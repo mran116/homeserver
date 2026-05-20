@@ -367,7 +367,23 @@ Filling in API keys for ~15 services by hand is the worst part of any first run.
 ./scripts/harvest-keys.sh
 ```
 
-Walks every external key the stack uses, shows you the exact URL + click path to find it (e.g. *"Open `http://server:8989`, Settings → General → Security"*), prompts once, writes straight to `.env`. Re-runnable; existing values are skipped unless you pass `--force`.
+It first **auto-detects** the *arr keys from each app's generated `config.xml`, then walks the rest (showing the exact URL + click path), prompts once, and writes straight to `.env`. Re-runnable; existing values are skipped unless you pass `--force`.
+
+#### Keeping keys in sync automatically
+The *arr keys rarely change, but if you ever regenerate one, you don't want to remember to re-run the script. `--sync` is a non-interactive mode that **detects the *arr keys and, only if one changed, recreates the consumers** (Unpackerr, Recyclarr, Homepage) so they pick up the new value — then exits silently:
+
+```bash
+./scripts/harvest-keys.sh --sync
+```
+
+Schedule it so it self-heals. Either a host cron entry:
+
+```cron
+# check nightly at 4am; no-op unless an *arr key actually changed
+0 4 * * * cd /opt/docker/stacks && ./scripts/harvest-keys.sh --sync >> /var/log/key-sync.log 2>&1
+```
+
+…or a systemd timer (`key-sync.service` + `key-sync.timer`) if you prefer. It only needs `CONFIG_PATH` and Docker access — no ports, no prompts. On a normal night it detects no change and does nothing.
 
 ### Homepage
 - Config source lives in `dashboard/homepage/` (this repo)

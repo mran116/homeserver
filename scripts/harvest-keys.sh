@@ -19,8 +19,13 @@ cd "$REPO_DIR"
 
 [[ -f .env ]] || { echo "No .env found. Run ./bootstrap.sh first." >&2; exit 1; }
 
-FORCE=0
-[[ "${1:-}" == "--force" ]] && FORCE=1
+FORCE=0; SYNC=0
+for arg in "$@"; do
+  case "$arg" in
+    --force) FORCE=1 ;;
+    --sync)  SYNC=1 ;;   # non-interactive: detect *arr keys, redeploy consumers on change
+  esac
+done
 
 # shellcheck disable=SC1091
 set -a; source .env; set +a
@@ -32,7 +37,11 @@ c_b=$'\033[1m'; c_d=$'\033[2m'; c_g=$'\033[32m'; c_y=$'\033[33m'; c_r=$'\033[0m'
 # Keys we harvest, in the order a user would naturally hit them.
 # Format (pipe-separated, # for comments):
 #   ENV_VAR | service URL on this server | UI path to find the value
+# The URLs are display-only hints, so relax `set -u` while expanding them — a
+# missing port just yields a blank URL rather than aborting (matters for --sync,
+# which doesn't need ports at all).
 # -----------------------------------------------------------------------------
+set +u
 KEYS=$(cat <<EOF
 # ---- *arr stack (Settings → General → Security → API Key) ----
 SONARR_API_KEY           | http://${SERVER_IP}:${SONARR_PORT}     | Settings → General → Security
@@ -78,6 +87,7 @@ TS_AUTHKEY                           | https://login.tailscale.com/admin/setting
 CLOUDFLARE_TUNNEL_TOKEN              | https://one.dash.cloudflare.com           | Zero Trust → Networks → Tunnels → your tunnel → token
 EOF
 )
+set -u
 
 # -----------------------------------------------------------------------------
 update_env() {
@@ -114,13 +124,15 @@ detect_arr() {
   key="$(grep -oE '<ApiKey>[^<]+</ApiKey>' "$cfg" | sed -E 's#</?ApiKey>##g' | head -n1)"
   [[ -n "$key" ]] || { printf '  %s·%s %-18s config.xml has no ApiKey yet\n' "$c_d" "$c_r" "$dir"; return 0; }
   if [[ "$(current_value "$envvar")" == "$key" ]]; then
-    printf '  %s✓%s %-18s already in .env\n' "$c_g" "$c_r" "$envvar"
+    [[ $SYNC -eq 0 ]] && printf '  %s✓%s %-18s already in .env\n' "$c_g" "$c_r" "$envvar"
   else
     update_env "$envvar" "$key"
+    CHANGED=1
     printf '  %s+%s %-18s detected from %s/config.xml\n' "$c_g" "$c_r" "$envvar" "$dir"
   fi
 }
 
+CHANGED=0
 printf '%s\n' "${c_b}Auto-detecting *arr API keys from config.xml${c_r}"
 detect_arr sonarr   SONARR_API_KEY
 detect_arr radarr   RADARR_API_KEY
@@ -128,6 +140,19 @@ detect_arr lidarr   LIDARR_API_KEY
 detect_arr whisparr WHISPARR_API_KEY
 detect_arr prowlarr PROWLARR_API_KEY
 echo
+
+# --sync: non-interactive. If a key changed, recreate only the consumer services
+# so they pick up the new value, then exit. Used by cron / a scheduler.
+if [[ $SYNC -eq 1 ]]; then
+  if [[ $CHANGED -eq 1 ]]; then
+    printf '%s==>%s Key(s) changed — recreating consumers (unpackerr, recyclarr, homepage)\n' "$c_b$c_g" "$c_r"
+    ( cd "$REPO_DIR/mediastack" && docker compose up -d unpackerr recyclarr ) || true
+    ( cd "$REPO_DIR/dashboard"  && docker compose up -d homepage )           || true
+  else
+    printf '%s==>%s No key changes.\n' "$c_b$c_g" "$c_r"
+  fi
+  exit 0
+fi
 
 printf '%s\n' "${c_b}Homestack key harvester${c_r}"
 printf '%s\n\n' "${c_d}Press Enter to keep current value, type new value to replace, '-' to clear.${c_r}"
