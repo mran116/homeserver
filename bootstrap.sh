@@ -114,6 +114,38 @@ PY
 
 fi
 
+# ---- top up .env with vars added since it was created -----------------------
+# Additive ONLY: append any uncommented KEY=default from .env.example that is
+# missing from .env (e.g. DOCKGE_PORT/DIUN_PORT added in a later version).
+# Never modifies, reorders, or touches existing values or commented lines.
+# Backs up first and reports exactly what it added. No-op on a fresh .env.
+missing="$(comm -13 \
+  <(grep -oE '^[A-Z0-9_]+=' .env         | sed 's/=$//' | sort -u) \
+  <(grep -oE '^[A-Z0-9_]+=' .env.example | sed 's/=$//' | sort -u))"
+if [[ -n "$missing" ]]; then
+  count="$(printf '%s\n' "$missing" | grep -c .)"
+  echo
+  say "$count variable(s) in .env.example are missing from your .env:"
+  printf '%s\n' "$missing" | sed 's/^/     /'
+  echo "  These were added in a newer version (e.g. new ports/services). Adding them"
+  echo "  with template defaults is additive — your existing values are NOT touched."
+  if ask_yn "Append the missing variable(s) to .env?" Y; then
+    cp .env .env.bak
+    say "Backed up current .env to .env.bak"
+    {
+      echo ""
+      echo "# --- added by bootstrap on $(date '+%Y-%m-%d') (new since your .env) ---"
+      while IFS= read -r key; do
+        [[ -z "$key" ]] && continue
+        grep -E "^${key}=" .env.example | head -n1
+      done < <(printf '%s\n' "$missing")
+    } >> .env
+    say "Appended $count variable(s). Review them at the bottom of .env."
+  else
+    warn "Skipped — services using the missing vars may not work until you add them."
+  fi
+fi
+
 # ---- fill blank machine secrets (safe: never overwrites) --------------------
 # Runs in every case. Only lines that are still blank get a random value, so a
 # partial setup (e.g. mediastack already configured) keeps everything you've set
