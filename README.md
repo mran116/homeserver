@@ -215,6 +215,31 @@ For bulk operations across all stacks, use `scripts/stack.sh`:
 ./scripts/stack.sh restart mediastack              # target a specific stack
 ```
 
+### Running only one stack (sparse-checkout)
+Want just one stack (e.g. handing a friend the media stack, or running a subset on a second host)? Use git **sparse-checkout** — one clone, but only the folder(s) you pick appear on disk, and `git pull` only updates those. No need to split the repo.
+
+```bash
+git clone --no-checkout https://github.com/mran116/homeserver.git
+cd homeserver
+git sparse-checkout init --cone
+git sparse-checkout set mediastack          # pick the stack(s) you want
+git checkout main
+```
+
+Now the working tree has only `mediastack/` plus the repo's root files (incl. `.env.example`). Then the usual setup:
+```bash
+cp .env.example .env && nano .env           # fill in the media vars
+docker network create home
+docker compose -f mediastack/docker-compose.yml --env-file .env up -d
+```
+
+- `git pull` updates only the checked-out folders.
+- Add more later: `git sparse-checkout set mediastack monitoring`
+- Back to everything: `git sparse-checkout disable`
+- It's still one repo (the full history is cloned) — sparse-checkout only controls which files appear in the working tree.
+
+> Note: as-is, `mediastack` routes downloads through Gluetun (VPN), so qBittorrent needs valid `WIREGUARD_*` creds in `.env` or it won't connect.
+
 ---
 
 ## 🔗 How Stacks Connect
