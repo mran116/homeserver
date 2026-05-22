@@ -287,6 +287,8 @@ sudo systemctl enable docker
 sudo usermod -aG docker $USER
 ```
 
+> **Brand-new machine?** After cloning (step 2), `./scripts/setup-fresh.sh` installs Docker + git for you and then runs `bootstrap.sh` — a one-shot for fresh Debian/Ubuntu boxes. You still mount your own media/data disks first.
+
 ### 2 — Clone the repo and run bootstrap
 
 ```bash
