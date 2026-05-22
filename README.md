@@ -121,7 +121,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | qBittorrent | Torrent download client — routes through Gluetun VPN. |
 | Gluetun | VPN container — all torrent traffic routes through this for privacy. |
 | Navidrome | Dedicated music server — compatible with all Subsonic/Airsonic apps. |
-| Kavita | Book and audiobook server — supports EPUB, PDF, CBZ and more. |
+| Audiobookshelf | Audiobook, podcast and ebook server — with native iOS and Android apps. |
 | Seerr | Family media requests — family members search and request movies and shows without needing access to Radarr or Sonarr. You get notified, Radarr/Sonarr grabs it automatically, and it appears in Jellyfin. Essential for families. |
 | Recommendarr | AI-powered media recommendations based on your Jellyfin watch history. |
 | Recyclarr | Automatically syncs TRaSH Guides quality profiles to Sonarr and Radarr. |
@@ -635,7 +635,7 @@ One app per service — install these on family devices:
 | Paperless-ngx | Paperless | ✅ | ✅ |
 | Home Assistant | Home Assistant | ✅ | ✅ |
 | Navidrome (Substreamer) | Navidrome | ✅ | ✅ |
-| Kavita | Kavita | ✅ | ✅ |
+| Audiobookshelf | Audiobookshelf | ✅ | ✅ |
 
 > **Family media workflow:** Kid wants a movie → opens Jellyseerr app → searches and requests it → Radarr grabs it automatically → appears in Jellyfin. Nobody needs access to Radarr or Sonarr except you.
 
