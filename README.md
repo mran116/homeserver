@@ -1,6 +1,6 @@
 # 🏠 Homeserver Docker Stack
 
-A complete self-hosted homeserver stack built with Docker Compose and managed via Dockge. Designed for families who want to own their data, reduce reliance on cloud subscriptions, and run a capable home server with minimal ongoing maintenance.
+A complete self-hosted homeserver stack built with Docker Compose and managed via Arcane. Designed for families who want to own their data, reduce reliance on cloud subscriptions, and run a capable home server with minimal ongoing maintenance.
 
 Covers media streaming, household management, photo backup, document storage, password management, budget tracking, private messaging, monitoring, and automation — all self-hosted, all free (or nearly free).
 
@@ -13,7 +13,7 @@ Before you start you will need:
 - A server or VM running **Ubuntu 22.04+** or **Debian 12+**
 - **Docker 24+** and **Docker Compose v2** installed
 - **8GB RAM minimum** (16GB+ recommended)
-- **Dockge** for stack management
+- **Arcane** for stack management
 - A **GitHub account** for GitOps deployment
 - A **private IP address** for your server (e.g. `192.168.1.100`)
 - Optional: a domain name for external access via Cloudflare Tunnel (~$10/year)
@@ -25,7 +25,7 @@ Before you start you will need:
 ```
 /opt/docker/
 ├── stacks/              ← this repo — all compose files
-│   ├── dockge/
+│   ├── arcane/
 │   ├── vaultwarden/
 │   ├── infrastructure/     (includes borgmatic/ configs)
 │   ├── monitoring/
@@ -52,12 +52,12 @@ All app data lives under `/opt/docker/data/` as bind mounts — easy to back up,
 
 ## 📦 Stacks
 
-### Dockge — Stack Manager
-Compose-native stack manager. Deploy this first via SSH — every other stack is then managed through Dockge's UI, which reads and writes the compose files in this repo directly (no drift between UI and git).
+### Arcane — Stack Manager
+Compose-native stack manager. Deploy this first via SSH — every other stack is then managed through Arcane's UI, which reads and writes the compose files in this repo directly (no drift between UI and git).
 
 | Service | Purpose |
 |---|---|
-| Dockge | Web UI for managing Docker compose stacks. Edits the same files you commit to git. |
+| Arcane | Web UI for managing Docker compose stacks. Edits the same files you commit to git. |
 
 ---
 
@@ -89,7 +89,7 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 |---|---|
 | Uptime Kuma | Heartbeat monitor for every service. Home Assistant reads this via the Uptime Kuma integration so "is X up?" surfaces on the family HA dashboard. |
 | Dozzle | Real-time Docker log viewer. Debugging tool — opened only when something is already known broken. |
-| Diun | Docker Image Update Notifier. Watches every running container and notifies (via Home Assistant webhook) when a new image is published. Does not auto-apply — pair with Dockge for one-click updates. |
+| Diun | Docker Image Update Notifier. Watches every running container and notifies (via Home Assistant webhook) when a new image is published. Does not auto-apply — pair with Arcane for one-click updates. |
 
 ---
 
@@ -175,7 +175,7 @@ All vars are loaded from a single `.env` at the repo root, consumed by every sta
 
 1. `cp .env.example .env`
 2. Fill in values (ports + secrets); store actual secrets in **Vaultwarden** for backup
-3. Reload affected stacks from Dockge (or `docker compose up -d` per stack)
+3. Reload affected stacks from Arcane (or `docker compose up -d` per stack)
 
 Never commit `.env` to Git — it is blocked by `.gitignore`.
 
@@ -189,11 +189,11 @@ This repo is the single source of truth for every stack:
 Edit compose file locally in VS Code
   → git commit and push
     → on the host:  git pull
-      → in Dockge:  click "Update" on the affected stack
+      → in Arcane:  click "Update" on the affected stack
         → new config is live
 ```
 
-Dockge edits the same files on disk, so anything changed in the UI shows up in `git status` and can be reviewed and committed back. No drift.
+Arcane edits the same files on disk, so anything changed in the UI shows up in `git status` and can be reviewed and committed back. No drift.
 
 ---
 
@@ -224,9 +224,9 @@ The whole journey, start to finish, so you know where you're headed:
 1. Install Docker                         (one command)
 2. Clone the repo to /opt/docker/stacks
 3. Run ./bootstrap.sh                      → generates .env, secrets, *arr keys,
-                                             dirs, network, symlinks, starts Dockge
-4. Open Dockge → create admin
-5. Start the stacks in order from Dockge   → vaultwarden first, cloud last
+                                             dirs, network, symlinks, starts Arcane
+4. Open Arcane → create admin
+5. Start the stacks in order from Arcane   → vaultwarden first, cloud last
 6. Create your accounts in each app's UI   (Vaultwarden, Immich, Mealie, NPM…)
 7. Run ./scripts/harvest-keys.sh           → auto-detects *arr keys + collects UI-only keys, then redeploy consumers
 8. Verify on Homepage + Uptime Kuma        → everything green
@@ -257,10 +257,10 @@ cd /opt/docker/stacks
 - **create `.env`** from `.env.example` if one doesn't exist yet (prompts for SERVER_IP, timezone, PUID/PGID, storage paths — defaults autodetected). If a `.env` already exists it's kept as-is.
 - **fill only the blank machine secrets** (DB passwords, Vaultwarden/Paperless tokens, Immich DB password) with random values — a yes/no prompt that tells you how many are blank. Anything you've already set is left untouched, so on a partial setup only the not-yet-used stacks get secrets. If your real secrets live outside this `.env` (e.g. still in Portainer), it warns you to paste them first so new random values don't clash with existing databases.
 - **never generates or pre-seeds app API keys.** Each *arr creates its own key on first boot — bootstrap doesn't touch app config at all. You collect the keys *after* the apps are up (next step), which is safer: the script only ever reads app config, never writes it
-- **symlink the root `.env` into every stack folder** so Dockge and CLI both find it with no `--env-file` flag on reload
+- **symlink the root `.env` into every stack folder** so Arcane and CLI both find it with no `--env-file` flag on reload
 - create the directory layout and the `home` docker network
 - seed `dashboard/homepage/*.yaml` into your config dir
-- optionally start Dockge
+- optionally start Arcane
 
 After the apps are up, run `./scripts/harvest-keys.sh`. It **auto-detects** the *arr API keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) straight from each app's generated `config.xml` and writes them to `.env`, then prompts you for the keys that can only come from a UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) are pasted in by hand. Then **redeploy** the consumers (Recyclarr, Unpackerr, Homepage) so they pick up the new keys.
 
@@ -274,22 +274,22 @@ git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
 cd /opt/docker/stacks
 cp .env.example .env && $EDITOR .env
 cp -r dashboard/homepage/* /opt/docker/data/homepage/
-# Link the root .env into every stack folder so Dockge/CLI find it without --env-file
+# Link the root .env into every stack folder so Arcane/CLI find it without --env-file
 for d in */docker-compose.yml; do ln -sf ../.env "$(dirname "$d")/.env"; done
-cd dockge && docker compose up -d
+cd arcane && docker compose up -d
 ```
 </details>
 
-### 3 — Configure Dockge
+### 3 — Configure Arcane
 
-Open `http://YOUR_SERVER_IP:5001`
+Open `http://YOUR_SERVER_IP:3552`
 
-1. Create admin account
-2. Dockge auto-discovers every stack under `/opt/docker/stacks` (mapped to `/opt/stacks` inside the container)
+1. Log in with the first-run credentials **`arcane` / `arcane-admin`** and change the password immediately
+2. Arcane auto-discovers every stack under `/opt/docker/stacks` (mapped to `/opt/stacks` inside the container)
 
-### 4 — Deploy stacks via Dockge
+### 4 — Deploy stacks via Arcane
 
-In the Dockge UI, start each stack in this order (click → Start). The order matters:
+In the Arcane UI, start each stack in this order (click → Start). The order matters:
 
 1. `vaultwarden` — your password vault; stand it up first so you have somewhere to store the secrets bootstrap generated
 2. `infrastructure` — reverse proxy + networking; other services sit behind it
@@ -405,7 +405,7 @@ Both scripts are **location-independent** — they resolve the repo root from th
 1. Get a reusable auth key at: login.tailscale.com/admin/settings/keys
 2. Add TS_AUTHKEY to .env
 3. Uncomment tailscale in infrastructure/docker-compose.yml
-4. Push, `git pull` on host, redeploy in Dockge
+4. Push, `git pull` on host, redeploy in Arcane
 5. Approve the advertised subnet route in Tailscale admin panel
 ```
 
@@ -419,7 +419,7 @@ Both scripts are **location-independent** — they resolve the repo root from th
    jellyfin.yourdomain.com    → http://jellyfin:8096
    vaultwarden.yourdomain.com → http://vaultwarden:80
    navidrome.yourdomain.com   → http://navidrome:4533
-6. Push, `git pull` on host, redeploy in Dockge
+6. Push, `git pull` on host, redeploy in Arcane
 ```
 
 ### Matrix — private encrypted messaging
@@ -427,7 +427,7 @@ Both scripts are **location-independent** — they resolve the repo root from th
 1. Requires a domain and Cloudflare Tunnel first
 2. Set MATRIX_SERVER_NAME=yourdomain.com in .env
 3. Uncomment synapse in cloud/docker-compose.yml
-4. Push, `git pull` on host, redeploy in Dockge
+4. Push, `git pull` on host, redeploy in Arcane
 5. Add matrix.yourdomain.com to Cloudflare tunnel routes
 6. Install the Element app on devices
 ```
@@ -438,7 +438,7 @@ Both scripts are **location-independent** — they resolve the repo root from th
 2. Set up Cloudflare Email Routing for your domain (free)
 3. Add Gmail SMTP credentials to .env
 4. Uncomment docuseal in records/docker-compose.yml
-5. Push, `git pull` on host, redeploy in Dockge
+5. Push, `git pull` on host, redeploy in Arcane
 ```
 
 ### Borgmatic — automated offsite backups
@@ -447,14 +447,14 @@ Both scripts are **location-independent** — they resolve the repo root from th
 2. Update infrastructure/borgmatic/config.yaml with your B2 bucket and credentials
 3. Add BORG_PASSPHRASE to .env
 4. Uncomment borgmatic in infrastructure/docker-compose.yml
-5. Push, `git pull` on host, redeploy in Dockge
+5. Push, `git pull` on host, redeploy in Arcane
 ```
 
 ### Gitea + Actions runner — self-hosted devops (Phase 3)
 ```
 1. Uncomment gitea, gitea-db, gitea-runner in devops/docker-compose.yml
 2. Set GITEA_HTTP_PORT, GITEA_SSH_PORT, GITEA_DB_PASSWORD in .env
-3. Start the stack from Dockge; create admin account at http://SERVER_IP:GITEA_HTTP_PORT
+3. Start the stack from Arcane; create admin account at http://SERVER_IP:GITEA_HTTP_PORT
 4. In Gitea: Site Administration → Actions → Runners → New runner → copy token
 5. Set GITEA_RUNNER_TOKEN in .env and restart the runner container
 6. (Optional) Mirror this repo from GitHub for local-first GitOps
@@ -494,13 +494,13 @@ Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on fir
 
 - [ ] Strong master password on Vaultwarden
 - [ ] 2FA enabled on Vaultwarden
-- [ ] 2FA enabled on Dockge
+- [ ] 2FA enabled on Arcane
 - [ ] 2FA enabled on Immich admin
 - [ ] `VAULTWARDEN_SIGNUPS_ALLOWED=false` after creating your account
 - [ ] NPM SSL certificates configured for local services
 - [ ] Tailscale enabled for remote access
 - [ ] Cloudflare Tunnel configured for public services only
-- [ ] Dockge, Paperless, Actual Budget never exposed publicly
+- [ ] Arcane, Paperless, Actual Budget never exposed publicly
 - [ ] Diun notifying on image updates (manual review before applying)
 - [ ] Uptime Kuma monitoring all services with notifications configured
 
@@ -512,7 +512,7 @@ Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on fir
 - Docker Compose v2
 - 8GB RAM minimum (16GB+ recommended for Immich ML)
 - Ubuntu 22.04+ or Debian 12+
-- Dockge
+- Arcane
 
 ---
 
@@ -617,7 +617,7 @@ Local Network (192.168.1.0/24)
   │
   ├── Server (192.168.1.x)
   │     └── Docker home network
-  │           ├── dockge
+  │           ├── arcane
   │           ├── vaultwarden
   │           ├── infrastructure (NPM, Tailscale, Cloudflare, Borgmatic)
   │           ├── monitoring (Uptime Kuma, Dozzle, Diun)

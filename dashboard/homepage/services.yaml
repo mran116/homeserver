@@ -4,10 +4,10 @@
 # All IPs and ports pulled from .env via HOMEPAGE_VAR_* variables
 
 - Infrastructure:
-    - Dockge:
-        icon: dockge.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DOCKGE_PORT}}
-        description: Stack Manager
+    - Arcane:
+        icon: arcane.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ARCANE_PORT}}
+        description: Docker Management
 
     - Nginx Proxy Manager:
         icon: nginx-proxy-manager.png

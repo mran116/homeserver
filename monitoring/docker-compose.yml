@@ -45,7 +45,7 @@ services:
   # http://${SERVER_IP}:${DIUN_PORT}  (metrics / healthcheck endpoint)
   #
   # NOTIFIES when image updates exist. Does NOT apply them — by design.
-  # Pair with Dockge for a one-click "pull + recreate" workflow.
+  # Pair with Arcane for a one-click "pull + recreate" workflow.
   #
   # Notifications go to Home Assistant via webhook so all alerts land
   # in one notification stream. Set DIUN_NOTIF_WEBHOOK_URL in .env to:

@@ -3,7 +3,7 @@
 # Homeserver bootstrap
 #
 # One-shot host setup: prereq check, interactive .env, directory layout,
-# docker network, homepage seed, optional Dockge start.
+# docker network, homepage seed, optional Arcane start.
 #
 # Safe to re-run — it never overwrites an existing .env or existing data.
 # =============================================================================
@@ -116,7 +116,7 @@ fi
 
 # ---- top up .env with vars added since it was created -----------------------
 # Additive ONLY: append any uncommented KEY=default from .env.example that is
-# missing from .env (e.g. DOCKGE_PORT/DIUN_PORT added in a later version).
+# missing from .env (e.g. ARCANE_PORT/DIUN_PORT added in a later version).
 # Never modifies, reorders, or touches existing values or commented lines.
 # Backs up first and reports exactly what it added. No-op on a fresh .env.
 missing="$(comm -13 \
@@ -225,6 +225,19 @@ else
   say "No blank machine secrets — nothing to generate."
 fi
 
+# ---- Arcane secrets (need base64 32-byte format, not the generic generator) --
+# Arcane's ENCRYPTION_KEY/JWT_SECRET want a proper random key; generate with
+# openssl if blank. Only fills empties, so existing values are kept.
+if command -v openssl >/dev/null; then
+  for k in ARCANE_ENCRYPTION_KEY ARCANE_JWT_SECRET; do
+    cur="$(grep -E "^${k}=" .env | head -n1 | cut -d= -f2-)"
+    if [[ -z "$cur" ]]; then
+      update_env "$k" "$(openssl rand -base64 32)"
+      say "   + $k"
+    fi
+  done
+fi
+
 say "Reminder: VPN keys, third-party tokens (Diun/Tailscale/Cloudflare) and"
 say "Homepage widget keys still need filling — run ./scripts/harvest-keys.sh later."
 
@@ -254,7 +267,7 @@ fi
 # ever read app config, never write it, so we can't corrupt an app's setup.
 
 # ---- link root .env into each stack folder ----------------------------------
-# Compose only auto-loads .env from the stack's own directory, and Dockge runs
+# Compose only auto-loads .env from the stack's own directory, and Arcane runs
 # `docker compose up` inside each stack folder with no --env-file flag. A
 # symlink per folder means every stack reads this single root .env — no
 # duplication, and no flag needed on reload (UI or CLI). Idempotent.
@@ -298,12 +311,12 @@ else
   warn "  cd $REPO_DIR && ./scripts/harvest-keys.sh --sync"
 fi
 
-# ---- optional: start Dockge -------------------------------------------------
+# ---- optional: start Arcane -------------------------------------------------
 echo
-if ask_yn "Start Dockge now? (deploy every other stack from its UI afterwards)" Y; then
-  say "Starting Dockge"
-  ( cd dockge && docker compose --env-file ../.env up -d )
-  say "Dockge running at http://${SERVER_IP}:${DOCKGE_PORT:-5001}"
+if ask_yn "Start Arcane now? (deploy every other stack from its UI afterwards)" Y; then
+  say "Starting Arcane"
+  ( cd arcane && docker compose --env-file ../.env up -d )
+  say "Arcane running at http://${SERVER_IP}:${ARCANE_PORT:-3552}"
 fi
 
 echo
@@ -311,15 +324,15 @@ say "Bootstrap complete."
 cat <<EOF
 
 Next steps:
-  1. Open http://${SERVER_IP}:${DOCKGE_PORT:-5001} and create the Dockge admin.
-  2. Deploy stacks in this order from the Dockge UI:
+  1. Open http://${SERVER_IP}:${ARCANE_PORT:-3552} and create the Arcane admin
+     (first-run login: arcane / arcane-admin — change it immediately).
+  2. Deploy stacks in this order from the Arcane UI:
        vaultwarden → infrastructure → monitoring → dashboard
        → mediastack → household → records → cloud
-  3. After the apps are up, gather the keys that must come from each UI
-     (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.):
+  3. After the apps are up, run the key harvester:
        ./scripts/harvest-keys.sh
-     The *arr keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) are already
-     pre-seeded and live in .env.
+     It auto-detects the *arr keys from each app's config.xml and prompts
+     for the UI-only keys (Jellyfin, Immich, Mealie, SABnzbd, NPM login).
   4. Create a Home Assistant webhook and set DIUN_NOTIF_WEBHOOK_URL in .env
      so update notifications land in your HA notification stream.
 EOF
