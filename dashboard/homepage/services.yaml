@@ -226,6 +226,11 @@
           username: {{HOMEPAGE_VAR_PAPERLESS_ADMIN_USER}}
           password: {{HOMEPAGE_VAR_PAPERLESS_ADMIN_PASSWORD}}
 
+    - Paperless-AI:
+        icon: paperless-ngx.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PAPERLESS_AI_PORT}}
+        description: Auto-tag Documents (AI)
+
     - Stirling PDF:
         icon: stirling-pdf.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_STIRLING_PORT}}
