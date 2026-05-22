@@ -152,6 +152,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Service | Purpose |
 |---|---|
 | Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
+| Paperless-AI | Uses your local Ollama to auto-title, classify, and tag new scans (correspondent + document type). Set it to use existing tags only for clean results. |
 | Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
 | BookStack | Family knowledge base / house manual — wifi passwords, shutoff valves, account info, vendor contacts, "how things work". |
 | Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |

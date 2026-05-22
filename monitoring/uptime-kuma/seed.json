@@ -36,6 +36,7 @@
 
     { "name": "Paperless",       "type": "http", "url": "http://paperless:8000",             "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
     { "name": "Stirling PDF",    "type": "http", "url": "http://stirling-pdf:8080",          "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Paperless-AI",    "type": "http", "url": "http://paperless-ai:3000",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
     { "name": "BookStack",       "type": "http", "url": "http://bookstack:80",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
     { "name": "Memos",           "type": "http", "url": "http://memos:5230",                  "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
 
