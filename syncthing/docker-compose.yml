@@ -1,0 +1,37 @@
+services:
+
+  # ===========================================================================
+  # SYNCTHING - Private, peer-to-peer file sync (your Dropbox replacement)
+  # http://${SERVER_IP}:${SYNCTHING_PORT}
+  #
+  # Syncs folders between this server and your PCs/phones with no cloud and no
+  # database — it just works and stays working. Put files you want synced under
+  # SYNC_PATH (mounted at /data), then pair each device from the web UI
+  # (Add Remote Device → scan the QR / paste the device ID).
+  #
+  # Note: this is sync, not a web drive. If you later want browser access +
+  # share-links, add Seafile alongside it.
+  # ===========================================================================
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: syncthing
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/syncthing:/config
+      - ${SYNC_PATH}:/data
+    ports:
+      - "${SYNCTHING_PORT}:8384"      # web UI
+      - "22000:22000/tcp"             # sync protocol (TCP)
+      - "22000:22000/udp"             # sync protocol (QUIC)
+      - "21027:21027/udp"             # local discovery
+    networks:
+      - home
+    restart: unless-stopped
+
+networks:
+  home:
+    external: true

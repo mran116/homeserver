@@ -6,6 +6,8 @@
     { "name": "Homepage",        "type": "http", "url": "http://homepage:3000",              "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
     { "name": "Nginx Proxy Mgr", "type": "http", "url": "http://nginx-proxy-manager:81",     "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","401"] },
     { "name": "AdGuard Home",    "type": "http", "url": "http://adguard:3000",               "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
+    { "name": "Syncthing",       "type": "http", "url": "http://syncthing:8384",              "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302","401"] },
+    { "name": "ntfy",            "type": "http", "url": "http://ntfy:80/v1/health",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
 
     { "name": "Uptime Kuma self","type": "http", "url": "http://uptime-kuma:3001",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
     { "name": "Dozzle",          "type": "http", "url": "http://dozzle:8080",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
@@ -33,6 +35,8 @@
 
     { "name": "Paperless",       "type": "http", "url": "http://paperless:8000",             "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
     { "name": "Stirling PDF",    "type": "http", "url": "http://stirling-pdf:8080",          "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "BookStack",       "type": "http", "url": "http://bookstack:80",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
+    { "name": "Memos",           "type": "http", "url": "http://memos:5230",                  "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
 
     { "name": "Immich",          "type": "http", "url": "http://immich-server:3001/api/server-info/ping", "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] }
   ]

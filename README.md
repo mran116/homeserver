@@ -76,6 +76,8 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 |---|---|
 | Nginx Proxy Manager | Reverse proxy with SSL certificate management. Gives all services clean local URLs and HTTPS. |
 | AdGuard Home | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. |
+| Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
+| ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone. |
 | Tailscale* | Zero-config VPN built on WireGuard. Gives secure remote access to your entire home network from anywhere. |
 | Cloudflare Tunnel* | Exposes selected services publicly with zero open ports on your router. Works with a custom domain. |
 | Borgmatic* | Automated encrypted offsite backups to Backblaze B2 or any remote storage. |
@@ -150,6 +152,8 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 |---|---|
 | Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
 | Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
+| BookStack | Family knowledge base / house manual — wifi passwords, shutoff valves, account info, vendor contacts, "how things work". |
+| Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |
 | DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. |
 
 *Commented out — enable when ready.
@@ -349,7 +353,10 @@ In the Arcane UI, start each stack in this order (click → Start). The order ma
 6. `mediastack`
 7. `household`
 8. `records`
-9. `cloud`
+9. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
+10. `syncthing`
+11. `ntfy`
+12. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 
