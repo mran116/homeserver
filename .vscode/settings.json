@@ -1,0 +1,7 @@
+{
+  "//": "Recyclarr uses custom YAML tags (!env_var, !secret). Declare them so the YAML extension stops flagging them as errors.",
+  "yaml.customTags": [
+    "!env_var scalar",
+    "!secret scalar"
+  ]
+}

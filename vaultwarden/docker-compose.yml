@@ -1,0 +1,35 @@
+services:
+
+  # ===========================================================================
+  # VAULTWARDEN - Password Manager
+  # http://${SERVER_IP}:${VAULTWARDEN_PORT}
+  # Standalone stack - critical service, isolated from everything else
+  #
+  # First login:
+  #   1. Go to /admin with ADMIN_TOKEN to set up
+  #   2. Create your account
+  #   3. Set VAULTWARDEN_SIGNUPS_ALLOWED=false in .env
+  #   4. Enable 2FA immediately
+  #
+  # Mobile/Desktop: Use official Bitwarden app
+  #   Point server URL to http://${SERVER_IP}:${VAULTWARDEN_PORT}
+  # ===========================================================================
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    ports:
+      - "${VAULTWARDEN_PORT}:80"
+    volumes:
+      - ${CONFIG_PATH}/vaultwarden:/data
+    environment:
+      - TZ=${TZ}
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED}
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+    networks:
+      - home
+
+networks:
+  home:
+    external: true
