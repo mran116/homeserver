@@ -355,6 +355,14 @@ services:
 
   # ===========================================================================
   # RECOMMENDARR - AI media recommendations based on Jellyfin history
+  # http://${SERVER_IP}:${RECOMMENDARR_PORT}
+  #
+  # Point it at your LOCAL Ollama in the UI (Settings -> AI Service) — no API
+  # fees, nothing leaves the house:
+  #   API URL:  http://ollama:11434/v1     (OpenAI-compatible)
+  #   Model:    qwen2.5:7b                 (pull it first on the ollama stack)
+  #   API key:  ollama                     (any non-empty value)
+  # Then connect Sonarr/Radarr (URL http://sonarr:8989 etc. + their API keys).
   # ===========================================================================
   recommendarr:
     image: tannermiddleton/recommendarr:latest
