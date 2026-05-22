@@ -266,6 +266,13 @@ fi
 # config.xml and writes them to .env, then you redeploy the consumers. We only
 # ever read app config, never write it, so we can't corrupt an app's setup.
 
+# ---- point STACKS_PATH at this repo -----------------------------------------
+# Arcane mounts ${STACKS_PATH} as its projects dir, so it must match where this
+# repo actually lives. We know that here ($REPO_DIR), so set it directly — this
+# self-heals even if the repo was cloned somewhere other than /opt/docker/stacks.
+say "Setting STACKS_PATH to $REPO_DIR"
+update_env STACKS_PATH "$REPO_DIR"
+
 # ---- link root .env into each stack folder ----------------------------------
 # Compose only auto-loads .env from the stack's own directory, and Arcane runs
 # `docker compose up` inside each stack folder with no --env-file flag. A

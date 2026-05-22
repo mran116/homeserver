@@ -64,8 +64,7 @@ SABNZBD_API_KEY          | http://${SERVER_IP}:${SABNZBD_PORT}    | Config → G
 # ---- Media servers ----
 JELLYFIN_API_KEY         | http://${SERVER_IP}:${JELLYFIN_PORT}   | Dashboard → API Keys → "+" (any name)
 SEERR_API_KEY            | http://${SERVER_IP}:${SEERR_PORT}      | Settings → General → API Key
-KAVITA_USER              | http://${SERVER_IP}:${KAVITA_PORT}     | Your Kavita username
-KAVITA_PASSWORD          | http://${SERVER_IP}:${KAVITA_PORT}     | Your Kavita password
+AUDIOBOOKSHELF_TOKEN     | http://${SERVER_IP}:${AUDIOBOOKSHELF_PORT} | Settings → Users → your user → API Token
 
 # ---- Navidrome (token + salt are derived; see https://gethomepage.dev/widgets/services/navidrome/) ----
 NAVIDROME_USER           | http://${SERVER_IP}:${NAVIDROME_PORT}  | Your Navidrome username

@@ -21,7 +21,7 @@
     { "name": "SABnzbd",         "type": "http", "url": "http://sabnzbd:8080",               "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
     { "name": "Gluetun (VPN)",   "type": "http", "url": "http://gluetun:8000/v1/openvpn/status","interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
     { "name": "Navidrome",       "type": "http", "url": "http://navidrome:4533/ping",        "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
-    { "name": "Kavita",          "type": "http", "url": "http://kavita:5000",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Audiobookshelf",  "type": "http", "url": "http://audiobookshelf:80",          "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
 
     { "name": "Mealie",          "type": "http", "url": "http://mealie:9000",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
     { "name": "KitchenOwl",      "type": "http", "url": "http://kitchenowl:8080",            "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
