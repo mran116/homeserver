@@ -207,6 +207,14 @@ docker compose -f monitoring/docker-compose.yml --env-file .env up -d
 
 `.env` is gitignored, so `git pull` never touches your secrets. Never hand-copy these files between machines — always `git pull` so they can't land in the wrong place.
 
+For bulk operations across all stacks, use `scripts/stack.sh`:
+```bash
+./scripts/stack.sh pull && ./scripts/stack.sh up   # update all images + redeploy
+./scripts/stack.sh down                            # stop everything (reverse order)
+./scripts/stack.sh status                          # ps for every stack
+./scripts/stack.sh restart mediastack              # target a specific stack
+```
+
 ---
 
 ## 🔗 How Stacks Connect
