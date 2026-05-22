@@ -195,6 +195,18 @@ Edit compose file locally in VS Code
 
 Arcane edits the same files on disk, so anything changed in the UI shows up in `git status` and can be reviewed and committed back. No drift.
 
+### Updating the host
+The server runs a plain git clone of this repo at `/opt/docker/stacks`. To pull in changes:
+
+```bash
+cd /opt/docker/stacks
+git pull
+# then reload only the stacks that changed, e.g.:
+docker compose -f monitoring/docker-compose.yml --env-file .env up -d
+```
+
+`.env` is gitignored, so `git pull` never touches your secrets. Never hand-copy these files between machines — always `git pull` so they can't land in the wrong place.
+
 ---
 
 ## 🔗 How Stacks Connect
