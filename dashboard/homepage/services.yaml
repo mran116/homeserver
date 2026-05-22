@@ -81,15 +81,14 @@
           token: {{HOMEPAGE_VAR_NAVIDROME_TOKEN}}
           salt: {{HOMEPAGE_VAR_NAVIDROME_SALT}}
 
-    - Kavita:
-        icon: kavita.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_KAVITA_PORT}}
-        description: Books & Audiobooks
+    - Audiobookshelf:
+        icon: audiobookshelf.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_AUDIOBOOKSHELF_PORT}}
+        description: Audiobooks, Podcasts & Ebooks
         widget:
-          type: kavita
-          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_KAVITA_PORT}}
-          username: {{HOMEPAGE_VAR_KAVITA_USER}}
-          password: {{HOMEPAGE_VAR_KAVITA_PASSWORD}}
+          type: audiobookshelf
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_AUDIOBOOKSHELF_PORT}}
+          key: {{HOMEPAGE_VAR_AUDIOBOOKSHELF_TOKEN}}
 
 - Downloads:
     - qBittorrent:
