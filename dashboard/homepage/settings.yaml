@@ -15,12 +15,21 @@ layout:
   Infrastructure:
     style: row
     columns: 4
+  Monitoring:
+    style: row
+    columns: 4
   Media:
+    style: row
+    columns: 4
+  Downloads:
     style: row
     columns: 4
   Household:
     style: row
     columns: 4
-  Downloads:
+  Records:
+    style: row
+    columns: 4
+  Cloud:
     style: row
     columns: 4
