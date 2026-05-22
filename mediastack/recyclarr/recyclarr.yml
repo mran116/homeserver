@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/master/schemas/config-schema.json
+# =============================================================================
+# Recyclarr — auto-sync TRaSH-Guides quality profiles to Sonarr and Radarr
+#
+# Defaults below target 1080p, which is what most home setups want.
+# Edit base_url + api_key for each app, then Recyclarr will sync nightly
+# (CRON_SCHEDULE in docker-compose.yml).
+#
+# To pivot to 4K later: swap profile names (e.g. WEB-2160p) and bump
+# quality_definition to "movie".  See https://recyclarr.dev for the full
+# config reference.
+# =============================================================================
+
+sonarr:
+  series:
+    base_url: http://sonarr:8989
+    api_key: !env_var SONARR_API_KEY
+
+    include:
+      # WEB-1080p TRaSH profile (current Sonarr v4 template)
+      - template: sonarr-quality-definition-series
+      - template: sonarr-v4-quality-profile-web-1080p
+      - template: sonarr-v4-custom-formats-web-1080p
+
+    quality_profiles:
+      - name: WEB-1080p
+        upgrade:
+          allowed: true
+          until_quality: WEB 1080p
+          until_score: 10000
+        min_format_score: 0
+        quality_sort: top
+        reset_unmatched_scores:
+          enabled: true
+
+radarr:
+  movies:
+    base_url: http://radarr:7878
+    api_key: !env_var RADARR_API_KEY
+
+    include:
+      # HD Bluray + WEB 1080p — the standard TRaSH home profile
+      - template: radarr-quality-definition-movie
+      - template: radarr-quality-profile-hd-bluray-web
+      - template: radarr-custom-formats-hd-bluray-web
+
+    quality_profiles:
+      - name: HD Bluray + WEB
+        upgrade:
+          allowed: true
+          until_quality: Bluray-1080p
+          until_score: 10000
+        min_format_score: 0
+        quality_sort: top
+        reset_unmatched_scores:
+          enabled: true

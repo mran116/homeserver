@@ -1,0 +1,40 @@
+# Borgmatic Configuration
+# Copy this to ${CONFIG_PATH}/borgmatic/config/config.yaml
+# Fill in your Backblaze B2 credentials
+
+repositories:
+  - path: ssh://youraccount@youraccount.repo.borgbase.com/./repo
+    label: backblaze
+
+# What to back up
+source_directories:
+  - /mnt/source/docker
+  - /mnt/source/media
+
+# What to exclude
+exclude_patterns:
+  - /mnt/source/media/torrents
+  - /mnt/source/media/usenet
+  - '*.tmp'
+  - '*.log'
+
+# Retention policy
+keep_daily: 7
+keep_weekly: 4
+keep_monthly: 6
+
+# Backblaze B2 settings
+storage:
+  archive_name_format: '{hostname}-{now}'
+  encryption_passphrase: '{BORG_PASSPHRASE}'  # set in .env
+
+# Notifications on failure
+on_error:
+  - echo "Backup failed!"
+
+# Run checks weekly
+checks:
+  - name: repository
+    frequency: 1 week
+  - name: archives
+    frequency: 1 week
