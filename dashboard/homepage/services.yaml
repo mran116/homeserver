@@ -29,6 +29,16 @@
         href: https://dash.cloudflare.com
         description: Tunnel & DNS
 
+    - AdGuard Home:
+        icon: adguard-home.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ADGUARD_PORT}}
+        description: DNS Ad-Blocking
+        widget:
+          type: adguard
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ADGUARD_PORT}}
+          username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
+          password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
+
 - Monitoring:
     - Uptime Kuma:
         icon: uptime-kuma.png
@@ -155,6 +165,11 @@
           url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BAZARR_PORT}}
           key: {{HOMEPAGE_VAR_BAZARR_API_KEY}}
 
+    - Cleanuparr:
+        icon: cleanuparr.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_CLEANUPARR_PORT}}
+        description: Download Queue Cleanup
+
 - Household:
     - Mealie:
         icon: mealie.png
@@ -179,6 +194,11 @@
         icon: actual-budget.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ACTUAL_PORT}}
         description: Budget & Banking
+
+    - Homebox:
+        icon: homebox.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_HOMEBOX_PORT}}
+        description: Home Inventory
 
 - Records:
     - Paperless:

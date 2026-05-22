@@ -334,7 +334,7 @@ Next steps:
   1. Open http://${SERVER_IP}:${ARCANE_PORT:-3552} and create the Arcane admin
      (first-run login: arcane / arcane-admin — change it immediately).
   2. Deploy stacks in this order from the Arcane UI:
-       vaultwarden → infrastructure → monitoring → dashboard
+       vaultwarden → infrastructure → adguard → monitoring → dashboard
        → mediastack → household → records → cloud
   3. After the apps are up, run the key harvester:
        ./scripts/harvest-keys.sh

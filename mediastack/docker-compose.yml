@@ -329,6 +329,31 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
+  # CLEANUPARR - Auto-clean stalled / failed / orphaned downloads
+  # http://${SERVER_IP}:${CLEANUPARR_PORT}
+  #
+  # Stops you babysitting the queue: it removes stuck downloads and tells the
+  # *arr to grab an alternative. Configure the Sonarr/Radarr/Lidarr/Whisparr +
+  # download-client connections in its web UI. qBittorrent rides on gluetun's
+  # network, so use http://gluetun:8080 (not http://qbittorrent) for it there.
+  # ===========================================================================
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: cleanuparr
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - PORT=11011
+    volumes:
+      - ${CONFIG_PATH}/cleanuparr:/config
+    ports:
+      - ${CLEANUPARR_PORT}:11011
+    networks:
+      - home
+    restart: unless-stopped
+
+  # ===========================================================================
   # RECOMMENDARR - AI media recommendations based on Jellyfin history
   # ===========================================================================
   recommendarr:

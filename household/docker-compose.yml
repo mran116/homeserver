@@ -86,6 +86,26 @@ services:
     networks:
       - home
 
+  # ================================
+  # HOMEBOX - Home inventory
+  # http://${SERVER_IP}:${HOMEBOX_PORT}
+  # Track what you own, where it lives, plus warranties, manuals & receipts.
+  # First run: create your account, then disable sign-ups by adding
+  #   - HBOX_OPTIONS_ALLOW_REGISTRATION=false   (and redeploy).
+  # ================================
+  homebox:
+    image: ghcr.io/sysadminsmedia/homebox:latest
+    container_name: homebox
+    restart: unless-stopped
+    ports:
+      - "${HOMEBOX_PORT}:7745"
+    volumes:
+      - ${CONFIG_PATH}/homebox:/data
+    environment:
+      - TZ=${TZ}
+    networks:
+      - home
+
 networks:
   home:
     external: true
