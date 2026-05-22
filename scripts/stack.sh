@@ -28,11 +28,38 @@ warn() { printf '%s!!%s %s\n'  "$c_b$c_y" "$c_r" "$*"; }
 
 usage() { echo "Usage: $0 {up|down|restart|pull|status} [stack ...]"; exit 1; }
 
-[[ -f "$ENV_FILE" ]] || { echo "No .env at $ENV_FILE — run ./bootstrap.sh first." >&2; exit 1; }
-[[ $# -ge 1 ]] || usage
-cmd="$1"; shift
+# Interactive menu when run with no arguments.
+menu() {
+  # Display goes to stderr so only the chosen keyword is captured via $(menu).
+  {
+    echo "${c_b}stack.sh — pick an action:${c_r}"
+    echo "  1) up       start all stacks"
+    echo "  2) down     stop all stacks"
+    echo "  3) restart  down then up"
+    echo "  4) pull     update images"
+    echo "  5) status   ps for each"
+    echo "  q) quit"
+  } >&2
+  local choice
+  read -r -p "Choice [5]: " choice   # read's prompt already goes to stderr
+  case "${choice:-5}" in
+    1) echo up ;; 2) echo down ;; 3) echo restart ;; 4) echo pull ;; 5) echo status ;;
+    q|Q) echo "" ;;
+    *) echo "INVALID" ;;
+  esac
+}
 
-if [[ $# -gt 0 ]]; then targets=("$@"); explicit=1; else targets=("${ORDER[@]}"); explicit=0; fi
+[[ -f "$ENV_FILE" ]] || { echo "No .env at $ENV_FILE — run ./bootstrap.sh first." >&2; exit 1; }
+
+if [[ $# -ge 1 ]]; then
+  cmd="$1"; shift
+  if [[ $# -gt 0 ]]; then targets=("$@"); explicit=1; else targets=("${ORDER[@]}"); explicit=0; fi
+else
+  cmd="$(menu)"
+  [[ -z "$cmd" ]] && { echo "Cancelled."; exit 0; }
+  [[ "$cmd" == "INVALID" ]] && { echo "Invalid choice."; exit 1; }
+  targets=("${ORDER[@]}"); explicit=0
+fi
 
 dc() { docker compose -f "$1/docker-compose.yml" --env-file "$ENV_FILE" "${@:2}"; }
 
