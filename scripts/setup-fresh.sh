@@ -16,9 +16,8 @@
 #   2. Docker engine + compose plugin
 #   3. Docker log rotation (so container logs can't fill the disk)
 #   4. qemu-guest-agent (only if running in a VM — helps Proxmox manage it)
-#   5. automatic security updates (unattended-upgrades)
-#   6. adds your user to the docker group
-#   7. runs ./bootstrap.sh
+#   5. adds your user to the docker group
+#   6. runs ./bootstrap.sh
 #
 # It does NOT (you handle these):
 #   - mount your media/data disks — do that first if they're separate drives/NAS
@@ -71,19 +70,13 @@ if command -v systemd-detect-virt >/dev/null && systemd-detect-virt -q --vm; the
   sudo systemctl enable --now qemu-guest-agent 2>/dev/null || true
 fi
 
-# ---- 5. automatic security updates ------------------------------------------
-say "Enabling unattended security updates"
-sudo apt-get install -y unattended-upgrades
-printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\n' \
-  | sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null
-
-# ---- 6. docker group for this user ------------------------------------------
+# ---- 5. docker group for this user ------------------------------------------
 if ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
   say "Adding $USER to the 'docker' group"
   sudo usermod -aG docker "$USER"
 fi
 
-# ---- 7. make sure we can talk to docker, then hand off ----------------------
+# ---- 6. make sure we can talk to docker, then hand off ----------------------
 if ! docker info >/dev/null 2>&1; then
   echo
   warn "Docker is installed, but your shell isn't in the 'docker' group yet."
