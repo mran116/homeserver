@@ -335,8 +335,8 @@ Next steps:
      (first-run login: arcane / arcane-admin — change it immediately).
   2. Deploy stacks in this order from the Arcane UI:
        vaultwarden → infrastructure → adguard → monitoring → dashboard
-       → mediastack → household → records → knowledge → syncthing
-       → ntfy → cloud
+       → ollama → mediastack → household → records → knowledge
+       → syncthing → ntfy → cloud
   3. After the apps are up, run the key harvester:
        ./scripts/harvest-keys.sh
      It auto-detects the *arr keys from each app's config.xml and prompts

@@ -1,0 +1,45 @@
+services:
+
+  # ===========================================================================
+  # OLLAMA - Local LLM runtime (free, open source, runs on CPU)
+  # http://${SERVER_IP}:${OLLAMA_PORT}
+  #
+  # Powers Recommendarr's AI (and HA Assist later) with NO cloud and NO API
+  # fees. Your box has no GPU but plenty of cores/RAM, so it runs on CPU.
+  #
+  # After deploying, pull a model (one-time, downloads a few GB):
+  #   docker exec -it ollama ollama pull qwen2.5:7b      # good quality
+  #   docker exec -it ollama ollama pull llama3.2:3b     # smaller / snappier
+  #
+  # Point Recommendarr at it (Settings -> AI):
+  #   API URL:  http://ollama:11434/v1   (OpenAI-compatible)
+  #   Model:    qwen2.5:7b
+  #   API key:  ollama   (any non-empty value works)
+  #
+  # GPU later? Uncomment the deploy block below and install the NVIDIA
+  # container toolkit (and pass the GPU through to this VM in Proxmox).
+  # ===========================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      - TZ=${TZ}
+      - OLLAMA_KEEP_ALIVE=24h
+    volumes:
+      - ${CONFIG_PATH}/ollama:/root/.ollama
+    ports:
+      - "${OLLAMA_PORT}:11434"
+    networks:
+      - home
+    restart: unless-stopped
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+networks:
+  home:
+    external: true
