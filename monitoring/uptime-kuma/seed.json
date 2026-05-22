@@ -8,6 +8,7 @@
     { "name": "AdGuard Home",    "type": "http", "url": "http://adguard:3000",               "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302"] },
     { "name": "Syncthing",       "type": "http", "url": "http://syncthing:8384",              "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299","302","401"] },
     { "name": "ntfy",            "type": "http", "url": "http://ntfy:80/v1/health",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
+    { "name": "Ollama",          "type": "http", "url": "http://ollama:11434",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
 
     { "name": "Uptime Kuma self","type": "http", "url": "http://uptime-kuma:3001",           "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },
     { "name": "Dozzle",          "type": "http", "url": "http://dozzle:8080",                "interval": 60, "retryInterval": 60, "maxretries": 2, "method": "GET", "ignoreTls": true, "accepted_statuscodes": ["200-299"] },

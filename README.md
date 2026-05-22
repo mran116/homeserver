@@ -78,6 +78,7 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 | AdGuard Home | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. |
 | Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
 | ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone. |
+| Ollama | Local LLM runtime (CPU) — powers Recommendarr's AI (and HA Assist) with no cloud and no API fees. |
 | Tailscale* | Zero-config VPN built on WireGuard. Gives secure remote access to your entire home network from anywhere. |
 | Cloudflare Tunnel* | Exposes selected services publicly with zero open ports on your router. Works with a custom domain. |
 | Borgmatic* | Automated encrypted offsite backups to Backblaze B2 or any remote storage. |
@@ -350,13 +351,14 @@ In the Arcane UI, start each stack in this order (click → Start). The order ma
 3. `adguard` — network DNS + ad-blocking (free host port 53 first; see `adguard/`)
 4. `monitoring` — Uptime Kuma / Dozzle / Diun start watching everything else
 5. `dashboard` — Homepage; depends on the rest existing, so it comes after
-6. `mediastack`
-7. `household`
-8. `records`
-9. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
-10. `syncthing`
-11. `ntfy`
-12. `cloud`
+6. `ollama` — local LLM; start before Recommendarr so its AI works (then `docker exec -it ollama ollama pull qwen2.5:7b`)
+7. `mediastack`
+8. `household`
+9. `records`
+10. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
+11. `syncthing`
+12. `ntfy`
+13. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 

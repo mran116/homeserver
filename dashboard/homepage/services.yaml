@@ -49,6 +49,11 @@
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NTFY_PORT}}
         description: Push Notifications
 
+    - Ollama:
+        icon: ollama.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_OLLAMA_PORT}}
+        description: Local LLM (AI)
+
 - Monitoring:
     - Uptime Kuma:
         icon: uptime-kuma.png
