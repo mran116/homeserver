@@ -1,0 +1,117 @@
+# =============================================================================
+# ALERTS PACKAGE
+# -----------------------------------------------------------------------------
+# Routes the things that are already wired into your stack into a single, calm
+# notification stream — so you find out when something needs attention instead
+# of discovering it later.
+#
+# Covers:
+#   - Diun     -> "a container has an update"  (uses your existing webhook)
+#   - Uptime Kuma -> "a service is down"       (uses the HA integration)
+#   - Low battery roundup (handy once you add sensors)
+#
+# INSTALL: copy to /config/packages/alerts.yaml  (see household.yaml header).
+# This package reuses script.notify_household from household.yaml, so install
+# that one too (or swap the action for your own notify service).
+# =============================================================================
+
+# A webhook trigger needs a stable, unguessable id. This MUST match the id in
+# your DIUN_NOTIF_WEBHOOK_URL on the Docker host:
+#   http://<ha-vm-ip>:8123/api/webhook/<webhook-id>
+# Pick something random and keep the two in sync.
+automation:
+  # ---------------------------------------------------------------------------
+  # Diun image-update notifier -> notification.
+  # Diun POSTs JSON; we surface the image name. Updates are NOT auto-applied —
+  # do the one-click update in Arcane when you're ready.
+  # ---------------------------------------------------------------------------
+  - alias: "Alerts — container update available"
+    id: alerts_diun_update
+    triggers:
+      - trigger: webhook
+        webhook_id: diun-updates            # CHANGE ME: must match .env webhook id
+        allowed_methods:
+          - POST
+        local_only: true                    # set false only if HA is reached via tunnel
+    actions:
+      - action: script.notify_household
+        data:
+          title: "📦 Update available"
+          message: >-
+            {{ trigger.json.image | default('A container') }} has a new image
+            ({{ trigger.json.status | default('update') }}). Update it from Arcane.
+    mode: queued
+    max: 10
+
+  # ---------------------------------------------------------------------------
+  # Service down (Uptime Kuma integration).
+  # The integration creates a binary_sensor per monitor (on = up). List the
+  # ones you care about; alerts fire when any flips to "off" for 2 minutes.
+  # ---------------------------------------------------------------------------
+  - alias: "Alerts — a service went down"
+    id: alerts_service_down
+    triggers:
+      - trigger: state
+        entity_id:
+          - binary_sensor.uptime_kuma_jellyfin     # CHANGE ME: add your monitors
+          - binary_sensor.uptime_kuma_immich
+          - binary_sensor.uptime_kuma_vaultwarden
+        to: "off"
+        for:
+          minutes: 2
+    actions:
+      - action: script.notify_household
+        data:
+          title: "🔴 Service down"
+          message: "{{ trigger.to_state.attributes.friendly_name }} is not responding."
+    mode: parallel
+    max: 10
+
+  # ---------------------------------------------------------------------------
+  # ...and tell you when it recovers, so you're not left wondering.
+  # ---------------------------------------------------------------------------
+  - alias: "Alerts — a service recovered"
+    id: alerts_service_up
+    triggers:
+      - trigger: state
+        entity_id:
+          - binary_sensor.uptime_kuma_jellyfin     # CHANGE ME: same list as above
+          - binary_sensor.uptime_kuma_immich
+          - binary_sensor.uptime_kuma_vaultwarden
+        to: "on"
+        for:
+          minutes: 1
+    actions:
+      - action: script.notify_household
+        data:
+          title: "🟢 Recovered"
+          message: "{{ trigger.to_state.attributes.friendly_name }} is back up."
+    mode: parallel
+    max: 10
+
+  # ---------------------------------------------------------------------------
+  # Daily low-battery roundup (08:00). Becomes useful as you add sensors —
+  # one digest beats per-device nags. Safe to keep enabled with zero devices.
+  # ---------------------------------------------------------------------------
+  - alias: "Alerts — low battery roundup"
+    id: alerts_low_battery
+    triggers:
+      - trigger: time
+        at: "08:00:00"
+    variables:
+      low: >-
+        {{ states.sensor
+           | selectattr('attributes.device_class', 'defined')
+           | selectattr('attributes.device_class', 'eq', 'battery')
+           | selectattr('state', 'is_number')
+           | selectattr('state', 'lt', '20')
+           | map(attribute='name') | list }}
+    conditions:
+      - condition: template
+        value_template: "{{ low | count > 0 }}"
+    actions:
+      - action: script.notify_household
+        data:
+          title: "🔋 Low battery"
+          message: "Charge/replace: {{ low | join(', ') }}."
+    mode: single

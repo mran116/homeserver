@@ -618,6 +618,14 @@ For a wall-mounted family dashboard running Home Assistant:
 | Music Assistant | Connects Navidrome and other music sources to HA media players |
 | Studio Code Server | Edit HA config files from the browser |
 
+### Household automations (proactive nudges + alerts)
+
+Ready-made HA packages live in [`home-assistant/`](home-assistant/) — copy them
+to your HA VM's `/config/packages/` to turn Donetick / Mealie / KitchenOwl /
+Calendar into morning briefings, chore digests, bin/meal/shopping reminders, and
+to route Diun + Uptime Kuma into a single alert stream. See
+[`home-assistant/README.md`](home-assistant/README.md) for setup.
+
 ---
 
 ## 📱 Mobile Apps
