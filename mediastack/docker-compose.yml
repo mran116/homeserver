@@ -106,6 +106,21 @@ services:
       - /dev/dri:/dev/dri
     group_add:
       - "${RENDER_GID:-render}"
+    # ---- NVIDIA (NVENC) ALTERNATIVE -----------------------------------------
+    # To use an NVIDIA GPU instead of the Intel iGPU: comment out the Intel
+    # `devices:` and `group_add:` lines above, then uncomment the block below.
+    # Prereqs: install the NVIDIA Container Toolkit on the host; in Jellyfin pick
+    # Hardware acceleration "NVIDIA NVENC". No /dev/dri or render group needed.
+    #   Also add these to the `environment:` block above:
+    #     - NVIDIA_VISIBLE_DEVICES=all
+    #     - NVIDIA_DRIVER_CAPABILITIES=all
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
     ports:
       - ${JELLYFIN_PORT}:8096
     networks:
