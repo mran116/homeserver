@@ -353,14 +353,20 @@ cat <<EOF
 Next steps:
   1. Open http://${SERVER_IP}:${ARCANE_PORT:-3552} and create the Arcane admin
      (first-run login: arcane / arcane-admin — change it immediately).
-  2. Deploy stacks in this order from the Arcane UI:
+  2. UPGRADING an existing host? AdGuard and ntfy moved INTO the infrastructure
+     and monitoring stacks. Remove the old standalone containers first, or the
+     redeploy fails on a name conflict (your data is kept — it lives in
+     ${CONFIG_PATH}/adguard and ${CONFIG_PATH}/ntfy):
+       docker rm -f adguard ntfy
+     and delete the old "adguard" / "ntfy" stacks in Arcane. (Fresh installs: skip.)
+  3. Deploy stacks in this order from the Arcane UI:
        vaultwarden → infrastructure → monitoring → dashboard → mediastack
        → household → records → knowledge → syncthing → cloud
      (AdGuard is in the infrastructure stack; ntfy is in monitoring.)
-  3. After the apps are up, run the key harvester:
+  4. After the apps are up, run the key harvester:
        ./scripts/harvest-keys.sh
      It auto-detects the *arr keys from each app's config.xml and prompts
      for the UI-only keys (Jellyfin, Immich, Mealie, SABnzbd, NPM login).
-  4. Create a Home Assistant webhook and set DIUN_NOTIF_WEBHOOK_URL in .env
-     so update notifications land in your HA notification stream.
+  5. Install the ntfy app and subscribe to the "diun-updates" topic to get
+     image-update alerts on your phone (Diun is pre-wired to ntfy).
 EOF

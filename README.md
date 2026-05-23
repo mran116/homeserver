@@ -346,6 +346,15 @@ Open `http://YOUR_SERVER_IP:3552`
 
 ### 4 — Deploy stacks via Arcane
 
+> **Upgrading an existing host?** AdGuard and ntfy used to be their own stacks and
+> are now part of `infrastructure` and `monitoring`. The new services reuse the
+> same container names (`adguard`, `ntfy`), so the old standalone containers must
+> be removed first or the redeploy fails on a name conflict. Your data is safe —
+> it lives in `${CONFIG_PATH}/adguard` and `${CONFIG_PATH}/ntfy` and is reused.
+> In Arcane, delete the old **`adguard`** and **`ntfy`** stacks (or run
+> `docker rm -f adguard ntfy`), then deploy `infrastructure` / `monitoring`.
+> Fresh installs can ignore this.
+
 In the Arcane UI, start each stack in this order (click → Start). The order matters:
 
 1. `vaultwarden` — your password vault; stand it up first so you have somewhere to store the secrets bootstrap generated
