@@ -75,7 +75,7 @@ services:
       # manually. ntfy lives in this stack, reachable at http://ntfy.
       - DIUN_NOTIF_NTFY_ENDPOINT=http://ntfy
       - DIUN_NOTIF_NTFY_TOPIC=diun-updates
-      - DIUN_NOTIF_NTFY_PRIORITY=default
+      - DIUN_NOTIF_NTFY_PRIORITY=3                # ntfy priority is an INT 1-5 (3 = default)
     networks:
       - home
 
