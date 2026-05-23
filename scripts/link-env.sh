@@ -17,6 +17,8 @@ cd "$REPO_DIR"
 usage() { sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 require_env || exit 0
+require_writable "$ENV_FILE"
+require_writable "$REPO_DIR"
 
 set_stacks_path=0
 if [[ "$(current_value STACKS_PATH)" != "$REPO_DIR" ]]; then

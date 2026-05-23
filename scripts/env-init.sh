@@ -27,6 +27,7 @@ if [[ $DRY_RUN -eq 1 ]]; then
   exit 0
 fi
 
+require_writable "$ENV_FILE"
 say "Configuring .env (press Enter to accept each default)"
 echo
 default_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"; default_ip="${default_ip:-192.168.1.100}"

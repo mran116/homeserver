@@ -88,6 +88,22 @@ require_docker() {
   docker info >/dev/null 2>&1 || die "Cannot talk to the docker daemon. Is your user in the 'docker' group? (sudo usermod -aG docker \$USER, then re-login.)"
 }
 
+require_writable() {
+  # require_writable PATH — die with an actionable fix if PATH (or its nearest
+  # existing ancestor, when PATH doesn't exist yet) isn't writable by you.
+  # Catches the classic "a step was run with sudo, so root owns it" trap.
+  local target="$1" node="$1"
+  while [[ ! -e "$node" && "$node" != "/" && "$node" != "." ]]; do
+    node="$(dirname "$node")"
+  done
+  [[ -w "$node" ]] && return 0
+  local owner; owner="$(stat -c '%U' "$node" 2>/dev/null || echo '?')"
+  warn "No write permission for: $target"
+  warn "  blocked at $node (owned by '$owner'; you are '$(id -un)')"
+  warn "  Likely a step was run with sudo, so root owns it. Fix it, then re-run WITHOUT sudo:"
+  die  "    sudo chown -R $(id -un):$(id -gn) \"$node\""
+}
+
 # ---- plan / gate framework (--dry-run / --yes) ------------------------------
 DRY_RUN=0
 ASSUME_YES=0
