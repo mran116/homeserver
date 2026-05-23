@@ -1,0 +1,40 @@
+# =============================================================================
+# Per-host overrides for the media stack.
+#
+# Copy this to docker-compose.override.yml (which is gitignored) and edit:
+#   cp mediastack/docker-compose.override.yml.example mediastack/docker-compose.override.yml
+#
+# Compose merges docker-compose.override.yml on top of docker-compose.yml, so
+# host-specific settings (like which GPU you have) live HERE — not in the
+# tracked compose. That keeps `git pull` clean on every host. scripts/stack.sh
+# (and update.sh) include this file automatically when it's present.
+#
+# Enable Jellyfin hardware transcoding for YOUR GPU below — uncomment ONE block
+# (you can only have a single `jellyfin:` key). No GPU? Leave it all commented;
+# Jellyfin falls back to software transcoding.
+# =============================================================================
+services:
+
+  # ---- Intel Quick Sync (iGPU at /dev/dri) --------------------------------
+  # Set RENDER_GID in .env first:  getent group render | cut -d: -f3
+  # (blank falls back to the container's "render" group). Then in Jellyfin pick
+  # Hardware acceleration: Intel QuickSync, device /dev/dri/renderD128.
+  # jellyfin:
+  #   devices:
+  #     - /dev/dri:/dev/dri
+  #   group_add:
+  #     - "${RENDER_GID:-render}"
+
+  # ---- NVIDIA NVENC -------------------------------------------------------
+  # Needs the NVIDIA Container Toolkit on the host. In Jellyfin pick NVENC.
+  # jellyfin:
+  #   environment:
+  #     - NVIDIA_VISIBLE_DEVICES=all
+  #     - NVIDIA_DRIVER_CAPABILITIES=all
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
