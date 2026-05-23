@@ -156,11 +156,12 @@ show_plan() {
   return 0
 }
 
-# gate — honour --dry-run / --yes, else ask. Returns 1 to abort, so:
+# gate — honour --dry-run / --yes, else ask. Defaults to NO: nothing happens
+# unless you explicitly accept by typing 'y'. Returns 1 to abort, so:
 #   gate || exit 0
 gate() {
   if [[ $DRY_RUN -eq 1 ]]; then say "Dry run — no changes made."; return 1; fi
   if [[ $ASSUME_YES -eq 1 ]]; then return 0; fi
-  ask_yn "Apply these changes?" Y || { say "Aborted — no changes made."; return 1; }
+  ask_yn "Apply these changes?" N || { say "Aborted — no changes made."; return 1; }
   return 0
 }
