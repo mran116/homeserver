@@ -1,0 +1,152 @@
+# =============================================================================
+# HOUSEHOLD COORDINATION PACKAGE
+# -----------------------------------------------------------------------------
+# Turns the apps you already run (Donetick chores, Mealie meals, KitchenOwl
+# shopping) and your calendars into *proactive nudges*, so the house reminds
+# you instead of you having to remember. No physical devices required.
+#
+# INSTALL
+#   1. Copy this file to:  /config/packages/household.yaml   on your HA VM.
+#   2. In configuration.yaml ensure you have:
+#          homeassistant:
+#            packages: !include_dir_named packages
+#   3. Replace every "CHANGE ME" with your real entity_id / notify target.
+#      Find your real entity IDs in Developer Tools -> States.
+#   4. Restart HA (or Developer Tools -> YAML -> Reload "All YAML config").
+#
+# The entity IDs below are PLACEHOLDERS based on the usual HACS integrations.
+# Yours may differ slightly (e.g. sensor.donetick_overdue_tasks).
+# =============================================================================
+
+# ---- One place to define WHO gets notified ---------------------------------
+# Every automation calls this script, so you set your phone(s) in ONE spot.
+script:
+  notify_household:
+    alias: Notify household
+    fields:
+      title:
+        description: Notification title
+      message:
+        description: Notification body
+    sequence:
+      # CHANGE ME: point at your phone, e.g. notify.mobile_app_pixel_8.
+      # To hit several phones, duplicate this action or make a notify group.
+      - action: notify.notify
+        data:
+          title: "{{ title | default('Home') }}"
+          message: "{{ message }}"
+
+automation:
+  # ---------------------------------------------------------------------------
+  # Morning briefing: today's calendar + chores due + tonight's dinner.
+  # One push at 07:00 instead of three apps to check.
+  # ---------------------------------------------------------------------------
+  - alias: "Household — morning briefing"
+    id: household_morning_briefing
+    triggers:
+      - trigger: time
+        at: "07:00:00"
+    actions:
+      - action: calendar.get_events
+        target:
+          entity_id: calendar.family        # CHANGE ME (your Google calendar)
+        data:
+          duration:
+            hours: 17                        # 07:00 -> midnight
+        response_variable: agenda
+      - action: script.notify_household
+        data:
+          title: "Good morning ☀️"
+          message: >-
+            {% set evs = agenda['calendar.family'].events
+               if agenda is defined and 'calendar.family' in agenda else [] %}
+            {% if evs | count > 0 -%}
+            Today: {{ evs | map(attribute='summary') | join(', ') }}.
+            {%- else -%}
+            No calendar events today.
+            {%- endif %}
+            Chores due: {{ states('sensor.donetick_tasks_due_today') }}.
+            Dinner: {{ states('sensor.mealie_today') }}.
+    mode: single
+
+  # ---------------------------------------------------------------------------
+  # Trash / recycling night-before reminder.
+  # Edit the weekday(s) to match your collection. Recycling shown as a second
+  # trigger so you can set a different day.
+  # ---------------------------------------------------------------------------
+  - alias: "Household — bins out tonight"
+    id: household_bins_reminder
+    triggers:
+      - trigger: time
+        at: "19:30:00"
+    conditions:
+      # CHANGE ME: 0=Mon ... 6=Sun. Example: trash collected Tuesday -> Monday night.
+      - condition: time
+        weekday:
+          - mon
+    actions:
+      - action: script.notify_household
+        data:
+          title: "🗑️ Bins"
+          message: "Trash is collected tomorrow — put the bins out tonight."
+    mode: single
+
+  # ---------------------------------------------------------------------------
+  # "Thaw tomorrow's dinner" — reads your Mealie plan for the next day.
+  # ---------------------------------------------------------------------------
+  - alias: "Household — thaw tomorrow's dinner"
+    id: household_thaw_reminder
+    triggers:
+      - trigger: time
+        at: "20:00:00"
+    conditions:
+      # Only nag if something is actually planned.
+      - condition: template
+        value_template: >-
+          {{ states('sensor.mealie_tomorrow') not in
+             ['unknown', 'unavailable', 'none', ''] }}   # CHANGE ME
+    actions:
+      - action: script.notify_household
+        data:
+          title: "🍽️ Prep for tomorrow"
+          message: "Tomorrow's dinner: {{ states('sensor.mealie_tomorrow') }}. Anything to defrost tonight?"
+    mode: single
+
+  # ---------------------------------------------------------------------------
+  # Weekly shopping nudge: the night before your usual shop, ping the list size.
+  # ---------------------------------------------------------------------------
+  - alias: "Household — shopping list reminder"
+    id: household_shopping_reminder
+    triggers:
+      - trigger: time
+        at: "18:00:00"
+    conditions:
+      - condition: time
+        weekday:
+          - fri                             # CHANGE ME: night before you shop
+    actions:
+      - action: script.notify_household
+        data:
+          title: "🛒 Shopping"
+          # CHANGE ME: KitchenOwl integration usually exposes an item count.
+          message: "Shopping list has {{ states('sensor.kitchenowl_shopping_items') }} item(s) on it."
+    mode: single
+
+  # ---------------------------------------------------------------------------
+  # Sunday-evening chore digest for the week ahead.
+  # ---------------------------------------------------------------------------
+  - alias: "Household — weekly chore digest"
+    id: household_weekly_chores
+    triggers:
+      - trigger: time
+        at: "18:30:00"
+    conditions:
+      - condition: time
+        weekday:
+          - sun
+    actions:
+      - action: script.notify_household
+        data:
+          title: "🧹 This week"
+          message: "Chores coming up this week: {{ states('sensor.donetick_tasks_this_week') }}."  # CHANGE ME
+    mode: single

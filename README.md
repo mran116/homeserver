@@ -75,6 +75,10 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 | Service | Purpose |
 |---|---|
 | Nginx Proxy Manager | Reverse proxy with SSL certificate management. Gives all services clean local URLs and HTTPS. |
+| AdGuard Home | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. |
+| Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
+| ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone. |
+| Ollama | Local LLM runtime (CPU) — powers Recommendarr's AI (and HA Assist) with no cloud and no API fees. |
 | Tailscale* | Zero-config VPN built on WireGuard. Gives secure remote access to your entire home network from anywhere. |
 | Cloudflare Tunnel* | Exposes selected services publicly with zero open ports on your router. Works with a custom domain. |
 | Borgmatic* | Automated encrypted offsite backups to Backblaze B2 or any remote storage. |
@@ -126,6 +130,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Recommendarr | AI-powered media recommendations based on your Jellyfin watch history. |
 | Recyclarr | Automatically syncs TRaSH Guides quality profiles to Sonarr and Radarr. |
 | Unpackerr | Automatically extracts completed downloads for Sonarr/Radarr/Lidarr. |
+| Cleanuparr | Auto-removes stalled, failed, and orphaned downloads and tells the *arr to grab an alternative — no more babysitting the queue. |
 | Flaresolverr | Cloudflare bypass for Prowlarr indexers that require it. |
 
 ---
@@ -138,6 +143,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | KitchenOwl | Shopping list manager with real-time family sync and a great mobile app. Receives shopping lists from Mealie. |
 | Donetick | Chore and task manager with recurring schedules, family member assignment, and points/rewards for kids. |
 | Actual Budget | Local-first budget and finance tracker. Connect your bank via SimpleFIN ($15/yr) for automatic transaction sync. |
+| Homebox | Home inventory — track what you own, where it lives, plus warranties, manuals, and receipts. |
 
 ---
 
@@ -146,7 +152,10 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Service | Purpose |
 |---|---|
 | Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
+| Paperless-AI | Uses your local Ollama to auto-title, classify, and tag new scans (correspondent + document type). Set it to use existing tags only for clean results. |
 | Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
+| BookStack | Family knowledge base / house manual — wifi passwords, shutoff valves, account info, vendor contacts, "how things work". |
+| Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |
 | DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. |
 
 *Commented out — enable when ready.
@@ -340,12 +349,17 @@ In the Arcane UI, start each stack in this order (click → Start). The order ma
 
 1. `vaultwarden` — your password vault; stand it up first so you have somewhere to store the secrets bootstrap generated
 2. `infrastructure` — reverse proxy + networking; other services sit behind it
-3. `monitoring` — Uptime Kuma / Dozzle / Diun start watching everything else
-4. `dashboard` — Homepage; depends on the rest existing, so it comes after
-5. `mediastack`
-6. `household`
-7. `records`
-8. `cloud`
+3. `adguard` — network DNS + ad-blocking (free host port 53 first; see `adguard/`)
+4. `monitoring` — Uptime Kuma / Dozzle / Diun start watching everything else
+5. `dashboard` — Homepage; depends on the rest existing, so it comes after
+6. `ollama` — local LLM; start before Recommendarr so its AI works (then `docker exec -it ollama ollama pull qwen2.5:7b`)
+7. `mediastack`
+8. `household`
+9. `records`
+10. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
+11. `syncthing`
+12. `ntfy`
+13. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 
@@ -617,6 +631,14 @@ For a wall-mounted family dashboard running Home Assistant:
 | Terminal & SSH | Required for HACS installation |
 | Music Assistant | Connects Navidrome and other music sources to HA media players |
 | Studio Code Server | Edit HA config files from the browser |
+
+### Household automations (proactive nudges + alerts)
+
+Ready-made HA packages live in [`home-assistant/`](home-assistant/) — copy them
+to your HA VM's `/config/packages/` to turn Donetick / Mealie / KitchenOwl /
+Calendar into morning briefings, chore digests, bin/meal/shopping reminders, and
+to route Diun + Uptime Kuma into a single alert stream. See
+[`home-assistant/README.md`](home-assistant/README.md) for setup.
 
 ---
 
