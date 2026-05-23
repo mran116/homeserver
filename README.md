@@ -34,7 +34,7 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── infrastructure/          Nginx Proxy Manager + AdGuard Home DNS (+ borgmatic/tailscale/cloudflare, commented)
 │   ├── monitoring/              Uptime Kuma + Dozzle + Diun + ntfy
 │   ├── dashboard/               Homepage (compose + homepage/ configs)
-│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Cleanuparr
+│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Decluttarr
 │   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget
 │   ├── records/                 Paperless-ngx + Stirling PDF
 │   ├── knowledge/               Memos (quick notes)
@@ -134,7 +134,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Seerr | Family media requests — family members search and request movies and shows without needing access to Radarr or Sonarr. You get notified, Radarr/Sonarr grabs it automatically, and it appears in Jellyfin. Essential for families. |
 | Recyclarr | Automatically syncs TRaSH Guides quality profiles to Sonarr and Radarr. |
 | Unpackerr | Automatically extracts completed downloads for Sonarr/Radarr/Lidarr. |
-| Cleanuparr | Auto-removes stalled, failed, and orphaned downloads and tells the *arr to grab an alternative — no more babysitting the queue. |
+| Decluttarr | Headless queue cleaner — removes stalled, failed, slow, or orphaned downloads (torrents **and** usenet) and has the *arr grab an alternative. No babysitting the queue. |
 | Flaresolverr | Cloudflare bypass for Prowlarr indexers that require it. |
 
 ---

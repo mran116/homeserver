@@ -1,0 +1,69 @@
+# =============================================================================
+# Decluttarr — https://github.com/ManiMatter/decluttarr
+#
+# Replaces Cleanuparr; cleans the *arr download queues for BOTH torrents
+# (qBittorrent via Gluetun) and usenet (SABnzbd). API keys/creds come from
+# environment variables (set on the compose service from the root .env) via
+# ${VAR} substitution, so NO secrets live in this file.
+#
+# After deploy: check `docker logs decluttarr` shows every instance + download
+# client connected, then set general.test_run to false and redeploy.
+# =============================================================================
+
+general:
+  log_level: INFO
+  test_run: true            # SAFETY: only logs what it WOULD remove. Set false once verified.
+  timer: 10                 # minutes between runs
+
+job_defaults:
+  max_strikes: 3            # strikes before a problem download is removed
+  min_days_between_searches: 7
+  max_concurrent_searches: 3
+
+jobs:
+  remove_failed_downloads:
+  remove_failed_imports:
+    message_patterns:
+      - "Not a Custom Format upgrade for existing*"
+      - "Not an upgrade for existing*"
+      - "*Found potentially dangerous file with extension*"
+      - "Invalid video file*"
+      - "No files found are eligible for import*"
+      - "One or more episodes expected in this release were not imported or missing from the release"
+  remove_metadata_missing:
+  remove_missing_files:
+  remove_orphans:
+  remove_slow:
+    min_speed: 100          # KB/s — below this for max_strikes runs => removed
+  remove_stalled:
+  remove_bad_files:         # torrent-only (needs qBittorrent)
+  # ---- Opt-in (uncomment to enable) ----
+  # remove_unmonitored:     # removes downloads for items you've unmonitored
+  # remove_done_seeding:    # torrent seeding cleanup (needs target_tags/categories)
+  # search_missing:         # periodically searches for missing items (hits indexers)
+  # search_unmet_cutoff:    # searches for quality-cutoff-unmet items
+
+instances:
+  sonarr:
+    - base_url: "http://sonarr:8989"
+      api_key: "${SONARR_API_KEY}"
+  radarr:
+    - base_url: "http://radarr:7878"
+      api_key: "${RADARR_API_KEY}"
+  lidarr:
+    - base_url: "http://lidarr:8686"
+      api_key: "${LIDARR_API_KEY}"
+  whisparr:
+    - base_url: "http://whisparr:6969"
+      api_key: "${WHISPARR_API_KEY}"
+
+download_clients:
+  qbittorrent:
+    - base_url: "http://gluetun:8080"   # qBittorrent rides Gluetun's network namespace
+      username: "${APP_USERNAME}"
+      password: "${APP_PASSWORD}"
+      name: "qBittorrent"               # MUST match the client name configured in your *arr
+  sabnzbd:
+    - base_url: "http://sabnzbd:8080"
+      api_key: "${SABNZBD_API_KEY}"
+      name: "SABnzbd"                   # MUST match the client name configured in your *arr
