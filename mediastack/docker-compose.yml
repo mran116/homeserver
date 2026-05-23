@@ -87,40 +87,13 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/jellyfin:/config
-      - ${MEDIA_PATH}/movies:/data/movies
-      - ${MEDIA_PATH}/tv:/data/tv
-      - ${MEDIA_PATH}/anime:/data/anime
-      - ${MEDIA_PATH}/music:/data/music
-      - ${MEDIA_PATH}/adult/movies:/data/adult/movies
-      - ${MEDIA_PATH}/adult/series:/data/adult/series
-      - ${MEDIA_PATH}/books:/data/books
-      - ${MEDIA_PATH}/audiobooks:/data/audiobooks
-    # Intel Quick Sync / VAAPI hardware transcoding (iGPU at /dev/dri).
-    # 1) The Docker host (or VM) must expose /dev/dri — confirm: ls -l /dev/dri
-    #    (on Proxmox, the iGPU must be passed through to this VM first).
-    # 2) Set RENDER_GID in .env to the host's render group:
-    #       getent group render | cut -d: -f3      (blank => falls back to "render")
-    # 3) Enable it in Jellyfin: Dashboard -> Playback -> Transcoding ->
-    #    Hardware acceleration: Intel QuickSync (QSV), device /dev/dri/renderD128.
-    devices:
-      - /dev/dri:/dev/dri
-    group_add:
-      - "${RENDER_GID:-render}"
-    # ---- NVIDIA (NVENC) ALTERNATIVE -----------------------------------------
-    # To use an NVIDIA GPU instead of the Intel iGPU: comment out the Intel
-    # `devices:` and `group_add:` lines above, then uncomment the block below.
-    # Prereqs: install the NVIDIA Container Toolkit on the host; in Jellyfin pick
-    # Hardware acceleration "NVIDIA NVENC". No /dev/dri or render group needed.
-    #   Also add these to the `environment:` block above:
-    #     - NVIDIA_VISIBLE_DEVICES=all
-    #     - NVIDIA_DRIVER_CAPABILITIES=all
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+      # Whole media root mounted once — works with ANY folder layout. Add
+      # libraries in the Jellyfin UI (e.g. /data/movies, /data/tv, or /data/Movies).
+      - ${MEDIA_PATH}:/data
+    # Hardware transcoding is host-specific (Intel iGPU vs NVIDIA vs none), so it
+    # lives in a gitignored docker-compose.override.yml — copy the example:
+    #   cp mediastack/docker-compose.override.yml.example mediastack/docker-compose.override.yml
+    # then uncomment your GPU. Hosts without a GPU just run software transcoding.
     ports:
       - ${JELLYFIN_PORT}:8096
     networks:
@@ -259,9 +232,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/bazarr:/config
-      - ${MEDIA_PATH}/movies:/data/movies
-      - ${MEDIA_PATH}/tv:/data/tv
-      - ${MEDIA_PATH}/anime:/data/anime
+      - ${MEDIA_PATH}:/data        # whole media root (matches the *arr); layout-agnostic
     ports:
       - ${BAZARR_PORT}:6767
     networks:
@@ -316,8 +287,9 @@ services:
     volumes:
       - ${CONFIG_PATH}/audiobookshelf/config:/config
       - ${CONFIG_PATH}/audiobookshelf/metadata:/metadata
-      - ${MEDIA_PATH}/audiobooks:/audiobooks
-      - ${MEDIA_PATH}/books:/books
+      # whole media root; add audiobook/book libraries in the ABS UI
+      # (e.g. /data/audiobooks, /data/books, or wherever yours live)
+      - ${MEDIA_PATH}:/data
     ports:
       - ${AUDIOBOOKSHELF_PORT}:80
     networks:
@@ -403,7 +375,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/navidrome:/data
-      - ${MEDIA_PATH}/music:/music:ro
+      - ${MUSIC_PATH:-${MEDIA_PATH}/music}:/music:ro
     ports:
       - ${NAVIDROME_PORT}:4533
     networks:

@@ -1,0 +1,43 @@
+name: validate
+
+# Free CI: validates every stack's compose + the helper scripts on each PR and
+# on pushes to main. Deploys nothing — it just keeps `main` known-good for you
+# and anyone who clones the repo. (Free/unlimited on public repos; well within
+# the free monthly minutes on private — this runs in seconds.)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker compose config (all stacks)
+        run: |
+          cp .env.example .env
+          fail=0
+          for f in */docker-compose.yml; do
+            if docker compose -f "$f" --env-file .env config -q 2>/dev/null; then
+              echo "ok      $f"
+            else
+              # a stack with all services commented (e.g. devops placeholder)
+              # fails config with "no services" — that's intentional, not broken.
+              active=$(awk '/^services:/{i=1;next} /^[^[:space:]#]/{i=0} i&&/^  [A-Za-z0-9_-]+:[[:space:]]*$/{n++} END{print n+0}' "$f")
+              if [ "${active:-0}" -eq 0 ]; then echo "skip    $f (placeholder)"; else echo "INVALID $f"; fail=1; fi
+            fi
+          done
+          exit $fail
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash syntax check
+        run: for s in bootstrap.sh scripts/*.sh scripts/lib/*.sh; do bash -n "$s" && echo "ok $s"; done
+      - name: shellcheck (advisory)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -x bootstrap.sh scripts/*.sh scripts/lib/*.sh || true

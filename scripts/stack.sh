@@ -59,7 +59,14 @@ else
   targets=("${ORDER[@]}"); explicit=0
 fi
 
-dc() { docker compose -f "$1/docker-compose.yml" --env-file "$ENV_FILE" "${@:2}"; }
+dc() {
+  # docker compose for a stack, auto-including its gitignored override if present
+  # (compose skips the auto-override when -f is passed explicitly, so add it).
+  local s="$1"; shift
+  local f=(-f "$s/docker-compose.yml")
+  [[ -f "$s/docker-compose.override.yml" ]] && f+=(-f "$s/docker-compose.override.yml")
+  docker compose "${f[@]}" --env-file "$ENV_FILE" "$@"
+}
 
 reversed() { local i; for ((i=${#ORDER[@]}-1; i>=0; i--)); do echo "${ORDER[i]}"; done; }
 
