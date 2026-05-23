@@ -342,7 +342,7 @@ cd arcane && docker compose up -d
 Open `http://YOUR_SERVER_IP:3552`
 
 1. Log in with the first-run credentials **`arcane` / `arcane-admin`** and change the password immediately
-2. Arcane auto-discovers every stack under `/opt/docker/stacks` (mapped to `/opt/stacks` inside the container)
+2. Arcane auto-discovers every stack under `/opt/docker/stacks` (bind-mounted to the **same** path inside the container, with `PROJECTS_DIRECTORY` set to it — Arcane requires identical paths in/out)
 
 ### 4 — Deploy stacks via Arcane
 
