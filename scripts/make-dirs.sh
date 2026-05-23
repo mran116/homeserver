@@ -19,6 +19,7 @@ require_env || exit 0
 load_env
 
 dirs=("$CONFIG_PATH" "$CONFIG_PATH/homepage" "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$SYNC_PATH")
+for d in "${dirs[@]}"; do [[ -d "$d" ]] || require_writable "$d"; done
 for d in "${dirs[@]}"; do [[ -d "$d" ]] || plan "create dir $d"; done
 
 seed=0

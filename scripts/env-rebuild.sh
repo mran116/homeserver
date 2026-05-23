@@ -20,6 +20,7 @@ usage() { sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 require_cmd python3
 require_env || exit 0
+require_writable "$ENV_FILE"
 
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT

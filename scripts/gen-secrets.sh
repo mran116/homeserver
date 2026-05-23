@@ -20,6 +20,7 @@ usage() { sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 require_cmd python3
 require_env || exit 0
+require_writable "$ENV_FILE"
 
 # User-facing / external credentials (VPN keys, third-party tokens, admin
 # passwords) are deliberately NOT here — they need a human or external account.

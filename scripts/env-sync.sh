@@ -18,6 +18,7 @@ usage() { sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 require_cmd python3
 require_env || exit 0
+require_writable "$ENV_FILE"
 
 missing="$(comm -13 \
   <(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE"  | sed 's/=$//' | sort -u) \
