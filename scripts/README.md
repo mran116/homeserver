@@ -53,6 +53,7 @@ off.
 | `harvest-keys.sh` | Collect app API keys into `.env` (auto-detects *arr keys; `--sync` recreates consumers on change). |
 | `sab-watchdog.sh` | Auto-recover a stalled SABnzbd (pause/resume, then container restart). Run by cron. |
 | `setup-fresh.sh` | Full host prep for a brand-new Ubuntu/Debian box, then runs `bootstrap.sh`. |
+| `install-hooks.sh` | Install a git pre-push hook that validates every stack's compose locally before a push (same check as CI, caught earlier). |
 
 ## Scheduled jobs (installed by `schedule-maintenance.sh`)
 
