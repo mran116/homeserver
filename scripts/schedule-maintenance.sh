@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # =============================================================================
-# install-cron.sh — install the low-maintenance cron jobs.
+# schedule-maintenance.sh — install the low-maintenance cron jobs:
 #
-#   - nightly *arr key auto-sync (harvest-keys.sh --sync) — self-heals if an
-#     *arr API key ever changes; no-op on a normal night.
-#   - weekly `docker image prune -af` — reclaims unused images (never
-#     containers, volumes, or your bind-mounted data).
+#   - nightly *arr key auto-sync (harvest-keys.sh --sync) @ 04:00 — self-heals
+#     if an *arr API key changes; no-op on a normal night.
+#   - weekly `docker image prune -af` @ Sun 05:00 — reclaims unused images
+#     (never containers, volumes, or your bind-mounted data).
+#   - SABnzbd stall watchdog (sab-watchdog.sh) every 5 min — recovers a wedged
+#     SAB (pause/resume, then container restart as a last resort).
 #
 # Idempotent (keyed off marker comments). Flags: --dry-run, --yes.
 # =============================================================================
@@ -16,7 +18,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 cd "$REPO_DIR"
 
-usage() { sed -n '2,11p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 
 if ! command -v crontab >/dev/null 2>&1; then

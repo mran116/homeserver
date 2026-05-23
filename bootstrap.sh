@@ -45,7 +45,7 @@ run gen-secrets.sh
 run make-dirs.sh
 run link-env.sh
 run create-network.sh
-run install-cron.sh
+run schedule-maintenance.sh
 
 say "Reminder: VPN keys + third-party tokens (Diun/Tailscale/Cloudflare) and"
 say "Homepage widget keys still need filling — run ./scripts/harvest-keys.sh later."
