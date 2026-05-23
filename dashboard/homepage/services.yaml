@@ -49,11 +49,6 @@
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NTFY_PORT}}
         description: Push Notifications
 
-    - Ollama:
-        icon: ollama.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_OLLAMA_PORT}}
-        description: Local LLM (AI)
-
 - Monitoring:
     - Uptime Kuma:
         icon: uptime-kuma.png
@@ -210,11 +205,6 @@
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ACTUAL_PORT}}
         description: Budget & Banking
 
-    - Homebox:
-        icon: homebox.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_HOMEBOX_PORT}}
-        description: Home Inventory
-
 - Records:
     - Paperless:
         icon: paperless-ngx.png
@@ -226,11 +216,6 @@
           username: {{HOMEPAGE_VAR_PAPERLESS_ADMIN_USER}}
           password: {{HOMEPAGE_VAR_PAPERLESS_ADMIN_PASSWORD}}
 
-    - Paperless-AI:
-        icon: paperless-ngx.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PAPERLESS_AI_PORT}}
-        description: Auto-tag Documents (AI)
-
     - Stirling PDF:
         icon: stirling-pdf.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_STIRLING_PORT}}
@@ -240,11 +225,6 @@
         icon: vaultwarden.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
         description: Password Manager
-
-    - BookStack:
-        icon: bookstack.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BOOKSTACK_PORT}}
-        description: Family Wiki / House Manual
 
     - Memos:
         icon: memos.png
