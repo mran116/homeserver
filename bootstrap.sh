@@ -155,7 +155,7 @@ fi
 # User-facing / external credentials (VPN keys, third-party API keys, admin
 # user passwords) are deliberately NOT in this list — they need a human or an
 # external account.
-SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET BOOKSTACK_DB_ROOT_PASSWORD BOOKSTACK_DB_PASSWORD'
+SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET'
 
 count_blank_secrets() {
   python3 - "$SECRET_KEYS" <<'PY'
@@ -190,8 +190,6 @@ DB_DIRS = {
     "IMMICH_DB_PASSWORD":         "immich/db",
     "PAPERLESS_DB_PASSWORD":      "paperless/db",
     "GITEA_DB_PASSWORD":          "gitea/db",
-    "BOOKSTACK_DB_ROOT_PASSWORD": "bookstack/db",
-    "BOOKSTACK_DB_PASSWORD":      "bookstack/db",
 }
 text = pathlib.Path(".env").read_text()
 m = re.search(r"(?m)^CONFIG_PATH=(.*)$", text)
@@ -315,9 +313,29 @@ if command -v crontab >/dev/null 2>&1; then
   else
     say "Skipped — you can run ./scripts/harvest-keys.sh --sync manually anytime."
   fi
+
+  # ---- optional: weekly docker image cleanup (cron) -------------------------
+  # Removes unused images so disk doesn't slowly fill after Diun-flagged
+  # updates. Only touches dangling/unused IMAGES — never containers, named
+  # volumes, or your bind-mounted data under CONFIG_PATH. Idempotent.
+  echo
+  if ask_yn "Install a weekly cron job to prune unused docker images?" Y; then
+    pmarker="# homestack-image-prune"
+    pcron="0 5 * * 0 docker image prune -af >> $REPO_DIR/image-prune.log 2>&1 $pmarker"
+    new_cron="$( { crontab -l 2>/dev/null | grep -vF "$pmarker"; echo "$pcron"; } )"
+    if printf '%s\n' "$new_cron" | crontab -; then
+      say "Installed weekly image prune (Sun 05:00). Logs: $REPO_DIR/image-prune.log"
+    else
+      warn "Could not write crontab — add this line yourself:"
+      warn "  $pcron"
+    fi
+  else
+    say "Skipped — run 'docker image prune -af' yourself now and then."
+  fi
 else
-  warn "cron not found — to automate key-sync, add a scheduler that runs:"
-  warn "  cd $REPO_DIR && ./scripts/harvest-keys.sh --sync"
+  warn "cron not found — to automate maintenance, add a scheduler that runs:"
+  warn "  cd $REPO_DIR && ./scripts/harvest-keys.sh --sync   (nightly)"
+  warn "  docker image prune -af                             (weekly)"
 fi
 
 # ---- optional: start Arcane -------------------------------------------------
@@ -335,14 +353,20 @@ cat <<EOF
 Next steps:
   1. Open http://${SERVER_IP}:${ARCANE_PORT:-3552} and create the Arcane admin
      (first-run login: arcane / arcane-admin — change it immediately).
-  2. Deploy stacks in this order from the Arcane UI:
-       vaultwarden → infrastructure → adguard → monitoring → dashboard
-       → ollama → mediastack → household → records → knowledge
-       → syncthing → ntfy → cloud
-  3. After the apps are up, run the key harvester:
+  2. UPGRADING an existing host? AdGuard and ntfy moved INTO the infrastructure
+     and monitoring stacks. Remove the old standalone containers first, or the
+     redeploy fails on a name conflict (your data is kept — it lives in
+     ${CONFIG_PATH}/adguard and ${CONFIG_PATH}/ntfy):
+       docker rm -f adguard ntfy
+     and delete the old "adguard" / "ntfy" stacks in Arcane. (Fresh installs: skip.)
+  3. Deploy stacks in this order from the Arcane UI:
+       vaultwarden → infrastructure → monitoring → dashboard → mediastack
+       → household → records → knowledge → syncthing → cloud
+     (AdGuard is in the infrastructure stack; ntfy is in monitoring.)
+  4. After the apps are up, run the key harvester:
        ./scripts/harvest-keys.sh
      It auto-detects the *arr keys from each app's config.xml and prompts
      for the UI-only keys (Jellyfin, Immich, Mealie, SABnzbd, NPM login).
-  4. Create a Home Assistant webhook and set DIUN_NOTIF_WEBHOOK_URL in .env
-     so update notifications land in your HA notification stream.
+  5. Install the ntfy app and subscribe to the "diun-updates" topic to get
+     image-update alerts on your phone (Diun is pre-wired to ntfy).
 EOF

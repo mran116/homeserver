@@ -22,28 +22,34 @@ Before you start you will need:
 
 ## 🗂️ Directory Structure
 
+Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (Arcane
+discovers stacks one level deep, so the layout is intentionally flat). Related
+services are grouped into a single stack rather than scattered across folders.
+
 ```
 /opt/docker/
-├── stacks/              ← this repo — all compose files
-│   ├── arcane/
-│   ├── vaultwarden/
-│   ├── infrastructure/     (includes borgmatic/ configs)
-│   ├── monitoring/
-│   ├── dashboard/          (homepage compose + homepage/ configs)
-│   ├── mediastack/
-│   ├── household/
-│   ├── records/
-│   ├── cloud/
-│   └── devops/
-└── data/                ← all app config and data (bind mounts)
-    ├── jellyfin/
-    ├── sonarr/
-    ├── radarr/
-    └── etc...
+├── stacks/                  ← this repo — all compose files
+│   ├── arcane/                  Docker management UI (deploy first)
+│   ├── vaultwarden/             password manager
+│   ├── infrastructure/          Nginx Proxy Manager + AdGuard Home DNS (+ borgmatic/tailscale/cloudflare, commented)
+│   ├── monitoring/              Uptime Kuma + Dozzle + Diun + ntfy
+│   ├── dashboard/               Homepage (compose + homepage/ configs)
+│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Cleanuparr
+│   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget
+│   ├── records/                 Paperless-ngx + Stirling PDF
+│   ├── knowledge/               Memos (quick notes)
+│   ├── syncthing/               private file sync
+│   ├── cloud/                   Immich (+ Matrix, commented)
+│   └── devops/                  Gitea + CI (commented, Phase 3)
+├── reference/               ← NOT stacks — config you copy elsewhere
+│   └── home-assistant/          HA packages for the HA VM (/config/packages)
+├── scripts/                 ← bootstrap helpers (harvest-keys, stack.sh, …)
+└── data/                    ← all app config + data (bind mounts: jellyfin/, sonarr/, …)
 
-/mnt/media/              ← Movies, TV, music, anime, books
-/mnt/photos/             ← Immich photo and video library
-/mnt/documents/          ← Paperless document storage
+/mnt/media/                  ← Movies, TV, music, anime, books
+/mnt/photos/                 ← Immich photo and video library
+/mnt/documents/              ← Paperless document storage
+/mnt/sync/                   ← Syncthing synced folders
 ```
 
 All app data lives under `/opt/docker/data/` as bind mounts — easy to back up, easy to find, easy to move.
@@ -78,7 +84,6 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 | AdGuard Home | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. |
 | Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
 | ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone. |
-| Ollama | Local LLM runtime (CPU) — powers Recommendarr's AI (and HA Assist) with no cloud and no API fees. |
 | Tailscale* | Zero-config VPN built on WireGuard. Gives secure remote access to your entire home network from anywhere. |
 | Cloudflare Tunnel* | Exposes selected services publicly with zero open ports on your router. Works with a custom domain. |
 | Borgmatic* | Automated encrypted offsite backups to Backblaze B2 or any remote storage. |
@@ -127,7 +132,6 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Navidrome | Dedicated music server — compatible with all Subsonic/Airsonic apps. |
 | Audiobookshelf | Audiobook, podcast and ebook server — with native iOS and Android apps. |
 | Seerr | Family media requests — family members search and request movies and shows without needing access to Radarr or Sonarr. You get notified, Radarr/Sonarr grabs it automatically, and it appears in Jellyfin. Essential for families. |
-| Recommendarr | AI-powered media recommendations based on your Jellyfin watch history. |
 | Recyclarr | Automatically syncs TRaSH Guides quality profiles to Sonarr and Radarr. |
 | Unpackerr | Automatically extracts completed downloads for Sonarr/Radarr/Lidarr. |
 | Cleanuparr | Auto-removes stalled, failed, and orphaned downloads and tells the *arr to grab an alternative — no more babysitting the queue. |
@@ -143,7 +147,6 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | KitchenOwl | Shopping list manager with real-time family sync and a great mobile app. Receives shopping lists from Mealie. |
 | Donetick | Chore and task manager with recurring schedules, family member assignment, and points/rewards for kids. |
 | Actual Budget | Local-first budget and finance tracker. Connect your bank via SimpleFIN ($15/yr) for automatic transaction sync. |
-| Homebox | Home inventory — track what you own, where it lives, plus warranties, manuals, and receipts. |
 
 ---
 
@@ -152,9 +155,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Service | Purpose |
 |---|---|
 | Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
-| Paperless-AI | Uses your local Ollama to auto-title, classify, and tag new scans (correspondent + document type). Set it to use existing tags only for clean results. |
 | Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
-| BookStack | Family knowledge base / house manual — wifi passwords, shutoff valves, account info, vendor contacts, "how things work". |
 | Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |
 | DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. |
 
@@ -345,21 +346,27 @@ Open `http://YOUR_SERVER_IP:3552`
 
 ### 4 — Deploy stacks via Arcane
 
+> **Upgrading an existing host?** AdGuard and ntfy used to be their own stacks and
+> are now part of `infrastructure` and `monitoring`. The new services reuse the
+> same container names (`adguard`, `ntfy`), so the old standalone containers must
+> be removed first or the redeploy fails on a name conflict. Your data is safe —
+> it lives in `${CONFIG_PATH}/adguard` and `${CONFIG_PATH}/ntfy` and is reused.
+> In Arcane, delete the old **`adguard`** and **`ntfy`** stacks (or run
+> `docker rm -f adguard ntfy`), then deploy `infrastructure` / `monitoring`.
+> Fresh installs can ignore this.
+
 In the Arcane UI, start each stack in this order (click → Start). The order matters:
 
 1. `vaultwarden` — your password vault; stand it up first so you have somewhere to store the secrets bootstrap generated
-2. `infrastructure` — reverse proxy + networking; other services sit behind it
-3. `adguard` — network DNS + ad-blocking (free host port 53 first; see `adguard/`)
-4. `monitoring` — Uptime Kuma / Dozzle / Diun start watching everything else
-5. `dashboard` — Homepage; depends on the rest existing, so it comes after
-6. `ollama` — local LLM; start before Recommendarr so its AI works (then `docker exec -it ollama ollama pull qwen2.5:7b`)
-7. `mediastack`
-8. `household`
-9. `records`
-10. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
-11. `syncthing`
-12. `ntfy`
-13. `cloud`
+2. `infrastructure` — reverse proxy + networking + **AdGuard Home** DNS (free host port 53 first — see the AdGuard notes in `infrastructure/docker-compose.yml`); other services sit behind it
+3. `monitoring` — Uptime Kuma / Dozzle / Diun + **ntfy** start watching everything else
+4. `dashboard` — Homepage; depends on the rest existing, so it comes after
+5. `mediastack`
+6. `household`
+7. `records`
+8. `knowledge` — Memos (quick notes)
+9. `syncthing`
+10. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 
@@ -551,6 +558,71 @@ Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on fir
 
 ---
 
+## 🧹 Maintenance (set it and forget it)
+
+Low-effort guards so the box keeps itself healthy without babysitting.
+
+**1. Cap container logs (one-time, prevents disk-fill).** Runaway logs are a top
+cause of "everything broke." Apply the included daemon config:
+
+```
+sudo cp reference/docker-daemon.json /etc/docker/daemon.json   # or merge if you already have one
+sudo systemctl restart docker
+```
+
+**2. Weekly image cleanup.** `bootstrap.sh` offers to install a cron that runs
+`docker image prune -af` weekly (removes only unused images — never containers,
+volumes, or your bind-mounted data). Logs to `image-prune.log`.
+
+**3. Update alerts → ntfy.** Diun pushes new-image alerts to the ntfy topic
+`diun-updates` (already wired in `monitoring/`). Install the **ntfy app**, point
+it at `http://<server-ip>:9933`, and subscribe to `diun-updates`. Then apply
+updates at your leisure from Arcane — no manual checking.
+
+**4. Outage alerts → ntfy.** Wire Uptime Kuma to ntfy so you hear about
+downtime instead of stumbling on it:
+- Uptime Kuma → **Settings → Notifications → Setup Notification**
+- Type **ntfy**, server `http://ntfy`, topic e.g. `uptime`, priority high → Save
+- Edit your monitors (or "Apply on all existing") to use it
+- Subscribe to the `uptime` topic in the ntfy app
+
+**5. Backups.** The one piece still to do (parked for your new PC): Proxmox
+`vzdump`/PBS for the whole VMs **+** a per-app backup (Kopia/Borgmatic) for
+config under `CONFIG_PATH`. Until then, a manual `vzdump` snapshot before big
+changes is cheap insurance.
+
+---
+
+## 🎛️ Day-to-Day Management
+
+You already have the tools (Arcane, Homepage, Uptime Kuma, Dozzle, Diun→ntfy,
+`scripts/stack.sh`). A few config-only wins make running it lower-effort:
+
+**Manage it from anywhere (Tailscale).** Enable the commented Tailscale block in
+`infrastructure/docker-compose.yml`, set `TS_AUTHKEY` in `.env`
+(login.tailscale.com → Settings → Keys), redeploy, and approve the subnet route
+in the Tailscale admin. Now Arcane / Homepage / SSH are reachable from your phone
+anywhere — no ports opened. (FOSS alternative: Headscale.)
+
+**Clean local URLs instead of `IP:port`.** Two steps:
+1. AdGuard → **Filters → DNS rewrites**: add `*.home` → your server IP.
+2. NPM → **Hosts → Proxy Hosts → Add**: e.g. `jellyfin.home` → `http://jellyfin:8096`.
+Repeat per service. Now it's `jellyfin.home`, `paperless.home`, etc.
+
+**Family "is it up?" page.** Uptime Kuma → **Status Pages → New** → add your
+monitors → publish. Share the link so the household can self-check instead of
+asking you.
+
+**Bulk operations.** `./scripts/stack.sh up|down|restart|pull|status` runs across
+all stacks in the right order — handy after a Diun update alert (`pull` then
+`up`) or for clean host-maintenance stop/start.
+
+> **Note on UI edits:** Arcane edits compose files directly in the git tree on
+> the host. If you also develop via PRs, do significant changes in a branch/PR
+> rather than editing live on the host, to avoid `main` diverging from origin.
+
+---
+
 ## 🔒 Security Checklist
 
 - [ ] Strong master password on Vaultwarden
@@ -634,11 +706,11 @@ For a wall-mounted family dashboard running Home Assistant:
 
 ### Household automations (proactive nudges + alerts)
 
-Ready-made HA packages live in [`home-assistant/`](home-assistant/) — copy them
+Ready-made HA packages live in [`reference/home-assistant/`](reference/home-assistant/) — copy them
 to your HA VM's `/config/packages/` to turn Donetick / Mealie / KitchenOwl /
 Calendar into morning briefings, chore digests, bin/meal/shopping reminders, and
 to route Diun + Uptime Kuma into a single alert stream. See
-[`home-assistant/README.md`](home-assistant/README.md) for setup.
+[`reference/home-assistant/README.md`](reference/home-assistant/README.md) for setup.
 
 ---
 
