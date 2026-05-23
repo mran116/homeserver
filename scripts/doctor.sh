@@ -2,10 +2,11 @@
 # =============================================================================
 # doctor.sh — read-only health check. Changes nothing; tells you what's wrong.
 #
-# Checks: docker daemon + compose, the `home` network, .env present and in sync
-# with .env.example, per-stack .env symlinks, STACKS_PATH, every compose file
-# validates, vars referenced by ACTIVE services that are still blank, and the
-# port-53 / systemd-resolved conflict that stops AdGuard.
+# Checks: docker daemon + compose, the `home` network, container health
+# (restarting / unhealthy / stopped), .env present and in sync with
+# .env.example, storage paths (exist, MEDIA_PATH actually mounted, CONFIG_PATH on
+# local disk), per-stack .env symlinks, STACKS_PATH, every compose file
+# validates, blank vars referenced by ACTIVE services, and the port-53 conflict.
 #
 # Exit: non-zero if any hard FAIL (handy as a pre-deploy gate). Flags: none.
 # =============================================================================
@@ -34,6 +35,17 @@ if [[ $have_daemon -eq 1 ]]; then
   say "Network"
   docker network inspect home >/dev/null 2>&1 && ok "'home' network exists" \
     || bad "'home' network missing — run ./scripts/create-network.sh"
+
+  say "Containers"
+  restarting="$(docker ps -a --filter status=restarting --format '{{.Names}}' 2>/dev/null)"
+  unhealthy="$(docker ps    --filter health=unhealthy    --format '{{.Names}}' 2>/dev/null)"
+  exited="$(docker ps -a    --filter status=exited       --format '{{.Names}}' 2>/dev/null)"
+  if [[ -z "$restarting$unhealthy" ]]; then ok "none restarting or unhealthy"
+  else
+    for n in $restarting; do bad "$n is restarting (crash loop) — docker logs $n"; done
+    for n in $unhealthy;  do bad "$n is unhealthy — docker logs $n"; done
+  fi
+  for n in $exited; do note "$n is stopped (Exited) — intentional? otherwise: docker logs $n"; done
 fi
 
 say ".env"
@@ -47,6 +59,24 @@ if [[ -f "$ENV_FILE" ]]; then
 else
   bad ".env missing — run ./scripts/env-init.sh"
 fi
+
+say "Storage"
+cfg="$(current_value CONFIG_PATH)"; med="$(current_value MEDIA_PATH)"
+if [[ -z "$cfg" ]]; then note "CONFIG_PATH not set in .env"
+elif [[ -d "$cfg" ]]; then
+  ok "CONFIG_PATH ($cfg) exists"
+  if command -v findmnt >/dev/null; then
+    ft="$(findmnt -n -o FSTYPE --target "$cfg" 2>/dev/null || true)"
+    case "$ft" in nfs*|cifs|smb*) bad "CONFIG_PATH is on a '$ft' mount — app DBs corrupt on network shares; move it to local disk" ;; esac
+  fi
+else bad "CONFIG_PATH ($cfg) does not exist"; fi
+if [[ -z "$med" ]]; then note "MEDIA_PATH not set in .env"
+elif [[ -d "$med" ]]; then
+  ok "MEDIA_PATH ($med) exists"
+  if command -v mountpoint >/dev/null && ! mountpoint -q "$med" 2>/dev/null && [[ -z "$(ls -A "$med" 2>/dev/null)" ]]; then
+    note "MEDIA_PATH is empty and not a mountpoint — if it's a NAS share it isn't mounted (containers would see no media)"
+  fi
+else bad "MEDIA_PATH ($med) does not exist"; fi
 
 say "Stack wiring"
 if [[ "$(current_value STACKS_PATH)" == "$REPO_DIR" ]]; then ok "STACKS_PATH = $REPO_DIR"
