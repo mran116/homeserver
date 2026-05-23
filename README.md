@@ -215,6 +215,10 @@ git pull
 docker compose -f monitoring/docker-compose.yml --env-file .env up -d
 ```
 
+Or do both in one shot with `./scripts/update.sh` — it `git pull`s (autostashing
+any in-place Arcane edits) and redeploys all stacks. Previews first; `--yes` to
+skip the prompt, `--dry-run` to only preview.
+
 `.env` is gitignored, so `git pull` never touches your secrets. Never hand-copy these files between machines — always `git pull` so they can't land in the wrong place.
 
 For bulk operations across all stacks, use `scripts/stack.sh`:
@@ -481,13 +485,19 @@ Both scripts are **location-independent** — they resolve the repo root from th
 ```
 1. Buy a domain at cloudflare.com (~$10/year)
 2. Zero Trust → Networks → Tunnels → Create tunnel → copy the token
-3. Add CLOUDFLARE_TUNNEL_TOKEN to .env
+3. Add CLOUDFLARE_TUNNEL_TOKEN (+ DOMAIN, CLOUDFLARE_DNS_API_TOKEN) to .env
 4. Uncomment cloudflared in infrastructure/docker-compose.yml
-5. Add hostname routes in the Cloudflare dashboard:
-   jellyfin.yourdomain.com    → http://jellyfin:8096
-   vaultwarden.yourdomain.com → http://vaultwarden:80
-   navidrome.yourdomain.com   → http://navidrome:4533
+5. Add public-hostname routes in the Cloudflare dashboard:
+   requests.yourdomain.com   → http://seerr:5055
+   photos.yourdomain.com     → http://immich-server:3001
+   audiobooks.yourdomain.com → http://audiobookshelf:80
+   music.yourdomain.com      → http://navidrome:4533
+   vault.yourdomain.com      → http://vaultwarden:80   (Access on /admin ONLY)
 6. Push, `git pull` on host, redeploy in Arcane
+
+NOTE: Jellyfin is NOT tunneled — streaming video over Cloudflare breaks their
+ToS. Serve it direct (DNS-only A record + 443 → NPM, with the ddns-updater for a
+dynamic IP) or over Tailscale. Full design: docs/network-and-remote-access.md
 ```
 
 ### Matrix — private encrypted messaging
@@ -616,6 +626,26 @@ asking you.
 **Bulk operations.** `./scripts/stack.sh up|down|restart|pull|status` runs across
 all stacks in the right order — handy after a Diun update alert (`pull` then
 `up`) or for clean host-maintenance stop/start.
+
+**Targeted setup steps (live stack).** `bootstrap.sh` is the first-run
+orchestrator, but each phase is also a standalone script you can run on a
+running stack without triggering the rest. Every one **previews then asks to
+apply** (`--dry-run` to only preview, `--yes` for automation):
+
+```bash
+./scripts/doctor.sh          # read-only health check — what's wrong before you deploy
+./scripts/env-sync.sh        # append vars added to .env.example in a new version
+./scripts/env-rebuild.sh     # rewrite .env into .env.example's clean structure
+./scripts/gen-secrets.sh     # fill any newly-blank machine secret (DB-safe)
+./scripts/link-env.sh        # re-link the per-stack .env symlinks + STACKS_PATH
+./scripts/make-dirs.sh       # create any missing data/media dirs
+./scripts/create-network.sh  # (re)create the `home` docker network
+./scripts/install-cron.sh    # (re)install the maintenance cron jobs
+```
+
+`env-rebuild.sh` reflows `.env` to mirror `.env.example`'s sections/order while
+keeping your values; vars you added that aren't in the template are preserved in
+a trailing `LOCAL EXTRAS` block. It shows a diff and backs up first.
 
 > **Note on UI edits:** Arcane edits compose files directly in the git tree on
 > the host. If you also develop via PRs, do significant changes in a branch/PR
