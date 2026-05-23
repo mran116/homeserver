@@ -825,14 +825,22 @@ Local Network (192.168.1.0/24)
 - Media: NAS with RAID for redundancy
 
 ### For Jellyfin hardware transcoding
-- **Intel Quick Sync (default, most efficient):** the `jellyfin` service ships with
-  `/dev/dri` passthrough enabled — set `RENDER_GID` in `.env`
-  (`getent group render | cut -d: -f3`) and pick QSV in Jellyfin.
-- **NVIDIA NVENC:** comment out the Intel `devices:`/`group_add:` lines and
-  uncomment the NVIDIA block beside them (needs the NVIDIA Container Toolkit on
-  the host); pick NVENC in Jellyfin.
-- Both options live side by side in `mediastack/docker-compose.yml` — switching
-  GPUs is a comment swap, no vendor lock-in.
+GPU config is **host-specific**, so it lives in a gitignored
+`mediastack/docker-compose.override.yml` (not the tracked compose) — that keeps
+`git pull` clean on every machine. Enable it once per host:
+```bash
+cp mediastack/docker-compose.override.yml.example mediastack/docker-compose.override.yml
+# edit it: uncomment your GPU block (Intel QSV or NVIDIA NVENC)
+```
+- **Intel Quick Sync:** uncomment the Intel block, set `RENDER_GID` in `.env`
+  (`getent group render | cut -d: -f3`), pick QSV in Jellyfin.
+- **NVIDIA NVENC:** uncomment the NVIDIA block (needs the NVIDIA Container
+  Toolkit on the host), pick NVENC in Jellyfin.
+- **No GPU:** leave it commented — Jellyfin uses software transcoding.
+
+`scripts/stack.sh` and `update.sh` auto-include the override when present, so no
+tracked file changes and no vendor lock-in. (Jellyfin also mounts the whole media
+root at `/data`, so any folder layout works — add libraries in the UI.)
 
 ### Wall tablet
 - Any Android tablet with Fully Kiosk Browser (~$7)
