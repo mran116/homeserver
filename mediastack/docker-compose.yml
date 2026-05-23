@@ -287,9 +287,9 @@ services:
     volumes:
       - ${CONFIG_PATH}/audiobookshelf/config:/config
       - ${CONFIG_PATH}/audiobookshelf/metadata:/metadata
-      # default to ${MEDIA_PATH}/<sub>; override per host by setting these in .env
-      - ${AUDIOBOOKS_PATH:-${MEDIA_PATH}/audiobooks}:/audiobooks
-      - ${BOOKS_PATH:-${MEDIA_PATH}/books}:/books
+      # whole media root; add audiobook/book libraries in the ABS UI
+      # (e.g. /data/audiobooks, /data/books, or wherever yours live)
+      - ${MEDIA_PATH}:/data
     ports:
       - ${AUDIOBOOKSHELF_PORT}:80
     networks:
