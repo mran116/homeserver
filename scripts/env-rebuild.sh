@@ -81,7 +81,6 @@ diff "$ENV_FILE" "$tmp" || true
 echo
 gate || exit 0
 
-cp "$ENV_FILE" "$ENV_FILE.bak"
-say "Backed up current .env to $ENV_FILE.bak"
+backup_env
 cp "$tmp" "$ENV_FILE"
 say "Rebuilt .env in template structure. Review it, then redeploy affected stacks."

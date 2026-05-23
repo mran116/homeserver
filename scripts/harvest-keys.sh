@@ -16,6 +16,8 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
+# shellcheck source=scripts/lib/common.sh
+source "$REPO_DIR/scripts/lib/common.sh"
 
 [[ -f .env ]] || { echo "No .env found. Run ./bootstrap.sh first." >&2; exit 1; }
 
@@ -40,7 +42,7 @@ fi
 set -a; source .env; set +a
 : "${SERVER_IP:?SERVER_IP missing from .env}"
 
-c_b=$'\033[1m'; c_d=$'\033[2m'; c_g=$'\033[32m'; c_y=$'\033[33m'; c_r=$'\033[0m'
+c_b="$c_bold"; c_d="$c_dim"; c_g="$c_green"; c_y="$c_yellow"; c_r="$c_reset"
 
 # -----------------------------------------------------------------------------
 # Keys we harvest, in the order a user would naturally hit them.
@@ -98,25 +100,8 @@ EOF
 set -u
 
 # -----------------------------------------------------------------------------
-update_env() {
-  # update_env KEY VALUE  — replaces the first KEY=… line in .env in-place
-  local key="$1" value="$2"
-  python3 - "$key" "$value" <<'PY'
-import sys, re, pathlib
-key, value = sys.argv[1], sys.argv[2]
-p = pathlib.Path(".env")
-text = p.read_text()
-if re.search(rf"(?m)^{re.escape(key)}=", text):
-    text = re.sub(rf"(?m)^{re.escape(key)}=.*$", f"{key}={value}", text, count=1)
-else:
-    text = text.rstrip() + f"\n{key}={value}\n"
-p.write_text(text)
-PY
-}
-
-current_value() {
-  grep -E "^${1}=" .env | head -n1 | cut -d= -f2-
-}
+# update_env / current_value come from scripts/lib/common.sh — they target
+# $ENV_FILE (= $REPO_DIR/.env, the same file this script operates on).
 
 # -----------------------------------------------------------------------------
 # Auto-detect *arr API keys from the config.xml each app generates on first

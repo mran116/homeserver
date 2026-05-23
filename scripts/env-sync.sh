@@ -30,8 +30,7 @@ while IFS= read -r k; do [[ -n "$k" ]] && plan "append $k (with .env.example def
 show_plan || exit 0
 gate || exit 0
 
-cp "$ENV_FILE" "$ENV_FILE.bak"
-say "Backed up current .env to $ENV_FILE.bak"
+backup_env
 {
   echo ""
   echo "# --- added by env-sync on $(date '+%Y-%m-%d') (new since your .env) ---"
