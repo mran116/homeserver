@@ -549,6 +549,41 @@ Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on fir
 
 ---
 
+## 🧹 Maintenance (set it and forget it)
+
+Low-effort guards so the box keeps itself healthy without babysitting.
+
+**1. Cap container logs (one-time, prevents disk-fill).** Runaway logs are a top
+cause of "everything broke." Apply the included daemon config:
+
+```
+sudo cp reference/docker-daemon.json /etc/docker/daemon.json   # or merge if you already have one
+sudo systemctl restart docker
+```
+
+**2. Weekly image cleanup.** `bootstrap.sh` offers to install a cron that runs
+`docker image prune -af` weekly (removes only unused images — never containers,
+volumes, or your bind-mounted data). Logs to `image-prune.log`.
+
+**3. Update alerts → ntfy.** Diun pushes new-image alerts to the ntfy topic
+`diun-updates` (already wired in `monitoring/`). Install the **ntfy app**, point
+it at `http://<server-ip>:9933`, and subscribe to `diun-updates`. Then apply
+updates at your leisure from Arcane — no manual checking.
+
+**4. Outage alerts → ntfy.** Wire Uptime Kuma to ntfy so you hear about
+downtime instead of stumbling on it:
+- Uptime Kuma → **Settings → Notifications → Setup Notification**
+- Type **ntfy**, server `http://ntfy`, topic e.g. `uptime`, priority high → Save
+- Edit your monitors (or "Apply on all existing") to use it
+- Subscribe to the `uptime` topic in the ntfy app
+
+**5. Backups.** The one piece still to do (parked for your new PC): Proxmox
+`vzdump`/PBS for the whole VMs **+** a per-app backup (Kopia/Borgmatic) for
+config under `CONFIG_PATH`. Until then, a manual `vzdump` snapshot before big
+changes is cheap insurance.
+
+---
+
 ## 🔒 Security Checklist
 
 - [ ] Strong master password on Vaultwarden

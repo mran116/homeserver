@@ -313,9 +313,29 @@ if command -v crontab >/dev/null 2>&1; then
   else
     say "Skipped — you can run ./scripts/harvest-keys.sh --sync manually anytime."
   fi
+
+  # ---- optional: weekly docker image cleanup (cron) -------------------------
+  # Removes unused images so disk doesn't slowly fill after Diun-flagged
+  # updates. Only touches dangling/unused IMAGES — never containers, named
+  # volumes, or your bind-mounted data under CONFIG_PATH. Idempotent.
+  echo
+  if ask_yn "Install a weekly cron job to prune unused docker images?" Y; then
+    pmarker="# homestack-image-prune"
+    pcron="0 5 * * 0 docker image prune -af >> $REPO_DIR/image-prune.log 2>&1 $pmarker"
+    new_cron="$( { crontab -l 2>/dev/null | grep -vF "$pmarker"; echo "$pcron"; } )"
+    if printf '%s\n' "$new_cron" | crontab -; then
+      say "Installed weekly image prune (Sun 05:00). Logs: $REPO_DIR/image-prune.log"
+    else
+      warn "Could not write crontab — add this line yourself:"
+      warn "  $pcron"
+    fi
+  else
+    say "Skipped — run 'docker image prune -af' yourself now and then."
+  fi
 else
-  warn "cron not found — to automate key-sync, add a scheduler that runs:"
-  warn "  cd $REPO_DIR && ./scripts/harvest-keys.sh --sync"
+  warn "cron not found — to automate maintenance, add a scheduler that runs:"
+  warn "  cd $REPO_DIR && ./scripts/harvest-keys.sh --sync   (nightly)"
+  warn "  docker image prune -af                             (weekly)"
 fi
 
 # ---- optional: start Arcane -------------------------------------------------

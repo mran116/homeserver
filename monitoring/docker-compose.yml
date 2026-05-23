@@ -69,14 +69,13 @@ services:
       - DIUN_WATCH_JITTER=30s
       - DIUN_PROVIDERS_DOCKER=true                # auto-discover every running container
       - DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT=true # opt-out via label, not opt-in
-      # ---- Notifications (OPTIONAL) ----
-      # Diun REQUIRES a non-empty endpoint once the webhook notifier is set, so
-      # these stay commented until you actually have a Home Assistant webhook.
-      # With them off, Diun still watches images and LOGS updates (docker logs
-      # diun). To enable HA notifications: set DIUN_NOTIF_WEBHOOK_URL in .env,
-      # then uncomment both lines and recreate the container.
-      # - DIUN_NOTIF_WEBHOOK_ENDPOINT=${DIUN_NOTIF_WEBHOOK_URL}
-      # - DIUN_NOTIF_WEBHOOK_METHOD=POST
+      # ---- Notifications -> ntfy (same stack) ----
+      # Image-update alerts get pushed to ntfy. Subscribe to the "diun-updates"
+      # topic in the ntfy app to get them on your phone — no need to check
+      # manually. ntfy lives in this stack, reachable at http://ntfy.
+      - DIUN_NOTIF_NTFY_ENDPOINT=http://ntfy
+      - DIUN_NOTIF_NTFY_TOPIC=diun-updates
+      - DIUN_NOTIF_NTFY_PRIORITY=default
     networks:
       - home
 
