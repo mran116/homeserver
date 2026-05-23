@@ -32,11 +32,35 @@ you plug in your own entity IDs and notify target.
 4. **Fix the entity IDs.** Open *Developer Tools → States*, search for your
    Donetick / Mealie / KitchenOwl / calendar entities, and replace each
    `CHANGE ME` placeholder with the real `entity_id`.
-5. **Wire the Diun webhook.** In `alerts.yaml`, set `webhook_id` to match the id
-   in `DIUN_NOTIF_WEBHOOK_URL` in your Docker host `.env`
-   (`http://<ha-vm-ip>:8123/api/webhook/<webhook-id>`).
+5. **(Optional) Diun alerts in HA.** Diun already pushes update alerts to **ntfy**
+   (the `diun-updates` topic) from the monitoring stack, so you get them on your
+   phone without HA. The `alerts.yaml` Diun-webhook automation is only needed if
+   you *also* want update alerts inside HA — to use it, point Diun's notifier at
+   HA's webhook (instead of ntfy) and match the `webhook_id`.
 6. **Reload.** *Developer Tools → YAML → Reload all*, or restart HA. Test from
    *Developer Tools → Actions* by running `script.notify_household`.
+
+## Embed Homepage in HA (one front door, optional)
+
+Keep Homepage as your admin launcher, but reach it from inside HA so there's a
+single place to go:
+
+1. HA → **Settings → Dashboards → Add Dashboard → Webpage**.
+2. Title it "Homepage", pick an icon, URL: `http://<server-ip>:3000`.
+3. Save — it shows in the HA sidebar; one click opens Homepage inside HA.
+
+**Mixed-content gotcha:** a browser blocks an `http://` page embedded in an
+`https://` HA. If your HA is served over https, either:
+- give Homepage an https URL (e.g. `https://homepage.home` via Nginx Proxy
+  Manager) and use that as the Webpage URL, or
+- access HA over http on the LAN.
+
+If you move Homepage to a hostname, add it to `HOMEPAGE_ALLOWED_HOSTS` in
+`dashboard/docker-compose.yml` (it currently allows `${SERVER_IP}:${HOMEPAGE_PORT}`).
+
+> Homepage stays your *admin* board; build the *family* dashboard in HA from its
+> integrations (calendar, chores, shopping, lights, weather). They pull from the
+> same services — you don't rebuild Homepage in HA.
 
 ## Prerequisites (already in the main README's HA section)
 
