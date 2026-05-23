@@ -22,28 +22,35 @@ Before you start you will need:
 
 ## 🗂️ Directory Structure
 
+Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (Arcane
+discovers stacks one level deep, so the layout is intentionally flat). Related
+services are grouped into a single stack rather than scattered across folders.
+
 ```
 /opt/docker/
-├── stacks/              ← this repo — all compose files
-│   ├── arcane/
-│   ├── vaultwarden/
-│   ├── infrastructure/     (includes borgmatic/ configs)
-│   ├── monitoring/
-│   ├── dashboard/          (homepage compose + homepage/ configs)
-│   ├── mediastack/
-│   ├── household/
-│   ├── records/
-│   ├── cloud/
-│   └── devops/
-└── data/                ← all app config and data (bind mounts)
-    ├── jellyfin/
-    ├── sonarr/
-    ├── radarr/
-    └── etc...
+├── stacks/                  ← this repo — all compose files
+│   ├── arcane/                  Docker management UI (deploy first)
+│   ├── vaultwarden/             password manager
+│   ├── infrastructure/          Nginx Proxy Manager + AdGuard Home DNS (+ borgmatic/tailscale/cloudflare, commented)
+│   ├── monitoring/              Uptime Kuma + Dozzle + Diun + ntfy
+│   ├── dashboard/               Homepage (compose + homepage/ configs)
+│   ├── ollama/                  local LLM backend (shared by Recommendarr + Paperless-AI)
+│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Cleanuparr + Recommendarr
+│   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget, Homebox
+│   ├── records/                 Paperless-ngx + Paperless-AI + Stirling PDF
+│   ├── knowledge/               Memos + BookStack (family wiki)
+│   ├── syncthing/               private file sync
+│   ├── cloud/                   Immich (+ Matrix, commented)
+│   └── devops/                  Gitea + CI (commented, Phase 3)
+├── reference/               ← NOT stacks — config you copy elsewhere
+│   └── home-assistant/          HA packages for the HA VM (/config/packages)
+├── scripts/                 ← bootstrap helpers (harvest-keys, stack.sh, …)
+└── data/                    ← all app config + data (bind mounts: jellyfin/, sonarr/, …)
 
-/mnt/media/              ← Movies, TV, music, anime, books
-/mnt/photos/             ← Immich photo and video library
-/mnt/documents/          ← Paperless document storage
+/mnt/media/                  ← Movies, TV, music, anime, books
+/mnt/photos/                 ← Immich photo and video library
+/mnt/documents/              ← Paperless document storage
+/mnt/sync/                   ← Syncthing synced folders
 ```
 
 All app data lives under `/opt/docker/data/` as bind mounts — easy to back up, easy to find, easy to move.
@@ -348,18 +355,16 @@ Open `http://YOUR_SERVER_IP:3552`
 In the Arcane UI, start each stack in this order (click → Start). The order matters:
 
 1. `vaultwarden` — your password vault; stand it up first so you have somewhere to store the secrets bootstrap generated
-2. `infrastructure` — reverse proxy + networking; other services sit behind it
-3. `adguard` — network DNS + ad-blocking (free host port 53 first; see `adguard/`)
-4. `monitoring` — Uptime Kuma / Dozzle / Diun start watching everything else
-5. `dashboard` — Homepage; depends on the rest existing, so it comes after
-6. `ollama` — local LLM; start before Recommendarr so its AI works (then `docker exec -it ollama ollama pull qwen2.5:7b`)
-7. `mediastack`
-8. `household`
-9. `records`
-10. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
-11. `syncthing`
-12. `ntfy`
-13. `cloud`
+2. `infrastructure` — reverse proxy + networking + **AdGuard Home** DNS (free host port 53 first — see the AdGuard notes in `infrastructure/docker-compose.yml`); other services sit behind it
+3. `monitoring` — Uptime Kuma / Dozzle / Diun + **ntfy** start watching everything else
+4. `dashboard` — Homepage; depends on the rest existing, so it comes after
+5. `ollama` — local LLM; start before Recommendarr so its AI works (then `docker exec -it ollama ollama pull qwen2.5:7b`)
+6. `mediastack`
+7. `household`
+8. `records`
+9. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
+10. `syncthing`
+11. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 
@@ -634,11 +639,11 @@ For a wall-mounted family dashboard running Home Assistant:
 
 ### Household automations (proactive nudges + alerts)
 
-Ready-made HA packages live in [`home-assistant/`](home-assistant/) — copy them
+Ready-made HA packages live in [`reference/home-assistant/`](reference/home-assistant/) — copy them
 to your HA VM's `/config/packages/` to turn Donetick / Mealie / KitchenOwl /
 Calendar into morning briefings, chore digests, bin/meal/shopping reminders, and
 to route Diun + Uptime Kuma into a single alert stream. See
-[`home-assistant/README.md`](home-assistant/README.md) for setup.
+[`reference/home-assistant/README.md`](reference/home-assistant/README.md) for setup.
 
 ---
 

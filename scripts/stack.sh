@@ -20,7 +20,7 @@ cd "$REPO_DIR"
 ENV_FILE="$REPO_DIR/.env"
 
 # Deploy order: brought UP first→last, taken DOWN last→first.
-ORDER=(arcane vaultwarden infrastructure monitoring dashboard mediastack household records cloud)
+ORDER=(arcane vaultwarden infrastructure monitoring dashboard ollama mediastack household records knowledge syncthing cloud)
 
 c_b=$'\033[1m'; c_g=$'\033[32m'; c_y=$'\033[33m'; c_r=$'\033[0m'
 say()  { printf '%s==>%s %s\n' "$c_b$c_g" "$c_r" "$*"; }
