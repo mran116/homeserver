@@ -34,11 +34,10 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── infrastructure/          Nginx Proxy Manager + AdGuard Home DNS (+ borgmatic/tailscale/cloudflare, commented)
 │   ├── monitoring/              Uptime Kuma + Dozzle + Diun + ntfy
 │   ├── dashboard/               Homepage (compose + homepage/ configs)
-│   ├── ollama/                  local LLM backend (shared by Recommendarr + Paperless-AI)
-│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Cleanuparr + Recommendarr
-│   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget, Homebox
-│   ├── records/                 Paperless-ngx + Paperless-AI + Stirling PDF
-│   ├── knowledge/               Memos + BookStack (family wiki)
+│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Cleanuparr
+│   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget
+│   ├── records/                 Paperless-ngx + Stirling PDF
+│   ├── knowledge/               Memos (quick notes)
 │   ├── syncthing/               private file sync
 │   ├── cloud/                   Immich (+ Matrix, commented)
 │   └── devops/                  Gitea + CI (commented, Phase 3)
@@ -85,7 +84,6 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 | AdGuard Home | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. |
 | Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
 | ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone. |
-| Ollama | Local LLM runtime (CPU) — powers Recommendarr's AI (and HA Assist) with no cloud and no API fees. |
 | Tailscale* | Zero-config VPN built on WireGuard. Gives secure remote access to your entire home network from anywhere. |
 | Cloudflare Tunnel* | Exposes selected services publicly with zero open ports on your router. Works with a custom domain. |
 | Borgmatic* | Automated encrypted offsite backups to Backblaze B2 or any remote storage. |
@@ -134,7 +132,6 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Navidrome | Dedicated music server — compatible with all Subsonic/Airsonic apps. |
 | Audiobookshelf | Audiobook, podcast and ebook server — with native iOS and Android apps. |
 | Seerr | Family media requests — family members search and request movies and shows without needing access to Radarr or Sonarr. You get notified, Radarr/Sonarr grabs it automatically, and it appears in Jellyfin. Essential for families. |
-| Recommendarr | AI-powered media recommendations based on your Jellyfin watch history. |
 | Recyclarr | Automatically syncs TRaSH Guides quality profiles to Sonarr and Radarr. |
 | Unpackerr | Automatically extracts completed downloads for Sonarr/Radarr/Lidarr. |
 | Cleanuparr | Auto-removes stalled, failed, and orphaned downloads and tells the *arr to grab an alternative — no more babysitting the queue. |
@@ -150,7 +147,6 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | KitchenOwl | Shopping list manager with real-time family sync and a great mobile app. Receives shopping lists from Mealie. |
 | Donetick | Chore and task manager with recurring schedules, family member assignment, and points/rewards for kids. |
 | Actual Budget | Local-first budget and finance tracker. Connect your bank via SimpleFIN ($15/yr) for automatic transaction sync. |
-| Homebox | Home inventory — track what you own, where it lives, plus warranties, manuals, and receipts. |
 
 ---
 
@@ -159,9 +155,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Service | Purpose |
 |---|---|
 | Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
-| Paperless-AI | Uses your local Ollama to auto-title, classify, and tag new scans (correspondent + document type). Set it to use existing tags only for clean results. |
 | Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
-| BookStack | Family knowledge base / house manual — wifi passwords, shutoff valves, account info, vendor contacts, "how things work". |
 | Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |
 | DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. |
 
@@ -358,13 +352,12 @@ In the Arcane UI, start each stack in this order (click → Start). The order ma
 2. `infrastructure` — reverse proxy + networking + **AdGuard Home** DNS (free host port 53 first — see the AdGuard notes in `infrastructure/docker-compose.yml`); other services sit behind it
 3. `monitoring` — Uptime Kuma / Dozzle / Diun + **ntfy** start watching everything else
 4. `dashboard` — Homepage; depends on the rest existing, so it comes after
-5. `ollama` — local LLM; start before Recommendarr so its AI works (then `docker exec -it ollama ollama pull qwen2.5:7b`)
-6. `mediastack`
-7. `household`
-8. `records`
-9. `knowledge` — BookStack + Memos (BookStack needs `BOOKSTACK_APP_KEY` set first)
-10. `syncthing`
-11. `cloud`
+5. `mediastack`
+6. `household`
+7. `records`
+8. `knowledge` — Memos (quick notes)
+9. `syncthing`
+10. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 
