@@ -48,6 +48,39 @@ services:
       - home
 
   # ===========================================================================
+  # ADGUARD HOME - Network-wide DNS ad/tracker blocking + local DNS
+  # http://${SERVER_IP}:${ADGUARD_PORT}
+  #
+  # First run:
+  #   1. Open the admin UI on ${ADGUARD_PORT} and run the setup wizard.
+  #   2. Set the *admin interface* to port 3000 (matches the mapping below) and
+  #      the *DNS server* to listen on 0.0.0.0:53.
+  #   3. Point your router's DNS (or each device) at this server's IP for
+  #      whole-home blocking. Add local rewrites (e.g. *.home -> server IP) for
+  #      clean hostnames instead of IP:port.
+  #
+  # PORT 53 GOTCHA: if the host runs systemd-resolved, it already holds :53 and
+  # AdGuard won't start. Free it first:
+  #   sudo systemctl disable --now systemd-resolved
+  # then replace /etc/resolv.conf with a static nameserver (e.g. 1.1.1.1).
+  # ===========================================================================
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "${ADGUARD_PORT}:3000/tcp"
+    volumes:
+      - ${CONFIG_PATH}/adguard/work:/opt/adguardhome/work
+      - ${CONFIG_PATH}/adguard/conf:/opt/adguardhome/conf
+    environment:
+      - TZ=${TZ}
+    networks:
+      - home
+
+  # ===========================================================================
   # BORGMATIC - Automated encrypted offsite backups
   # COMMENTED OUT - Enable after setting up Backblaze B2
   # Backups are useless if they live on the same machine!
