@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Homeserver bootstrap — first-run host setup (orchestrator).
+# Homeserver bootstrap — FIRST-RUN host setup (orchestrator).
 #
-# Runs each step in scripts/ in dependency order. Every step PREVIEWS what it
-# will do, then asks you to apply (plan-then-apply). Safe to re-run — nothing
-# overwrites an existing .env or existing data.
+# Run this ONCE when first setting up this repo on a host. It runs each step in
+# scripts/ in dependency order; every step PREVIEWS what it will do, then asks
+# to apply. Safe to re-run (idempotent), but on a LIVE stack you usually don't
+# need it — see "When to run what" in scripts/README.md. In short:
+#   ./scripts/update.sh   pull latest + redeploy (routine updates)
+#   ./scripts/doctor.sh   read-only health check (tells you which step to run)
+#   ./scripts/<step>.sh   a single targeted step (env-sync, link-env, ...)
 #
 # Flags:
 #   --dry-run   preview every step, change nothing
 #   --yes       apply every step without prompting (non-interactive)
-#
-# Each step is also a standalone script you can run on a LIVE stack, e.g.:
-#   ./scripts/env-sync.sh      # add vars introduced in a newer .env.example
-#   ./scripts/link-env.sh      # re-link the per-stack .env symlinks
-#   ./scripts/gen-secrets.sh   # fill any newly-blank machine secret
 # =============================================================================
 set -euo pipefail
 
@@ -22,7 +21,7 @@ cd "$REPO_DIR"
 # shellcheck source=scripts/lib/common.sh
 source "$REPO_DIR/scripts/lib/common.sh"
 
-usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 
 # Flags to forward to each step.
