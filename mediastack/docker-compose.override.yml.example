@@ -38,3 +38,22 @@ services:
   #           - driver: nvidia
   #             count: 1
   #             capabilities: [gpu]
+
+  # ---- Per-host volume / path overrides -----------------------------------
+  # Media that lives OUTSIDE ${MEDIA_PATH} (so the base `${MEDIA_PATH}:/data`
+  # mount can't reach it)? Add an extra mount here. Compose APPENDS to the base
+  # volumes list, so you do NOT re-list the base mounts — only the new ones.
+  #
+  # The new mount nests inside /data: the longer path wins for that subtree, so
+  # /data/audiobooks shows your external folder while the rest of /data still
+  # comes from ${MEDIA_PATH}. Then point the app's library at /data/audiobooks.
+  #
+  # Verify the merged result first:  (cd mediastack && docker compose config)
+  #
+  # audiobookshelf:
+  #   volumes:
+  #     - /mnt/storage/audiobooks:/data/audiobooks
+  #     - /mnt/nas/ebooks:/data/books
+  #
+  # Reminder: only ONE key per service. If you also override Jellyfin's GPU
+  # above, a Jellyfin volume override must go in that SAME jellyfin: block.
