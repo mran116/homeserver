@@ -38,7 +38,7 @@ off.
 | `env-sync.sh` | Append vars added to `.env.example` that are missing from `.env`. |
 | `env-rebuild.sh` | Rewrite `.env` into `.env.example`'s structure, keeping your values (extras parked in a `LOCAL EXTRAS` block). |
 | `gen-secrets.sh` | Fill blank machine secrets; skips DB passwords whose data dir already exists. |
-| `make-dirs.sh` | Create the data/media dir layout and seed Homepage config. |
+| `make-dirs.sh` | Create the data/media dir layout and sync Homepage config (repo → config dir). |
 | `link-env.sh` | Set `STACKS_PATH` and symlink the root `.env` into each stack folder. |
 | `create-network.sh` | Create the shared external `home` docker network. |
 | `schedule-maintenance.sh` | Install the cron jobs (see below). |

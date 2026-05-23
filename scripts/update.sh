@@ -7,9 +7,10 @@
 #   2. git pull (autostash — survives Arcane's in-place edits)
 #   3. env-sync   — append any new .env vars
 #   4. link-env   — wire up any new stack / fix symlinks
-#   5. validates every stack's compose (aborts the redeploy if one is broken)
-#   6. redeploys all stacks with --remove-orphans (drops removed services)
-#   7. runs doctor — surfaces anything still needing you (e.g. a blank var)
+#   5. make-dirs  — sync repo Homepage config → CONFIG_PATH (repo = truth)
+#   6. validates every stack's compose (aborts the redeploy if one is broken)
+#   7. redeploys all stacks with --remove-orphans (drops removed services)
+#   8. runs doctor — surfaces anything still needing you (e.g. a blank var)
 #
 # Flags: --dry-run (preview only), --yes (no prompt — for cron), --images
 # (also `docker compose pull` newer images before redeploying).
@@ -43,7 +44,7 @@ fi
 changed_stacks="$(git diff --name-only "HEAD..origin/$branch" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
 plan "git pull origin $branch ($incoming new commit(s))"
 [[ -n "$(git status --porcelain)" ]] && plan "autostash local changes (Arcane edits) across the pull"
-plan "reconcile: env-sync + link-env"
+plan "reconcile: env-sync + link-env + Homepage config sync"
 [[ $PULL_IMAGES -eq 1 ]] && plan "docker compose pull (newer images)"
 plan "redeploy all stacks with --remove-orphans"
 plan "run doctor (report)"
@@ -63,6 +64,7 @@ fi
 # --- reconcile ---------------------------------------------------------------
 "$SCRIPT_DIR/env-sync.sh" --yes
 "$SCRIPT_DIR/link-env.sh" --yes
+"$SCRIPT_DIR/make-dirs.sh" --yes
 
 # --- validate before deploying (don't ship a broken pull) --------------------
 say "Validating compose files"
