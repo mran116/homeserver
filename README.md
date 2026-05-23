@@ -633,6 +633,7 @@ running stack without triggering the rest. Every one **previews then asks to
 apply** (`--dry-run` to only preview, `--yes` for automation):
 
 ```bash
+./scripts/doctor.sh          # read-only health check — what's wrong before you deploy
 ./scripts/env-sync.sh        # append vars added to .env.example in a new version
 ./scripts/env-rebuild.sh     # rewrite .env into .env.example's clean structure
 ./scripts/gen-secrets.sh     # fill any newly-blank machine secret (DB-safe)

@@ -20,6 +20,7 @@ require_docker
 git rev-parse --git-dir >/dev/null 2>&1 || die "Not a git repository: $REPO_DIR"
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
+[[ "$branch" == "HEAD" ]] && die "Detached HEAD — check out a branch first (e.g. git checkout main)."
 dirty=0; [[ -n "$(git status --porcelain)" ]] && dirty=1
 
 plan "git pull origin $branch$([[ $dirty -eq 1 ]] && echo '  (--autostash: local edits stashed + reapplied)')"

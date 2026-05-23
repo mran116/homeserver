@@ -40,9 +40,10 @@ ask_yn() {
 ENV_FILE="${ENV_FILE:-$REPO_DIR/.env}"
 
 update_env() {
-  # update_env KEY VALUE — set (or append) KEY=VALUE in $ENV_FILE, in place
+  # update_env KEY VALUE — set (or append) KEY=VALUE in $ENV_FILE, atomically
+  # (write to a temp file in the same dir, preserve mode, then os.replace).
   python3 - "$1" "$2" "$ENV_FILE" <<'PY'
-import sys, re, pathlib
+import sys, re, os, pathlib, tempfile, shutil
 key, value, path = sys.argv[1], sys.argv[2], sys.argv[3]
 p = pathlib.Path(path)
 text = p.read_text()
@@ -50,7 +51,18 @@ if re.search(rf"(?m)^{re.escape(key)}=", text):
     text = re.sub(rf"(?m)^{re.escape(key)}=.*$", f"{key}={value}", text, count=1)
 else:
     text = text.rstrip() + f"\n{key}={value}\n"
-p.write_text(text)
+d = os.path.dirname(os.path.abspath(path)) or "."
+fd, tmp = tempfile.mkstemp(dir=d, prefix=".env.", suffix=".tmp")
+try:
+    with os.fdopen(fd, "w") as fh:
+        fh.write(text)
+    try: shutil.copymode(path, tmp)
+    except OSError: pass
+    os.replace(tmp, path)
+except BaseException:
+    try: os.unlink(tmp)
+    except OSError: pass
+    raise
 PY
 }
 
@@ -58,6 +70,13 @@ current_value() {
   # current_value KEY — echo the value of KEY in $ENV_FILE (empty if unset)
   [[ -f "$ENV_FILE" ]] || return 0
   grep -E "^${1}=" "$ENV_FILE" | head -n1 | cut -d= -f2-
+}
+
+backup_env() {
+  # backup_env — timestamped copy of $ENV_FILE (keeps history; .env.* is gitignored)
+  local b="$ENV_FILE.bak.$(date +%Y%m%d-%H%M%S)"
+  cp "$ENV_FILE" "$b"
+  say "Backed up current .env to $b"
 }
 
 load_env() {
