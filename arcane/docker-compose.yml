@@ -6,10 +6,11 @@ services:
   #
   # Default login on first run:  arcane / arcane-admin  — change it immediately.
   #
-  # Manages the docker-compose.yml files in this repo directly: the host stacks
-  # dir (STACKS_PATH in .env) is mounted at /opt/stacks (Arcane's projects
-  # directory), so UI edits and git stay in sync. bootstrap.sh sets STACKS_PATH
-  # to wherever this repo lives, so it works even if it isn't /opt/docker/stacks.
+  # Manages the docker-compose.yml files in this repo directly. Arcane REQUIRES
+  # its projects directory to be the SAME absolute path inside and outside the
+  # container, so STACKS_PATH is bind-mounted to itself and PROJECTS_DIRECTORY
+  # points at it. bootstrap.sh sets STACKS_PATH to wherever this repo lives, so
+  # Arcane discovers every stack here even if it isn't /opt/docker/stacks.
   #
   # Deploy this first — every other stack is managed through it.
   # ===========================================================================
@@ -22,12 +23,13 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${CONFIG_PATH}/arcane:/app/data
-      - ${STACKS_PATH}:/opt/stacks
+      - ${STACKS_PATH}:${STACKS_PATH}      # MUST be identical inside & out
     environment:
       - TZ=${TZ}
       - PUID=${PUID}
       - PGID=${PGID}
       - APP_URL=http://${SERVER_IP}:${ARCANE_PORT}
+      - PROJECTS_DIRECTORY=${STACKS_PATH}
       - ENCRYPTION_KEY=${ARCANE_ENCRYPTION_KEY}
       - JWT_SECRET=${ARCANE_JWT_SECRET}
     networks:
