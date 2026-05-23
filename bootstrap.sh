@@ -155,7 +155,7 @@ fi
 # User-facing / external credentials (VPN keys, third-party API keys, admin
 # user passwords) are deliberately NOT in this list — they need a human or an
 # external account.
-SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET BOOKSTACK_DB_ROOT_PASSWORD BOOKSTACK_DB_PASSWORD'
+SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET'
 
 count_blank_secrets() {
   python3 - "$SECRET_KEYS" <<'PY'
@@ -190,8 +190,6 @@ DB_DIRS = {
     "IMMICH_DB_PASSWORD":         "immich/db",
     "PAPERLESS_DB_PASSWORD":      "paperless/db",
     "GITEA_DB_PASSWORD":          "gitea/db",
-    "BOOKSTACK_DB_ROOT_PASSWORD": "bookstack/db",
-    "BOOKSTACK_DB_PASSWORD":      "bookstack/db",
 }
 text = pathlib.Path(".env").read_text()
 m = re.search(r"(?m)^CONFIG_PATH=(.*)$", text)
@@ -336,8 +334,8 @@ Next steps:
   1. Open http://${SERVER_IP}:${ARCANE_PORT:-3552} and create the Arcane admin
      (first-run login: arcane / arcane-admin — change it immediately).
   2. Deploy stacks in this order from the Arcane UI:
-       vaultwarden → infrastructure → monitoring → dashboard → ollama
-       → mediastack → household → records → knowledge → syncthing → cloud
+       vaultwarden → infrastructure → monitoring → dashboard → mediastack
+       → household → records → knowledge → syncthing → cloud
      (AdGuard is in the infrastructure stack; ntfy is in monitoring.)
   3. After the apps are up, run the key harvester:
        ./scripts/harvest-keys.sh
