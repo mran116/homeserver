@@ -640,7 +640,7 @@ apply** (`--dry-run` to only preview, `--yes` for automation):
 ./scripts/link-env.sh        # re-link the per-stack .env symlinks + STACKS_PATH
 ./scripts/make-dirs.sh       # create any missing data/media dirs
 ./scripts/create-network.sh  # (re)create the `home` docker network
-./scripts/install-cron.sh    # (re)install the maintenance cron jobs
+./scripts/schedule-maintenance.sh  # (re)install the maintenance cron jobs
 ```
 
 `env-rebuild.sh` reflows `.env` to mirror `.env.example`'s sections/order while
