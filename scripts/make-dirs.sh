@@ -40,8 +40,10 @@ dirs=("${base_dirs[@]}" "${app_dirs[@]}")
 # CONFIG_PATH, which is covered by checking CONFIG_PATH itself.
 for d in "${base_dirs[@]}"; do [[ -d "$d" ]] || require_writable "$d"; done
 for d in "${base_dirs[@]}"; do [[ -d "$d" ]] || plan "create dir $d"; done
-app_missing=0; for d in "${app_dirs[@]}"; do [[ -d "$d" ]] || app_missing=$((app_missing+1)); done
-[[ $app_missing -gt 0 ]] && plan "create $app_missing per-app config dir(s) under $CONFIG_PATH"
+# Only the dirs that DON'T exist yet — so a pre-existing dir (e.g. a live DB data
+# dir) is never re-created or re-chowned below.
+new_app_dirs=(); for d in "${app_dirs[@]}"; do [[ -d "$d" ]] || new_app_dirs+=("$d"); done
+[[ ${#new_app_dirs[@]} -gt 0 ]] && plan "create ${#new_app_dirs[@]} per-app config dir(s) under $CONFIG_PATH"
 
 # Homepage config: repo is the source of truth. Mirror ./homepage/*.yaml into
 # CONFIG_PATH/homepage whenever anything differs (Homepage hot-reloads). Its
@@ -56,11 +58,12 @@ show_plan || exit 0
 gate || exit 0
 
 mkdir -p "${dirs[@]}"
-# Best-effort: ensure the per-app dirs are owned by PUID:PGID. A no-op when this
-# already runs as that user; silently skipped when not permitted (DB dirs get
-# re-chowned by their container anyway). Leaf dirs only — never recursive.
-if [[ -n "${PUID:-}" && -n "${PGID:-}" && ${#app_dirs[@]} -gt 0 ]]; then
-  chown "$PUID:$PGID" "${app_dirs[@]}" 2>/dev/null || true
+# chown ONLY the dirs we just created — a pre-existing dir (e.g. an existing
+# database's data dir) is left exactly as its container set it, so this can never
+# disturb live data. No-op when already PUID-owned; needs root otherwise, so
+# best-effort. Never recursive.
+if [[ -n "${PUID:-}" && -n "${PGID:-}" && ${#new_app_dirs[@]} -gt 0 ]]; then
+  chown "$PUID:$PGID" "${new_app_dirs[@]}" 2>/dev/null || true
 fi
 [[ $sync_homepage -eq 1 ]] && cp dashboard/homepage/*.yaml "$CONFIG_PATH/homepage/"
 say "Directory layout ready."
