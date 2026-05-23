@@ -37,11 +37,11 @@ jobs:
     min_speed: 100          # KB/s — below this for max_strikes runs => removed
   remove_stalled:
   remove_bad_files:         # torrent-only (needs qBittorrent)
+  search_missing:           # proactively search for monitored-but-missing items
+  search_unmet_cutoff:      # search for items below their quality cutoff
   # ---- Opt-in (uncomment to enable) ----
   # remove_unmonitored:     # removes downloads for items you've unmonitored
   # remove_done_seeding:    # torrent seeding cleanup (needs target_tags/categories)
-  # search_missing:         # periodically searches for missing items (hits indexers)
-  # search_unmet_cutoff:    # searches for quality-cutoff-unmet items
 
 instances:
   sonarr:
