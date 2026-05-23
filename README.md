@@ -320,7 +320,7 @@ cd /opt/docker/stacks
 - **never generates or pre-seeds app API keys.** Each *arr creates its own key on first boot — bootstrap doesn't touch app config at all. You collect the keys *after* the apps are up (next step), which is safer: the script only ever reads app config, never writes it
 - **symlink the root `.env` into every stack folder** so Arcane and CLI both find it with no `--env-file` flag on reload
 - create the directory layout and the `home` docker network
-- seed `dashboard/homepage/*.yaml` into your config dir
+- sync `dashboard/homepage/*.yaml` into your config dir (re-synced on every `update.sh` — the repo is the source of truth)
 - optionally start Arcane
 
 After the apps are up, run `./scripts/harvest-keys.sh`. It **auto-detects** the *arr API keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) straight from each app's generated `config.xml` and writes them to `.env`, then prompts you for the keys that can only come from a UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) are pasted in by hand. Then **redeploy** the consumers (Recyclarr, Unpackerr, Homepage) so they pick up the new keys.
@@ -462,11 +462,12 @@ It only needs `CONFIG_PATH` and Docker access — no ports, no prompts. On a nor
 Both scripts are **location-independent** — they resolve the repo root from their own path and `cd` there, so you can run them from any directory.
 
 ### Homepage
-- Config source lives in `dashboard/homepage/` (this repo)
-- Runtime copy: `/opt/docker/data/homepage/` (bind-mounted into the container)
-- Edit `services.yaml` to add API keys for live widget stats
+- Config source of truth lives in `dashboard/homepage/` (this repo) — edit it here, not on the box
+- `make-dirs.sh` (run by `bootstrap.sh` and every `update.sh`) mirrors `*.yaml` into the runtime dir `/opt/docker/data/homepage/` (bind-mounted into the container); Homepage hot-reloads
+- All ports/IPs/keys come from `.env` via `HOMEPAGE_VAR_*` — never hard-code them in `services.yaml`
+- `docker.yaml` enables the Docker integration: each tile shows a **live up/down dot + CPU/RAM** (the tile stays visible, in red, when a container is down). Aggregate up/down + history is the Uptime Kuma widget
 - Edit `widgets.yaml` to add your coordinates for the weather widget
-- Changes take effect immediately — no restart needed
+- To add a service: add its tile to `services.yaml` (with `server: my-docker` + `container: <name>`), then run `./scripts/update.sh`
 
 ---
 

@@ -4,18 +4,18 @@ services:
   # HOMEPAGE - Central dashboard and service launcher
   # http://${SERVER_IP}:${HOMEPAGE_PORT}
   #
-  # Source configs live in ./homepage/ in this repo.
-  # Copy them to ${CONFIG_PATH}/homepage/ before first deploy:
-  #   cp dashboard/homepage/*.yaml ${CONFIG_PATH}/homepage/
+  # Config is the SINGLE SOURCE OF TRUTH in ./homepage/ in this repo. You never
+  # copy it by hand: scripts/make-dirs.sh (run by bootstrap AND every
+  # scripts/update.sh) mirrors ./homepage/*.yaml into ${CONFIG_PATH}/homepage/,
+  # and Homepage hot-reloads. So: edit a file here, run update.sh, done.
+  #   - Fill in API keys / logins in .env (or ./scripts/harvest-keys.sh)
+  #   - Add your coordinates in widgets.yaml for weather
+  #   - Update domain URLs in bookmarks.yaml when domain is ready
   #
-  # After deploy:
-  #   1. Fill in API keys in services.yaml
-  #   2. Add your coordinates in widgets.yaml for weather
-  #   3. Update domain URLs in bookmarks.yaml when domain is ready
-  #
-  # All port/IP/secret vars are forwarded from the root .env as
-  # HOMEPAGE_VAR_* below — services.yaml references them via
-  # {{HOMEPAGE_VAR_*}} so .env stays the single source of truth.
+  # All port/IP/secret vars are forwarded from the root .env as HOMEPAGE_VAR_*
+  # below — services.yaml references them via {{HOMEPAGE_VAR_*}} so .env stays
+  # the single source of truth. The docker.sock mount + homepage/docker.yaml let
+  # each tile show a live up/down dot + CPU/RAM (see homepage/docker.yaml).
   # ===========================================================================
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
