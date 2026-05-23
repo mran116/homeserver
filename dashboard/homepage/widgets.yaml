@@ -1,12 +1,17 @@
 ---
 # Homepage Widgets
-# Shows system stats at the top of the dashboard
+# Shows system stats + a search bar at the top of the dashboard
 
 - resources:
     cpu: true
     memory: true
-    disk: /
+    disk: /            # NOTE: shows the Homepage container's disk. To report the
+                       # host data disk, bind-mount it and point this at that path.
     label: Server
+
+- search:
+    provider: duckduckgo
+    target: _blank
 
 - datetime:
     text_size: xl
@@ -15,10 +20,12 @@
       timeStyle: short
       hour12: true
 
-- openmeteo:
-    label: Local Weather
-    latitude: YOUR_LATITUDE       # ← replace with your coordinates
-    longitude: YOUR_LONGITUDE     # ← replace with your coordinates
-    timezone: America/Chicago
-    units: imperial
-    cache: 5
+# Weather — disabled until you add your coordinates (it errors with placeholders).
+# Find yours at https://www.latlong.net, then uncomment and fill in:
+# - openmeteo:
+#     label: Local Weather
+#     latitude: 00.0000
+#     longitude: -00.0000
+#     timezone: America/Chicago
+#     units: imperial
+#     cache: 5

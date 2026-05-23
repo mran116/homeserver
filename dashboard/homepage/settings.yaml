@@ -10,6 +10,8 @@ color: slate
 
 headerStyle: clean
 target: _blank
+useEqualHeights: true
+hideVersion: true
 
 layout:
   Infrastructure:

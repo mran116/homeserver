@@ -6,7 +6,8 @@
 # of discovering it later.
 #
 # Covers:
-#   - Diun     -> "a container has an update"  (uses your existing webhook)
+#   - Diun     -> "a container has an update"  (OPTIONAL — Diun already pushes to
+#                 ntfy directly; only use this if you also want it inside HA)
 #   - Uptime Kuma -> "a service is down"       (uses the HA integration)
 #   - Low battery roundup (handy once you add sensors)
 #
@@ -15,10 +16,10 @@
 # that one too (or swap the action for your own notify service).
 # =============================================================================
 
-# A webhook trigger needs a stable, unguessable id. This MUST match the id in
-# your DIUN_NOTIF_WEBHOOK_URL on the Docker host:
+# OPTIONAL: the Diun automation below fires only if you point Diun's notifier at
+# HA's webhook instead of ntfy. The webhook_id must match that URL:
 #   http://<ha-vm-ip>:8123/api/webhook/<webhook-id>
-# Pick something random and keep the two in sync.
+# By default Diun goes straight to ntfy, so you can ignore / delete this one.
 automation:
   # ---------------------------------------------------------------------------
   # Diun image-update notifier -> notification.
