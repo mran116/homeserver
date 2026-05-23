@@ -623,6 +623,20 @@ asking you.
 all stacks in the right order — handy after a Diun update alert (`pull` then
 `up`) or for clean host-maintenance stop/start.
 
+**Targeted setup steps (live stack).** `bootstrap.sh` is the first-run
+orchestrator, but each phase is also a standalone script you can run on a
+running stack without triggering the rest. Every one **previews then asks to
+apply** (`--dry-run` to only preview, `--yes` for automation):
+
+```bash
+./scripts/env-sync.sh        # append vars added to .env.example in a new version
+./scripts/gen-secrets.sh     # fill any newly-blank machine secret (DB-safe)
+./scripts/link-env.sh        # re-link the per-stack .env symlinks + STACKS_PATH
+./scripts/make-dirs.sh       # create any missing data/media dirs
+./scripts/create-network.sh  # (re)create the `home` docker network
+./scripts/install-cron.sh    # (re)install the maintenance cron jobs
+```
+
 > **Note on UI edits:** Arcane edits compose files directly in the git tree on
 > the host. If you also develop via PRs, do significant changes in a branch/PR
 > rather than editing live on the host, to avoid `main` diverging from origin.

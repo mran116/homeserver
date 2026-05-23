@@ -18,13 +18,11 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
 ENV_FILE="$REPO_DIR/.env"
+# shellcheck source=scripts/lib/common.sh
+source "$REPO_DIR/scripts/lib/common.sh"
 
 # Deploy order: brought UP first→last, taken DOWN last→first.
 ORDER=(arcane vaultwarden infrastructure monitoring dashboard mediastack household records knowledge syncthing cloud)
-
-c_b=$'\033[1m'; c_g=$'\033[32m'; c_y=$'\033[33m'; c_r=$'\033[0m'
-say()  { printf '%s==>%s %s\n' "$c_b$c_g" "$c_r" "$*"; }
-warn() { printf '%s!!%s %s\n'  "$c_b$c_y" "$c_r" "$*"; }
 
 usage() { echo "Usage: $0 {up|down|restart|pull|status} [stack ...]"; exit 1; }
 
@@ -32,7 +30,7 @@ usage() { echo "Usage: $0 {up|down|restart|pull|status} [stack ...]"; exit 1; }
 menu() {
   # Display goes to stderr so only the chosen keyword is captured via $(menu).
   {
-    echo "${c_b}stack.sh — pick an action:${c_r}"
+    echo "${c_bold}stack.sh — pick an action:${c_reset}"
     echo "  1) up       start all stacks"
     echo "  2) down     stop all stacks"
     echo "  3) restart  down then up"
