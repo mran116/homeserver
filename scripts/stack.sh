@@ -69,7 +69,7 @@ run_each() {
     [[ -f "$s/docker-compose.yml" ]] || { warn "skip $s (no docker-compose.yml)"; continue; }
     say "$action: $s"
     case "$action" in
-      up)     dc "$s" up -d        || warn "$s failed" ;;
+      up)     dc "$s" up -d ${STACK_UP_ARGS:-} || warn "$s failed" ;;
       down)   dc "$s" down         || warn "$s failed" ;;
       pull)   dc "$s" pull         || warn "$s failed" ;;
       status) dc "$s" ps           || true ;;
