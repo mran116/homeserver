@@ -481,13 +481,19 @@ Both scripts are **location-independent** — they resolve the repo root from th
 ```
 1. Buy a domain at cloudflare.com (~$10/year)
 2. Zero Trust → Networks → Tunnels → Create tunnel → copy the token
-3. Add CLOUDFLARE_TUNNEL_TOKEN to .env
+3. Add CLOUDFLARE_TUNNEL_TOKEN (+ DOMAIN, CLOUDFLARE_DNS_API_TOKEN) to .env
 4. Uncomment cloudflared in infrastructure/docker-compose.yml
-5. Add hostname routes in the Cloudflare dashboard:
-   jellyfin.yourdomain.com    → http://jellyfin:8096
-   vaultwarden.yourdomain.com → http://vaultwarden:80
-   navidrome.yourdomain.com   → http://navidrome:4533
+5. Add public-hostname routes in the Cloudflare dashboard:
+   requests.yourdomain.com   → http://seerr:5055
+   photos.yourdomain.com     → http://immich-server:3001
+   audiobooks.yourdomain.com → http://audiobookshelf:80
+   music.yourdomain.com      → http://navidrome:4533
+   vault.yourdomain.com      → http://vaultwarden:80   (Access on /admin ONLY)
 6. Push, `git pull` on host, redeploy in Arcane
+
+NOTE: Jellyfin is NOT tunneled — streaming video over Cloudflare breaks their
+ToS. Serve it direct (DNS-only A record + 443 → NPM, with the ddns-updater for a
+dynamic IP) or over Tailscale. Full design: docs/network-and-remote-access.md
 ```
 
 ### Matrix — private encrypted messaging

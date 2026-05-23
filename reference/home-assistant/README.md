@@ -62,6 +62,29 @@ If you move Homepage to a hostname, add it to `HOMEPAGE_ALLOWED_HOSTS` in
 > integrations (calendar, chores, shopping, lights, weather). They pull from the
 > same services — you don't rebuild Homepage in HA.
 
+## Reverse proxy & external access
+
+HA reaches the Docker services over the LAN (it's a separate VM, not on the
+`home` network), so point its integrations at **hostnames**, not `IP:port` —
+they survive IP changes and get valid TLS. Full design:
+[`docs/network-and-remote-access.md`](../../docs/network-and-remote-access.md).
+
+Put HA itself behind Nginx Proxy Manager (`home.<domain>` → `http://<ha-vm-ip>:8123`)
+and tell HA to trust the proxy. In `/config/configuration.yaml`:
+
+```yaml
+homeassistant:
+  external_url: "https://home.<domain>"   # CHANGE ME
+  internal_url: "https://home.<domain>"   # CHANGE ME (split-horizon: same name)
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - <NPM container/LAN IP>               # CHANGE ME — the Nginx Proxy Manager host
+```
+
+Reach HA from outside over **Tailscale**, not the public internet — it's an
+admin surface, so it stays off the Cloudflare Tunnel.
+
 ## Prerequisites (already in the main README's HA section)
 
 - HACS installed, with the **Donetick, Mealie, KitchenOwl** integrations.
