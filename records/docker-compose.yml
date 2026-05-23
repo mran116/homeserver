@@ -58,6 +58,44 @@ services:
       - home
 
   # ===========================================================================
+  # PAPERLESS-AI - Auto title / tag / classify scans using local Ollama
+  # http://${SERVER_IP}:${PAPERLESS_AI_PORT}
+  #
+  # First-run setup (web UI wizard):
+  #   - Paperless URL:  http://paperless:8000
+  #   - Paperless API token: create in Paperless (Settings -> "API Token"),
+  #     paste here or set PAPERLESS_AI_TOKEN in .env
+  #   - AI provider: Ollama   |   URL: http://ollama:11434   |   model: qwen2.5:7b
+  #
+  # VALUE TIP: in the UI, restrict it to your EXISTING tags (don't let it invent
+  # tags) — that keeps tagging clean. Its big wins are titles + correspondent +
+  # document type. Runs in the background, so CPU speed is fine.
+  # ===========================================================================
+  paperless-ai:
+    image: clusterzx/paperless-ai:latest
+    container_name: paperless-ai
+    restart: unless-stopped
+    ports:
+      - "${PAPERLESS_AI_PORT}:3000"
+    volumes:
+      - ${CONFIG_PATH}/paperless-ai:/app/data
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - PAPERLESS_API_URL=http://paperless:8000/api
+      - PAPERLESS_API_TOKEN=${PAPERLESS_AI_TOKEN}
+      - AI_PROVIDER=ollama
+      - OLLAMA_API_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:7b
+      - SCAN_INTERVAL=*/30 * * * *
+      - RAG_SERVICE_ENABLED=false
+    depends_on:
+      - paperless
+    networks:
+      - home
+
+  # ===========================================================================
   # STIRLING PDF - PDF manipulation toolkit
   # http://${SERVER_IP}:${STIRLING_PORT}
   # Merge, split, compress, convert, sign PDFs

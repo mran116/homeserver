@@ -1,0 +1,57 @@
+services:
+
+  # ===========================================================================
+  # OLLAMA - Local LLM runtime (free, open source, runs on CPU)
+  # http://${SERVER_IP}:${OLLAMA_PORT}
+  #
+  # Powers Recommendarr's AI (and HA Assist later) with NO cloud and NO API
+  # fees. Your box has no GPU but plenty of cores/RAM, so it runs on CPU.
+  #
+  # After deploying, pull a model (one-time, downloads a few GB):
+  #   docker exec -it ollama ollama pull qwen2.5:7b      # good quality
+  #   docker exec -it ollama ollama pull llama3.2:3b     # smaller / snappier
+  #
+  # Point Recommendarr at it (Settings -> AI):
+  #   API URL:  http://ollama:11434/v1   (OpenAI-compatible)
+  #   Model:    qwen2.5:7b
+  #   API key:  ollama   (any non-empty value works)
+  #
+  # GPU later? Uncomment the deploy block below and install the NVIDIA
+  # container toolkit (and pass the GPU through to this VM in Proxmox).
+  # ===========================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      - TZ=${TZ}
+      # Stability tuning: release the model from RAM after 5 min idle, and only
+      # ever run one inference / one loaded model at a time so it can't spike.
+      - OLLAMA_KEEP_ALIVE=5m
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+    volumes:
+      - ${CONFIG_PATH}/ollama:/root/.ollama
+    ports:
+      - "${OLLAMA_PORT}:11434"
+    networks:
+      - home
+    restart: unless-stopped
+    # Hard caps so Ollama can never starve the rest of the stack: even mid-
+    # inference, ~4 cores and ~37GB stay free for everything else. (Honored by
+    # `docker compose up` with Compose v2.) Use a 7B-or-smaller model on CPU.
+    deploy:
+      resources:
+        limits:
+          cpus: "6.0"
+          memory: 10G
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+networks:
+  home:
+    external: true

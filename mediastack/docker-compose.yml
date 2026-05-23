@@ -329,7 +329,40 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
+  # CLEANUPARR - Auto-clean stalled / failed / orphaned downloads
+  # http://${SERVER_IP}:${CLEANUPARR_PORT}
+  #
+  # Stops you babysitting the queue: it removes stuck downloads and tells the
+  # *arr to grab an alternative. Configure the Sonarr/Radarr/Lidarr/Whisparr +
+  # download-client connections in its web UI. qBittorrent rides on gluetun's
+  # network, so use http://gluetun:8080 (not http://qbittorrent) for it there.
+  # ===========================================================================
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: cleanuparr
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - PORT=11011
+    volumes:
+      - ${CONFIG_PATH}/cleanuparr:/config
+    ports:
+      - ${CLEANUPARR_PORT}:11011
+    networks:
+      - home
+    restart: unless-stopped
+
+  # ===========================================================================
   # RECOMMENDARR - AI media recommendations based on Jellyfin history
+  # http://${SERVER_IP}:${RECOMMENDARR_PORT}
+  #
+  # Point it at your LOCAL Ollama in the UI (Settings -> AI Service) — no API
+  # fees, nothing leaves the house:
+  #   API URL:  http://ollama:11434/v1     (OpenAI-compatible)
+  #   Model:    qwen2.5:7b                 (pull it first on the ollama stack)
+  #   API key:  ollama                     (any non-empty value)
+  # Then connect Sonarr/Radarr (URL http://sonarr:8989 etc. + their API keys).
   # ===========================================================================
   recommendarr:
     image: tannermiddleton/recommendarr:latest

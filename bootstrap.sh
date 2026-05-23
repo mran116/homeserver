@@ -155,7 +155,7 @@ fi
 # User-facing / external credentials (VPN keys, third-party API keys, admin
 # user passwords) are deliberately NOT in this list — they need a human or an
 # external account.
-SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET'
+SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET BOOKSTACK_DB_ROOT_PASSWORD BOOKSTACK_DB_PASSWORD'
 
 count_blank_secrets() {
   python3 - "$SECRET_KEYS" <<'PY'
@@ -185,11 +185,13 @@ keys = set(sys.argv[1].split())
 # So if the data dir already exists we must NOT invent a new password — that
 # would orphan the DB and break the app. Leave it blank for the human instead.
 DB_DIRS = {
-    "NPM_DB_ROOT_PASSWORD":  "npm/db",
-    "NPM_DB_PASSWORD":       "npm/db",
-    "IMMICH_DB_PASSWORD":    "immich/db",
-    "PAPERLESS_DB_PASSWORD": "paperless/db",
-    "GITEA_DB_PASSWORD":     "gitea/db",
+    "NPM_DB_ROOT_PASSWORD":       "npm/db",
+    "NPM_DB_PASSWORD":            "npm/db",
+    "IMMICH_DB_PASSWORD":         "immich/db",
+    "PAPERLESS_DB_PASSWORD":      "paperless/db",
+    "GITEA_DB_PASSWORD":          "gitea/db",
+    "BOOKSTACK_DB_ROOT_PASSWORD": "bookstack/db",
+    "BOOKSTACK_DB_PASSWORD":      "bookstack/db",
 }
 text = pathlib.Path(".env").read_text()
 m = re.search(r"(?m)^CONFIG_PATH=(.*)$", text)
@@ -250,7 +252,7 @@ set +a
 # ---- directories ------------------------------------------------------------
 say "Creating directory layout"
 mkdir -p "$CONFIG_PATH" "$CONFIG_PATH/homepage" \
-         "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH"
+         "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$SYNC_PATH"
 
 # Seed homepage configs only if the target is empty (don't clobber user edits)
 if [[ -z "$(ls -A "$CONFIG_PATH/homepage" 2>/dev/null)" ]]; then
@@ -334,8 +336,9 @@ Next steps:
   1. Open http://${SERVER_IP}:${ARCANE_PORT:-3552} and create the Arcane admin
      (first-run login: arcane / arcane-admin — change it immediately).
   2. Deploy stacks in this order from the Arcane UI:
-       vaultwarden → infrastructure → monitoring → dashboard
-       → mediastack → household → records → cloud
+       vaultwarden → infrastructure → adguard → monitoring → dashboard
+       → ollama → mediastack → household → records → knowledge
+       → syncthing → ntfy → cloud
   3. After the apps are up, run the key harvester:
        ./scripts/harvest-keys.sh
      It auto-detects the *arr keys from each app's config.xml and prompts
