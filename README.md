@@ -843,6 +843,23 @@ cp mediastack/docker-compose.override.yml.example mediastack/docker-compose.over
 tracked file changes and no vendor lock-in. (Jellyfin also mounts the whole media
 root at `/data`, so any folder layout works — add libraries in the UI.)
 
+### Media that lives outside `MEDIA_PATH`
+The base compose mounts your whole library once (`${MEDIA_PATH}:/data`), so the
+apps only see folders under `MEDIA_PATH`. If some media lives elsewhere (a second
+drive, a NAS share), add an extra mount in the **same** gitignored override.
+Compose *appends* to the base volumes, so you list only the new mount — not the
+base ones:
+```yaml
+services:
+  audiobookshelf:
+    volumes:
+      - /mnt/storage/audiobooks:/data/audiobooks   # nests inside /data
+```
+The longer path wins for that subtree, so `/data/audiobooks` shows the external
+folder while the rest of `/data` still comes from `MEDIA_PATH`; point the app's
+library at `/data/audiobooks`. Confirm the merged result with
+`cd mediastack && docker compose config` before deploying.
+
 ### Wall tablet
 - Any Android tablet with Fully Kiosk Browser (~$7)
 - Or iPad with Guided Access (built-in, free)
