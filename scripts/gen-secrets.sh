@@ -77,20 +77,24 @@ if [[ -n "$report" ]]; then
   done <<<"$report"
 fi
 
-# Arcane keys want a proper base64 32-byte value (openssl), not the generic gen.
+# Arcane keys want a proper base64 32-byte value. Prefer openssl; fall back to
+# python3 (already required above) so a box WITHOUT openssl still gets real keys
+# instead of silently-blank ones — Arcane won't start with empty crypto keys.
+gen_b64_32() {
+  if command -v openssl >/dev/null; then openssl rand -base64 32
+  else python3 -c 'import base64, os; print(base64.b64encode(os.urandom(32)).decode())'; fi
+}
 arcane_keys=()
-if command -v openssl >/dev/null; then
-  for k in ARCANE_ENCRYPTION_KEY ARCANE_JWT_SECRET; do
-    if [[ -z "$(current_value "$k")" ]]; then arcane_keys+=("$k"); plan "generate $k (openssl base64 32)"; fi
-  done
-fi
+for k in ARCANE_ENCRYPTION_KEY ARCANE_JWT_SECRET; do
+  if [[ -z "$(current_value "$k")" ]]; then arcane_keys+=("$k"); plan "generate $k (base64 32)"; fi
+done
 
 show_plan || exit 0
 gate || exit 0
 
 secrets_pass apply >/dev/null
 if [[ ${#arcane_keys[@]} -gt 0 ]]; then
-  for k in "${arcane_keys[@]}"; do update_env "$k" "$(openssl rand -base64 32)"; done
+  for k in "${arcane_keys[@]}"; do update_env "$k" "$(gen_b64_32)"; done
 fi
 
 # Report guarded keys prominently — the user must act on these.

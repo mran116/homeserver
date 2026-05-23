@@ -29,7 +29,10 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - HOMEPAGE_ALLOWED_HOSTS=${SERVER_IP}:${HOMEPAGE_PORT}
+      # Defaults to SERVER_IP:HOMEPAGE_PORT. Browsing by hostname / Tailscale name
+      # / reverse-proxy domain? Set HOMEPAGE_ALLOWED_HOSTS in .env (comma-list) or
+      # Homepage serves a blank "host validation failed" page.
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS:-${SERVER_IP}:${HOMEPAGE_PORT}}
 
       # ---- Port/IP aliases (forwarded from .env) ----
       - HOMEPAGE_VAR_SERVER_IP=${SERVER_IP}

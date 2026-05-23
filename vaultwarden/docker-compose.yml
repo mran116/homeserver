@@ -5,11 +5,11 @@ services:
   # http://${SERVER_IP}:${VAULTWARDEN_PORT}
   # Standalone stack - critical service, isolated from everything else
   #
-  # First login:
-  #   1. Go to /admin with ADMIN_TOKEN to set up
-  #   2. Create your account
-  #   3. Set VAULTWARDEN_SIGNUPS_ALLOWED=false in .env
-  #   4. Enable 2FA immediately
+  # First login (do this ONCE):
+  #   1. Set VAULTWARDEN_SIGNUPS_ALLOWED=true in .env and redeploy this stack
+  #   2. Open http://${SERVER_IP}:${VAULTWARDEN_PORT} and create your account
+  #   3. Set VAULTWARDEN_SIGNUPS_ALLOWED=false and redeploy (locks out new signups)
+  #   4. Enable 2FA immediately; use /admin (ADMIN_TOKEN) for server settings
   #
   # Mobile/Desktop: Use official Bitwarden app
   #   Point server URL to http://${SERVER_IP}:${VAULTWARDEN_PORT}
