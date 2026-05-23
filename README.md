@@ -34,7 +34,7 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── infrastructure/          Nginx Proxy Manager + AdGuard Home DNS (+ borgmatic/tailscale/cloudflare, commented)
 │   ├── monitoring/              Uptime Kuma + Dozzle + Diun + ntfy
 │   ├── dashboard/               Homepage (compose + homepage/ configs)
-│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Cleanuparr
+│   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Decluttarr
 │   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget
 │   ├── records/                 Paperless-ngx + Stirling PDF
 │   ├── knowledge/               Memos (quick notes)
@@ -134,7 +134,7 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | Seerr | Family media requests — family members search and request movies and shows without needing access to Radarr or Sonarr. You get notified, Radarr/Sonarr grabs it automatically, and it appears in Jellyfin. Essential for families. |
 | Recyclarr | Automatically syncs TRaSH Guides quality profiles to Sonarr and Radarr. |
 | Unpackerr | Automatically extracts completed downloads for Sonarr/Radarr/Lidarr. |
-| Cleanuparr | Auto-removes stalled, failed, and orphaned downloads and tells the *arr to grab an alternative — no more babysitting the queue. |
+| Decluttarr | Headless queue cleaner — removes stalled, failed, slow, or orphaned downloads (torrents **and** usenet) and has the *arr grab an alternative. No babysitting the queue. |
 | Flaresolverr | Cloudflare bypass for Prowlarr indexers that require it. |
 
 ---
@@ -825,9 +825,14 @@ Local Network (192.168.1.0/24)
 - Media: NAS with RAID for redundancy
 
 ### For Jellyfin hardware transcoding
-- Intel CPU with Quick Sync (most efficient)
-- Or NVIDIA GPU with NVENC support
-- Uncomment the hardware transcoding section in `mediastack/docker-compose.yml`
+- **Intel Quick Sync (default, most efficient):** the `jellyfin` service ships with
+  `/dev/dri` passthrough enabled — set `RENDER_GID` in `.env`
+  (`getent group render | cut -d: -f3`) and pick QSV in Jellyfin.
+- **NVIDIA NVENC:** comment out the Intel `devices:`/`group_add:` lines and
+  uncomment the NVIDIA block beside them (needs the NVIDIA Container Toolkit on
+  the host); pick NVENC in Jellyfin.
+- Both options live side by side in `mediastack/docker-compose.yml` — switching
+  GPUs is a comment swap, no vendor lock-in.
 
 ### Wall tablet
 - Any Android tablet with Fully Kiosk Browser (~$7)
