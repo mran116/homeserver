@@ -9,8 +9,25 @@ doing it. Flags:
 - `--dry-run` — preview only, change nothing
 - `--yes` — apply without prompting (used by cron / `bootstrap.sh --yes`)
 
-`bootstrap.sh` (in the repo root) is the first-run orchestrator — it runs the
-setup steps below in order. On a live stack you run individual ones as needed.
+## When to run what
+
+| Situation | Run |
+|---|---|
+| Brand-new bare Ubuntu/Debian box | `./scripts/setup-fresh.sh` (installs Docker etc., then bootstrap) |
+| First-time setup of this repo on a host | `./bootstrap.sh` — **once** |
+| Routine "pull latest + redeploy" on a running host | `./scripts/update.sh` |
+| "Is anything wrong / what changed?" | `./scripts/doctor.sh` (read-only) |
+| New vars appeared in `.env.example` after a pull | `./scripts/env-sync.sh` |
+| Stack `.env` symlink missing / `STACKS_PATH` wrong | `./scripts/link-env.sh` |
+| A blank machine secret needs generating | `./scripts/gen-secrets.sh` |
+| Tidy `.env` back into the template layout | `./scripts/env-rebuild.sh` |
+| (Re)install the maintenance cron jobs | `./scripts/schedule-maintenance.sh` |
+
+**`bootstrap.sh` is for the first run.** It's the orchestrator that runs the setup
+steps below in order. It's safe to re-run (idempotent), but on a **live** stack
+you rarely need to — run the one specific step instead, or `./scripts/update.sh`
+to pull + redeploy. **`doctor.sh` will tell you which step to run** if something's
+off.
 
 ## Setup steps
 
