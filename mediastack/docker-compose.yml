@@ -329,29 +329,42 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # CLEANUPARR - Auto-clean stalled / failed / orphaned downloads
-  # http://${SERVER_IP}:${CLEANUPARR_PORT}
+  # DECLUTTARR - Auto-clean stalled / failed / slow / orphaned downloads
   #
-  # Stops you babysitting the queue: it removes stuck downloads and tells the
-  # *arr to grab an alternative. Configure the Sonarr/Radarr/Lidarr/Whisparr +
-  # download-client connections in its web UI. qBittorrent rides on gluetun's
-  # network, so use http://gluetun:8080 (not http://qbittorrent) for it there.
+  # Headless (no web UI). Watches the *arr queues and removes downloads that
+  # stall, fail, import-fail, go missing, or run too slow, then has the *arr
+  # grab an alternative — for BOTH torrents (qBittorrent) AND usenet (SABnzbd),
+  # which is why it replaces Cleanuparr here. Config is the versioned
+  # decluttarr/config.yaml; API keys are pulled from the env below (no secrets
+  # in the file).
+  #
+  # qBittorrent rides Gluetun's network, so config.yaml points at
+  # http://gluetun:8080. The download-client `name:` in config.yaml MUST match
+  # the client name set in each *arr (Settings -> Download Clients) or Decluttarr
+  # can't match them.
+  #
+  # SAFETY: ships with general.test_run=true — it only LOGS what it would remove.
+  # Confirm connections in `docker logs decluttarr`, then set test_run=false in
+  # mediastack/decluttarr/config.yaml and redeploy.
   # ===========================================================================
-  cleanuparr:
-    image: ghcr.io/cleanuparr/cleanuparr:latest
-    container_name: cleanuparr
+  decluttarr:
+    image: ghcr.io/manimatter/decluttarr:latest
+    container_name: decluttarr
+    restart: unless-stopped
     environment:
       - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - PORT=11011
+      # Referenced by config.yaml via ${VAR} substitution (keeps secrets out of git).
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - RADARR_API_KEY=${RADARR_API_KEY}
+      - LIDARR_API_KEY=${LIDARR_API_KEY}
+      - WHISPARR_API_KEY=${WHISPARR_API_KEY}
+      - SABNZBD_API_KEY=${SABNZBD_API_KEY}
+      - APP_USERNAME=${APP_USERNAME}
+      - APP_PASSWORD=${APP_PASSWORD}
     volumes:
-      - ${CONFIG_PATH}/cleanuparr:/config
-    ports:
-      - ${CLEANUPARR_PORT}:11011
+      - ./decluttarr/config.yaml:/app/config/config.yaml:ro
     networks:
       - home
-    restart: unless-stopped
 
   # ===========================================================================
   # NAVIDROME - Music server
