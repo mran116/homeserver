@@ -95,12 +95,17 @@ services:
       - ${MEDIA_PATH}/adult/series:/data/adult/series
       - ${MEDIA_PATH}/books:/data/books
       - ${MEDIA_PATH}/audiobooks:/data/audiobooks
-    # Hardware transcoding - uncomment after running setup-transcoding.sh
-    # devices:
-    #   - /dev/dri/renderD128:/dev/dri/renderD128
-    # group_add:
-    #   - "render"
-    #   - "video"
+    # Intel Quick Sync / VAAPI hardware transcoding (iGPU at /dev/dri).
+    # 1) The Docker host (or VM) must expose /dev/dri — confirm: ls -l /dev/dri
+    #    (on Proxmox, the iGPU must be passed through to this VM first).
+    # 2) Set RENDER_GID in .env to the host's render group:
+    #       getent group render | cut -d: -f3      (blank => falls back to "render")
+    # 3) Enable it in Jellyfin: Dashboard -> Playback -> Transcoding ->
+    #    Hardware acceleration: Intel QuickSync (QSV), device /dev/dri/renderD128.
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID:-render}"
     ports:
       - ${JELLYFIN_PORT}:8096
     networks:
