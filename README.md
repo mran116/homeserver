@@ -584,6 +584,36 @@ changes is cheap insurance.
 
 ---
 
+## 🎛️ Day-to-Day Management
+
+You already have the tools (Arcane, Homepage, Uptime Kuma, Dozzle, Diun→ntfy,
+`scripts/stack.sh`). A few config-only wins make running it lower-effort:
+
+**Manage it from anywhere (Tailscale).** Enable the commented Tailscale block in
+`infrastructure/docker-compose.yml`, set `TS_AUTHKEY` in `.env`
+(login.tailscale.com → Settings → Keys), redeploy, and approve the subnet route
+in the Tailscale admin. Now Arcane / Homepage / SSH are reachable from your phone
+anywhere — no ports opened. (FOSS alternative: Headscale.)
+
+**Clean local URLs instead of `IP:port`.** Two steps:
+1. AdGuard → **Filters → DNS rewrites**: add `*.home` → your server IP.
+2. NPM → **Hosts → Proxy Hosts → Add**: e.g. `jellyfin.home` → `http://jellyfin:8096`.
+Repeat per service. Now it's `jellyfin.home`, `paperless.home`, etc.
+
+**Family "is it up?" page.** Uptime Kuma → **Status Pages → New** → add your
+monitors → publish. Share the link so the household can self-check instead of
+asking you.
+
+**Bulk operations.** `./scripts/stack.sh up|down|restart|pull|status` runs across
+all stacks in the right order — handy after a Diun update alert (`pull` then
+`up`) or for clean host-maintenance stop/start.
+
+> **Note on UI edits:** Arcane edits compose files directly in the git tree on
+> the host. If you also develop via PRs, do significant changes in a branch/PR
+> rather than editing live on the host, to avoid `main` diverging from origin.
+
+---
+
 ## 🔒 Security Checklist
 
 - [ ] Strong master password on Vaultwarden
