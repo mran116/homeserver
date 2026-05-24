@@ -136,12 +136,13 @@ services:
 
   # ===========================================================================
   # CLOUDFLARE TUNNEL - Secure public access, zero open ports
-  # COMMENTED OUT - Enable after stack is tested and working
+  # Defined below but INACTIVE by default — it only runs when COMPOSE_PROFILES=tunnel
+  # is set in .env, so an install without a tunnel never starts it. No file edits.
   # Full design: docs/network-and-remote-access.md
   # Setup:
   #   1. Buy domain at cloudflare.com (~$10/year)
   #   2. Zero Trust → Networks → Tunnels → Create tunnel
-  #   3. Copy token to CLOUDFLARE_TUNNEL_TOKEN in .env
+  #   3. Put the token in CLOUDFLARE_TUNNEL_TOKEN in .env, and set COMPOSE_PROFILES=tunnel
   #   4. Add public-hostname routes in the Cloudflare dashboard (cloudflared is
   #      on the `home` network, so it reaches services by container name):
   #      requests.${DOMAIN}   → http://seerr:5055
@@ -154,15 +155,18 @@ services:
   #   through the tunnel — streaming video over Cloudflare violates their ToS.
   #   See the ddns-updater below for the dynamic-IP A record.
   # ===========================================================================
-  # cloudflared:
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: cloudflared
-  #   restart: unless-stopped
-  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-  #   environment:
-  #     - TZ=${TZ}
-  #   networks:
-  #     - home
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    # Runs ONLY when COMPOSE_PROFILES=tunnel is set in .env (otherwise defined but
+    # inactive — no crash on installs without a token). No commenting needed.
+    profiles: ["tunnel"]
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    environment:
+      - TZ=${TZ}
+    networks:
+      - home
 
   # ===========================================================================
   # DDNS-UPDATER - keep the Jellyfin (direct) A record pointed at a dynamic WAN IP
