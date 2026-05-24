@@ -83,11 +83,13 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # JELLYFIN - Media server
+  # JELLYFIN - Media server (default). Pick your media server via COMPOSE_PROFILES
+  # in .env: "jellyfin" (default), "plex", or both. See the Plex block below.
   # ===========================================================================
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
+    profiles: ["jellyfin"]
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -103,6 +105,30 @@ services:
     # then uncomment your GPU. Hosts without a GPU just run software transcoding.
     ports:
       - ${JELLYFIN_PORT}:8096
+    networks:
+      - home
+    restart: unless-stopped
+
+  # ===========================================================================
+  # PLEX - Media server (alternative to Jellyfin). OFF unless COMPOSE_PROFILES
+  # includes "plex". First run: grab a claim token at https://plex.tv/claim
+  # (valid ~4 min) and set PLEX_CLAIM in .env, or claim it in the web UI later.
+  # ===========================================================================
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    profiles: ["plex"]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - VERSION=docker
+      - PLEX_CLAIM=${PLEX_CLAIM:-}
+    volumes:
+      - ${CONFIG_PATH}/plex:/config
+      - ${MEDIA_PATH}:/data
+    ports:
+      - ${PLEX_PORT:-32400}:32400
     networks:
       - home
     restart: unless-stopped
