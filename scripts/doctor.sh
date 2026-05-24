@@ -162,6 +162,43 @@ else
   ok "no obvious :53 conflict"
 fi
 
+say "Stack profile"
+if [[ -f .stacks.local ]]; then
+  denied="$("$SCRIPT_DIR/stacks.sh" denied-list 2>/dev/null | tr '\n' ' ' | sed 's/  *$//')"
+  pending="$("$SCRIPT_DIR/stacks.sh" pending-list 2>/dev/null | tr '\n' ' ' | sed 's/  *$//')"
+  if [[ -z "$denied" ]]; then ok "no stacks excluded"
+  else printf '  %s·%s excluded from bulk deploy: %s  (hs stacks enable <name>)\n' "$c_dim" "$c_reset" "$denied"; fi
+  [[ -n "$pending" ]] && note "new/undecided stack(s): $pending  (run 'hs stacks reconcile')"
+  # Flag (don't remove) .env vars now unused because their only stack is disabled.
+  if [[ -n "$denied" && -f "$ENV_FILE" ]]; then
+    while read -r var stk; do
+      [[ -n "$var" ]] && printf '  %s·%s %s is set but unused (%s disabled)\n' "$c_dim" "$c_reset" "$var" "$stk"
+    done < <(python3 - "$ENV_FILE" "$denied" <<'PY'
+import sys, re, glob, pathlib
+env_path, denied = sys.argv[1], set(sys.argv[2].split())
+env = {}
+for ln in pathlib.Path(env_path).read_text().splitlines():
+    m = re.match(r'^([A-Z0-9_]+)=(.*)$', ln)
+    if m: env[m.group(1)] = re.split(r'\s+#', m.group(2), 1)[0].strip()
+refs = {}
+for f in glob.glob('*/docker-compose.yml'):
+    stack = pathlib.Path(f).parent.name
+    for ln in pathlib.Path(f).read_text().splitlines():
+        if ln.lstrip().startswith('#'):
+            continue
+        for m in re.finditer(r'\$\{([A-Z0-9_]+)', ln):
+            refs.setdefault(m.group(1), set()).add(stack)
+for var in sorted(refs):
+    st = refs[var]
+    if st and st <= denied and env.get(var):   # referenced ONLY by denied stacks, and set
+        print(f"{var} {','.join(sorted(st))}")
+PY
+)
+  fi
+else
+  ok "all stacks deploy (no profile yet)"
+fi
+
 echo
 if [[ $FAILS -gt 0 ]]; then die "$FAILS problem(s), $WARNS warning(s). Fix the ✗ items above."; fi
 [[ $WARNS -gt 0 ]] && say "Healthy with $WARNS warning(s)." || say "All checks passed."

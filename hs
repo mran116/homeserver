@@ -34,6 +34,7 @@ EVERYDAY
   hs status [stack]            docker compose ps for each stack
   hs pull [stack]              pull newer images
   hs logs <stack|container>    tail logs (-f to follow); stack = compose, else docker
+  hs stacks [enable|disable|reconcile]  choose which stacks deploy
 
 SETUP (first time)
   hs setup [--fresh]           run bootstrap (--fresh: full host setup on a new box)
@@ -91,6 +92,7 @@ case "$cmd" in
     fi ;;
   secrets)               run gen-secrets.sh "$@" ;;
   keys)                  run harvest-keys.sh "$@" ;;
+  stacks)                run stacks.sh "$@" ;;
   network)               run create-network.sh "$@" ;;
   cron)                  run schedule-maintenance.sh "$@" ;;
   hooks)                 run install-hooks.sh "$@" ;;

@@ -13,7 +13,7 @@ _hs_root() {
 _hs() {
   local cur cmds first root stacks
   cur="${COMP_WORDS[COMP_CWORD]}"
-  cmds="update doctor up down restart pull status logs env secrets keys cron hooks network setup install help"
+  cmds="update doctor up down restart pull status logs stacks env secrets keys cron hooks network setup install help"
 
   if (( COMP_CWORD == 1 )); then
     COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
@@ -29,6 +29,15 @@ _hs() {
       root="$(_hs_root)" || return
       stacks="$(cd "$root" 2>/dev/null && for d in */docker-compose.yml; do [ -e "$d" ] && echo "${d%/*}"; done)"
       COMPREPLY=( $(compgen -W "$stacks" -- "$cur") )
+      ;;
+    stacks)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=( $(compgen -W "status enable disable reconcile" -- "$cur") )
+      else
+        root="$(_hs_root)" || return
+        stacks="$(cd "$root" 2>/dev/null && for d in */docker-compose.yml; do [ -e "$d" ] && echo "${d%/*}"; done)"
+        COMPREPLY=( $(compgen -W "$stacks" -- "$cur") )
+      fi
       ;;
   esac
 }
