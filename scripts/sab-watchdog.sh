@@ -2,8 +2,9 @@
 # =============================================================================
 # sab-watchdog.sh — auto-recover a stalled SABnzbd.
 #
-# SABnzbd sometimes wedges with downloads stuck at 0 B/s until the container is
-# restarted (hung news-server connections). This polls SAB's API and, on a
+# SABnzbd sometimes wedges until the container is restarted — either stuck at
+# 0 B/s, or frozen showing traffic/speed while making NO real progress (hung
+# news-server connections, a wedged write). This polls SAB's API and, on a
 # *genuine* stall, tries a soft pause->resume first, then restarts the container
 # only if that fails. Designed to run from cron every ~5 minutes.
 #
@@ -12,8 +13,11 @@
 #     Verifying / Repairing / Extracting / Running scripts — never count)
 #   - queue is NOT paused                      (user pause / disk-full pause skip)
 #   - there is work left (mbleft > 0)
-#   - speed is ~0 (< 1 KB/s)
-#   - the above held for STALL_MINUTES (debounce; any healthy poll resets it)
+#   - mbleft is UNCHANGED since the last poll (a frozen SAB shows a non-zero
+#     speed but makes no real progress). ANY change resets it — downloading
+#     lowers mbleft, queuing more raises it; either way it's "alive". On the
+#     first poll (no baseline yet) speed ~0 (< 1 KB/s) stands in.
+#   - the above held for STALL_MINUTES (debounce; any change resets the strikes)
 #   - an unreachable API is treated as "no action" (won't restart a SAB you
 #     stopped on purpose or one that's mid-deploy)
 # After any action the strike counter resets (cooldown -> no restart loops).
@@ -49,11 +53,15 @@ STATE="${CONFIG_PATH:-/opt/docker/data}/sab-watchdog.state"
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
-# check — print verdict: "STALLED ..." | "OK ..." | "UNREACHABLE ..."
+# check PREV_MBLEFT — print verdict: "STALLED ..." | "OK ..." | "UNREACHABLE ..."
+# A stall = actively downloading but mbleft is UNCHANGED versus PREV_MBLEFT (a
+# frozen SAB). Any change — down (progress) or up (more queued) — is "alive".
+# PREV empty (first poll, or an old state file) falls back to the speed signal.
 check() {
-  python3 - "$API" "$SABNZBD_API_KEY" <<'PY'
+  python3 - "$API" "$SABNZBD_API_KEY" "${1:-}" <<'PY'
 import sys, json, urllib.request, urllib.parse
 api, key = sys.argv[1], sys.argv[2]
+prev = sys.argv[3] if len(sys.argv) > 3 else ''
 url = api + '?' + urllib.parse.urlencode({'mode': 'queue', 'output': 'json', 'apikey': key})
 try:
     with urllib.request.urlopen(url, timeout=15) as r:
@@ -66,7 +74,14 @@ def num(v):
     try: return float(v)
     except (TypeError, ValueError): return 0.0
 kbps, mbleft = num(q.get('kbpersec')), num(q.get('mbleft'))
-stalled = status == 'Downloading' and not paused and mbleft > 0 and kbps < 1.0
+active = status == 'Downloading' and not paused and mbleft > 0
+# Compare whole-MB remaining. UNCHANGED = frozen (stall); any change resets.
+try:    prev_mb = int(float(prev)) if prev not in ('', 'None') else None
+except ValueError: prev_mb = None
+if prev_mb is not None:
+    stalled = active and round(mbleft) == prev_mb     # exactly unchanged
+else:
+    stalled = active and kbps < 1.0                    # first-poll fallback
 print(f"{'STALLED' if stalled else 'OK'} status={status} paused={paused} kbps={kbps:.0f} mbleft={mbleft:.0f}")
 PY
 }
@@ -93,17 +108,28 @@ except Exception: pass
 PY
 }
 
-verdict="$(check)"; tag="${verdict%% *}"
+# State carries "<strikes> <last_mbleft>" — last_mbleft feeds the no-progress
+# check on the next poll. Missing/old-format file just starts a fresh slate.
+prev_strikes=0; prev_mbleft=""
+[[ -f "$STATE" ]] && read -r prev_strikes prev_mbleft < "$STATE" 2>/dev/null
+[[ "$prev_strikes" =~ ^[0-9]+$ ]] || prev_strikes=0
 
-# Anything but a real stall -> reset the counter and stop.
+verdict="$(check "$prev_mbleft")"; tag="${verdict%% *}"
+cur_mbleft="$(sed -n 's/.*mbleft=\([0-9]*\).*/\1/p' <<<"$verdict")"; [[ -n "$cur_mbleft" ]] || cur_mbleft=0
+
+# Anything but a real stall -> reset strikes, but remember the current mbleft as
+# next poll's baseline (on an unreachable API, keep the previous baseline).
 if [[ "$tag" != "STALLED" ]]; then
-  echo 0 > "$STATE" 2>/dev/null || true
-  [[ "$tag" == "UNREACHABLE" ]] && log "SAB API unreachable ($verdict) — no action"
+  if [[ "$tag" == "UNREACHABLE" ]]; then
+    echo "0 ${prev_mbleft:-0}" > "$STATE" 2>/dev/null || true
+    log "SAB API unreachable ($verdict) — no action"
+  else
+    echo "0 $cur_mbleft" > "$STATE" 2>/dev/null || true
+  fi
   exit 0
 fi
 
-prev="$(cat "$STATE" 2>/dev/null || echo 0)"; [[ "$prev" =~ ^[0-9]+$ ]] || prev=0
-strikes=$(( prev + 1 )); echo "$strikes" > "$STATE" 2>/dev/null || true
+strikes=$(( prev_strikes + 1 )); echo "$strikes $cur_mbleft" > "$STATE" 2>/dev/null || true
 log "stall detected ($verdict) — strike $strikes/$THRESHOLD"
 (( strikes < THRESHOLD )) && exit 0
 
