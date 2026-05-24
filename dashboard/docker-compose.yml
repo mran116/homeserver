@@ -64,6 +64,7 @@ services:
       - HOMEPAGE_VAR_MEMOS_PORT=${MEMOS_PORT}
       - HOMEPAGE_VAR_VAULTWARDEN_PORT=${VAULTWARDEN_PORT}
       - HOMEPAGE_VAR_IMMICH_PORT=${IMMICH_PORT}
+      - HOMEPAGE_VAR_WGER_PORT=${WGER_PORT}
 
       # ---- Widget API keys / credentials ----
       # Every value is forwarded from an un-prefixed base var in .env, so each

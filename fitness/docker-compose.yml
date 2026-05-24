@@ -1,0 +1,142 @@
+# =============================================================================
+# WGER — self-hosted workout & fitness tracker
+# http://${SERVER_IP}:${WGER_PORT}
+#
+# Routines, set/rep/weight logging, body-weight + progress charts, a filterable
+# exercise database (filter by Dumbbell), optional nutrition tracking.
+#   - Dumbbells: first-class — filter the exercise DB by "Dumbbell", log weight.
+#   - Resistance bands: add custom exercises and log reps (note the band level);
+#     wger has no native "band tension" metric.
+#
+# Adapted from the official wger docker compose. nginx serves the collected
+# static files; the gunicorn app sits behind it. Celery worker/beat run async
+# tasks (e.g. periodic exercise-DB sync). Secrets come from the root .env.
+#
+# First run: open the URL, register the first account (ALLOW_REGISTRATION=True),
+# then turn registration off in the admin if you want it private. To populate the
+# exercise database immediately instead of waiting on the periodic sync:
+#   docker exec wger python3 manage.py sync-exercises
+# =============================================================================
+
+x-wger-common: &wger-common
+  image: wger/server:latest
+  restart: unless-stopped
+  depends_on:
+    wger-db:
+      condition: service_healthy
+    wger-cache:
+      condition: service_healthy
+  networks:
+    - home
+
+# Shared app/runtime env (DB + cache + celery + Django keys). Per-service extras
+# (SITE_URL, migrations, collectstatic) are added on the web service only.
+x-wger-env: &wger-env
+  TZ: ${TZ}
+  TIME_ZONE: ${TZ}
+  SECRET_KEY: ${WGER_SECRET_KEY}
+  SIGNING_KEY: ${WGER_SIGNING_KEY}
+  DJANGO_DB_ENGINE: django.db.backends.postgresql
+  DJANGO_DB_DATABASE: wger
+  DJANGO_DB_USER: wger
+  DJANGO_DB_PASSWORD: ${WGER_DB_PASSWORD}
+  DJANGO_DB_HOST: wger-db
+  DJANGO_DB_PORT: "5432"
+  DJANGO_CACHE_BACKEND: django_redis.cache.RedisCache
+  DJANGO_CACHE_LOCATION: redis://wger-cache:6379/1
+  DJANGO_CACHE_CLIENT_CLASS: django_redis.client.DefaultClient
+  CELERY_BROKER: redis://wger-cache:6379/2
+  CELERY_BACKEND: redis://wger-cache:6379/2
+  USE_CELERY: "True"
+
+services:
+
+  # ---- web app (gunicorn) — runs migrations + collectstatic on startup --------
+  wger:
+    <<: *wger-common
+    container_name: wger
+    environment:
+      <<: *wger-env
+      SITE_URL: http://${SERVER_IP}:${WGER_PORT}
+      ALLOWED_HOSTS: "*"
+      CSRF_TRUSTED_ORIGINS: http://${SERVER_IP}:${WGER_PORT}
+      DJANGO_DEBUG: "False"
+      DJANGO_PERFORM_MIGRATIONS: "True"
+      DJANGO_COLLECTSTATIC_ON_STARTUP: "True"
+      ALLOW_REGISTRATION: "True"
+      ALLOW_GUEST_USERS: "False"
+    volumes:
+      - ${CONFIG_PATH}/wger/static:/home/wger/static
+      - ${CONFIG_PATH}/wger/media:/home/wger/media
+
+  # ---- nginx — serves /static + /media, proxies everything else to the app ----
+  wger-nginx:
+    image: nginx:stable
+    container_name: wger-nginx
+    restart: unless-stopped
+    depends_on:
+      - wger
+    ports:
+      - ${WGER_PORT}:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${CONFIG_PATH}/wger/static:/wger/static:ro
+      - ${CONFIG_PATH}/wger/media:/wger/media:ro
+    networks:
+      - home
+
+  # ---- async workers ----------------------------------------------------------
+  wger-celery-worker:
+    <<: *wger-common
+    container_name: wger-celery-worker
+    command: /start-worker
+    environment:
+      <<: *wger-env
+    volumes:
+      - ${CONFIG_PATH}/wger/media:/home/wger/media
+
+  wger-celery-beat:
+    <<: *wger-common
+    container_name: wger-celery-beat
+    command: /start-beat
+    environment:
+      <<: *wger-env
+
+  # ---- datastores -------------------------------------------------------------
+  wger-db:
+    image: postgres:15-alpine
+    container_name: wger-db
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      POSTGRES_USER: wger
+      POSTGRES_PASSWORD: ${WGER_DB_PASSWORD}
+      POSTGRES_DB: wger
+    volumes:
+      - ${CONFIG_PATH}/wger/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wger -d wger"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - home
+
+  wger-cache:
+    image: redis:7
+    container_name: wger-cache
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH}/wger/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - home
+
+networks:
+  home:
+    external: true
