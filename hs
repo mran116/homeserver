@@ -59,21 +59,32 @@ EOF
 }
 
 install() {
-  local target="$HOME/.local/bin"
-  mkdir -p "$target"
-  ln -sf "$ROOT/hs" "$target/hs"
-  echo "Linked: $target/hs -> $ROOT/hs"
-  case ":$PATH:" in
-    *":$target:"*) echo "$target is on your PATH — 'hs' now works from anywhere." ;;
-    *) echo "Add it to your PATH (then restart your shell):"
-       echo "  echo 'export PATH=\"$target:\$PATH\"' >> ~/.bashrc" ;;
-  esac
-  # Tab-completion: bash-completion auto-loads a file named after the command.
+  local link=""
+  # Prefer /usr/local/bin — always on PATH (every dir, every user, even cron), so
+  # `hs` just works with no .bashrc/PATH fuss. Try without sudo (root), then with.
+  if ln -sf "$ROOT/hs" /usr/local/bin/hs 2>/dev/null \
+     || { command -v sudo >/dev/null && sudo ln -sf "$ROOT/hs" /usr/local/bin/hs 2>/dev/null; }; then
+    link=/usr/local/bin/hs
+  else
+    # No sudo — fall back to the user bin dir, and wire up PATH so it still works.
+    local target="$HOME/.local/bin"
+    mkdir -p "$target"
+    ln -sf "$ROOT/hs" "$target/hs"
+    link="$target/hs"
+    case ":$PATH:" in
+      *":$target:"*) ;;
+      *) local rc="$HOME/.bashrc"; [[ "${SHELL:-}" == *zsh* ]] && rc="$HOME/.zshrc"
+         local line="export PATH=\"$target:\$PATH\""
+         grep -qsF "$line" "$rc" 2>/dev/null || printf '%s\n' "$line" >> "$rc"
+         echo "Added $target to PATH in $rc — open a new shell or: source $rc" ;;
+    esac
+  fi
+  echo "Linked: $link -> $ROOT/hs   (run: hs help)"
+  # Tab-completion (bash-completion auto-loads a file named after the command).
   local comp="$HOME/.local/share/bash-completion/completions"
   mkdir -p "$comp"
   ln -sf "$ROOT/scripts/hs-completion.bash" "$comp/hs"
-  echo "Linked: $comp/hs (tab-completion — restart your shell to load)"
-  echo "  zsh: run 'autoload -U +X bashcompinit && bashcompinit' before it loads, if needed"
+  echo "Tab-completion linked (loads in a new shell). zsh: 'autoload -U +X bashcompinit && bashcompinit' first."
 }
 
 cmd="${1:-help}"; shift || true
