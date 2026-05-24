@@ -4,7 +4,8 @@
 #
 # Walk through every external API key / credential the stack uses and prompt
 # for each one, with a direct link to the page where you find it. Writes
-# values straight into .env so you never edit it by hand.
+# values straight into .env so you never edit it by hand, then offers to
+# recreate the homepage container so its widgets pick the new values up.
 #
 # Re-run any time. Existing values are shown and kept by default; press Enter
 # to skip, type a new value to replace, or "-" to clear.
@@ -147,6 +148,7 @@ navidrome_compute() {
   update_env NAVIDROME_USER  "$user"
   update_env NAVIDROME_TOKEN "$token"
   update_env NAVIDROME_SALT  "$salt"
+  CHANGED=1
   printf '  %s+%s NAVIDROME_USER / NAVIDROME_TOKEN / NAVIDROME_SALT written (token computed, password discarded)\n' "$c_g" "$c_r"
 }
 
@@ -200,11 +202,26 @@ while IFS= read -r line; do
   read -r -p "  > " new || true
 
   case "$new" in
-    "")  ;;                                   # keep
-    "-") update_env "$key" "" ;;               # clear
-    *)   update_env "$key" "$new" ;;           # replace
+    "")  ;;                                       # keep
+    "-") update_env "$key" "";    CHANGED=1 ;;    # clear
+    *)   update_env "$key" "$new"; CHANGED=1 ;;   # replace
   esac
 done <<<"$KEYS"
+
+# Homepage only reads HOMEPAGE_VAR_* at container creation, so newly-written keys
+# don't reach its widgets until it's recreated. Offer to do it now.
+if [[ $CHANGED -eq 1 ]]; then
+  echo
+  if ask_yn "Keys changed — recreate the homepage container now so its widgets pick them up?" Y; then
+    if ( cd "$REPO_DIR/dashboard" && docker compose up -d homepage ); then
+      say "Homepage recreated — widgets will reload with the new keys."
+    else
+      warn "Couldn't recreate homepage — do it manually: cd dashboard && docker compose up -d homepage"
+    fi
+  else
+    say "Skipped. Apply later with:  cd dashboard && docker compose up -d homepage   (or ./scripts/update.sh)"
+  fi
+fi
 
 echo
 printf '%sDone.%s Re-run with %s--force%s to revisit keys that already have a value.\n' \
