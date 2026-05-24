@@ -22,7 +22,7 @@ ENV_FILE="$REPO_DIR/.env"
 source "$REPO_DIR/scripts/lib/common.sh"
 
 # Deploy order: brought UP first→last, taken DOWN last→first.
-ORDER=(arcane vaultwarden infrastructure monitoring dashboard mediastack household records knowledge syncthing cloud)
+ORDER=(arcane vaultwarden infrastructure monitoring dashboard mediastack household fitness records knowledge syncthing cloud)
 
 usage() { echo "Usage: $0 {up|down|restart|pull|status} [stack ...]"; exit 1; }
 

@@ -24,7 +24,7 @@ require_writable "$ENV_FILE"
 
 # User-facing / external credentials (VPN keys, third-party tokens, admin
 # passwords) are deliberately NOT here — they need a human or external account.
-SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET'
+SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET WGER_DB_PASSWORD WGER_SECRET_KEY WGER_SIGNING_KEY'
 
 # secrets_pass MODE(plan|apply) — emits "FILL <key>" / "GUARD <key>" lines; only
 # writes the file when MODE=apply. Single source of truth for both passes.
@@ -39,6 +39,7 @@ DB_DIRS = {
     "IMMICH_DB_PASSWORD":   "immich/db",
     "PAPERLESS_DB_PASSWORD":"paperless/db",
     "GITEA_DB_PASSWORD":    "gitea/db",
+    "WGER_DB_PASSWORD":     "wger/db",
 }
 text = pathlib.Path(path).read_text()
 m = re.search(r"(?m)^CONFIG_PATH=(.*)$", text)

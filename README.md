@@ -36,6 +36,7 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── dashboard/               Homepage (compose + homepage/ configs)
 │   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Decluttarr
 │   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget
+│   ├── fitness/                 wger — workout & fitness tracker
 │   ├── records/                 Paperless-ngx + Stirling PDF
 │   ├── knowledge/               Memos (quick notes)
 │   ├── syncthing/               private file sync
@@ -147,6 +148,16 @@ Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) —
 | KitchenOwl | Shopping list manager with real-time family sync and a great mobile app. Receives shopping lists from Mealie. |
 | Donetick | Chore and task manager with recurring schedules, family member assignment, and points/rewards for kids. |
 | Actual Budget | Local-first budget and finance tracker. Connect your bank via SimpleFIN ($15/yr) for automatic transaction sync. |
+
+---
+
+### Fitness — Workout Tracking
+
+| Service | Purpose |
+|---|---|
+| wger | Self-hosted workout & fitness tracker — routines, set/rep/weight logging, body-weight and progress charts, a filterable exercise database, optional nutrition. Dumbbells are first-class (filter the exercise DB by "Dumbbell"); for resistance bands, add custom exercises and log reps (band level in notes), since wger has no native "band tension" metric. Runs as web + nginx + Postgres + Redis + Celery. |
+
+After deploy, register the first account, then (optionally) populate the exercise database immediately instead of waiting for the periodic sync: `docker exec wger python3 manage.py sync-exercises`.
 
 ---
 

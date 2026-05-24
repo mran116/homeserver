@@ -254,6 +254,14 @@
         server: my-docker
         container: actual-budget
 
+- Fitness:
+    - wger:
+        icon: wger.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_WGER_PORT}}
+        description: Workout & Fitness Tracker
+        server: my-docker
+        container: wger
+
 - Records:
     - Paperless:
         icon: paperless-ngx.png
