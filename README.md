@@ -567,6 +567,15 @@ Immich requires a specific PostgreSQL image (`tensorchord/pgvecto-rs`) not the s
 **Recyclarr needs API keys before it can run**
 Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on first deploy until you add API keys from both apps. This is expected — configure it after Sonarr and Radarr are running.
 
+**Nginx Proxy Manager owns host ports 80 and 443**
+Unlike every other service (whose host ports come from `.env`), NPM binds host `80` and `443` directly — it has to, to serve HTTP/HTTPS. If anything else on the host already uses those ports (another web server, a second reverse proxy), NPM won't start. Free them first.
+
+**Browsing Homepage by a name other than its IP**
+`HOMEPAGE_ALLOWED_HOSTS` defaults to `SERVER_IP:HOMEPAGE_PORT`. If you reach Homepage via a hostname, Tailscale name, or reverse-proxy domain, set `HOMEPAGE_ALLOWED_HOSTS` in `.env` to a comma-separated list of those names — otherwise Homepage shows a blank "host validation failed" page.
+
+**Immich machine learning is vision, not an LLM**
+The `immich-machine-learning` container runs CLIP (smart search) + face recognition models — not a language model. It's idle-light but loads ~2-4 GB into RAM while indexing/face jobs run. On a low-RAM box, set `IMMICH_MACHINE_LEARNING_ENABLED=false` on `immich-server` and comment out the ML container; photo upload/backup still work fully.
+
 ---
 
 ## 🧹 Maintenance (set it and forget it)
