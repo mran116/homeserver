@@ -47,11 +47,20 @@ menu() {
   esac
 }
 
-[[ -f "$ENV_FILE" ]] || { echo "No .env at $ENV_FILE — run ./bootstrap.sh first." >&2; exit 1; }
+for a in "$@"; do case "$a" in -h|--help) sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;; esac; done
+[[ -f "$ENV_FILE" ]] || { echo "No .env at $ENV_FILE — run 'hs setup' first." >&2; exit 1; }
 
 if [[ $# -ge 1 ]]; then
   cmd="$1"; shift
   if [[ $# -gt 0 ]]; then targets=("$@"); explicit=1; else targets=("${ORDER[@]}"); explicit=0; fi
+  # Guard: an explicitly-named stack that doesn't exist is a typo — fail clearly
+  # rather than silently skipping it.
+  if [[ $explicit -eq 1 ]]; then
+    for s in "${targets[@]}"; do
+      [[ "$s" == -* ]] && continue   # a flag (passed through to docker compose), not a stack
+      [[ -f "$s/docker-compose.yml" ]] || die "No such stack: '$s' — pick from: ${ORDER[*]}"
+    done
+  fi
 else
   cmd="$(menu)"
   [[ -z "$cmd" ]] && { echo "Cancelled."; exit 0; }
