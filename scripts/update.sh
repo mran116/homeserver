@@ -9,12 +9,13 @@
 #   4. gen-secrets — fill any blank machine secrets (DB-safe; e.g. a new stack)
 #   5. link-env    — wire up any new stack / fix symlinks
 #   6. make-dirs   — sync repo Homepage config → CONFIG_PATH (repo = truth)
-#   7. re-applies cron + git hooks IF already set up — keeps them matching the
+#   7. asks about any NEW stacks (deploy or exclude); decided ones aren't re-asked
+#   8. re-applies cron + git hooks IF already set up — keeps them matching the
 #      repo (fixes drift); won't impose them if you removed them
-#   8. if new .env vars were added, offers to tidy .env (interactive only)
-#   9. validates every stack's compose (aborts the redeploy if one is broken)
-#  10. redeploys all stacks with --remove-orphans (drops removed services)
-#  11. runs doctor — surfaces anything still needing you (e.g. a blank var)
+#   9. if new .env vars were added, offers to tidy .env (interactive only)
+#  10. validates every stack's compose (aborts the redeploy if one is broken)
+#  11. redeploys the enabled stacks with --remove-orphans (drops removed services)
+#  12. runs doctor — surfaces anything still needing you (e.g. a blank var)
 #
 # Flags: --dry-run (preview only), --yes (no prompt — for cron), --images
 # (also `docker compose pull` newer images before redeploying).
@@ -26,7 +27,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 cd "$REPO_DIR"
 
-usage() { sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 PULL_IMAGES=0; for a in "$@"; do [[ "$a" == "--images" ]] && PULL_IMAGES=1; done
 require_cmd git
@@ -48,7 +49,7 @@ fi
 changed_stacks="$(git diff --name-only "HEAD..origin/$branch" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
 plan "git pull origin $branch ($incoming new commit(s))"
 [[ -n "$(git status --porcelain)" ]] && plan "autostash local changes (Arcane edits) across the pull"
-plan "reconcile: env-sync + gen-secrets + link-env + Homepage config + cron/hooks (if set up)"
+plan "reconcile: env-sync + gen-secrets + link-env + Homepage config + new-stack check + cron/hooks"
 [[ $PULL_IMAGES -eq 1 ]] && plan "docker compose pull (newer images)"
 plan "redeploy all stacks with --remove-orphans"
 plan "run doctor (report)"
@@ -71,6 +72,9 @@ before_vars="$(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE" 2>/dev/null | sort -u || true
 "$SCRIPT_DIR/gen-secrets.sh" --yes   # fill blank secrets a new stack added (DB-safe; no-op otherwise)
 "$SCRIPT_DIR/link-env.sh" --yes
 "$SCRIPT_DIR/make-dirs.sh" --yes
+# Ask about any NEW stacks BEFORE redeploy (so you can exclude one before it ever
+# starts). Prompts each pending stack; --yes/cron leaves them pending (undecided).
+if [[ $ASSUME_YES -eq 1 ]]; then "$SCRIPT_DIR/stacks.sh" reconcile --yes; else "$SCRIPT_DIR/stacks.sh" reconcile; fi
 # Re-apply cron / git hooks to match the repo, but ONLY if already set up — fixes
 # drift without imposing them on someone who deliberately removed them.
 if crontab -l 2>/dev/null | grep -q '# homestack-'; then
