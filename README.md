@@ -506,6 +506,40 @@ Then in the browser:
 
 ---
 
+## 🎚️ Choosing what runs
+
+All choices live in your **gitignored** files (`.env`, `.stacks.local`), so they
+**survive every `git pull`** — you never edit the tracked compose files.
+
+### Optional services + your media server → `COMPOSE_PROFILES` in `.env`
+Profile-gated services are **off until you list their profile**. Set a comma-list:
+```
+COMPOSE_PROFILES=jellyfin,tunnel
+```
+| Profile | Turns on |
+|---|---|
+| `jellyfin` | Jellyfin media server *(pick this **or** `plex`)* |
+| `plex` | Plex media server |
+| `tunnel` | cloudflared (Cloudflare Tunnel) |
+| `backup` | borgmatic offsite backups |
+| `vpn` | tailscale |
+| `ddns` | cloudflare-ddns (direct Jellyfin A record) |
+| `matrix` | Synapse (Matrix) |
+
+It's read **natively by Docker Compose**, so **Arcane, `hs`, and plain `docker
+compose` all honor it** — set it once and it persists. ⚠️ **Include a media
+server** (`jellyfin` or `plex`) or you'll have none.
+
+### Whole stacks → just deploy the ones you want
+A stack is a folder — not deploying it means it's off. No tags needed:
+- **Arcane:** deploy only the stacks you want.
+- **CLI:** `hs stacks disable <stack>` (remembered in gitignored `.stacks.local`), or `hs up <stack>`.
+
+(`arcane`, `vaultwarden`, and `infrastructure` aren't profile-gated, so they always
+come up when deployed — your way back in is never accidentally switched off.)
+
+---
+
 ## 📋 Post-Deploy Setup
 
 ### Vaultwarden
