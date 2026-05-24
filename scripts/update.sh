@@ -83,7 +83,7 @@ after_vars="$(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE" 2>/dev/null | sort -u || true)
 new_vars="$(comm -13 <(printf '%s\n' "$before_vars") <(printf '%s\n' "$after_vars") | grep -v '^$' || true)"
 if [[ -n "$new_vars" && $ASSUME_YES -eq 0 ]]; then
   say "New var(s) added to .env:"; printf '   %s\n' $new_vars
-  if ask_yn "Reformat .env to match the template now? (hs env tidy)"; then
+  if ask_yn "Reformat .env to match the template now? (hs env-tidy)"; then
     "$SCRIPT_DIR/env-rebuild.sh" --yes
   fi
 fi

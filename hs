@@ -39,9 +39,9 @@ SETUP (first time)
   hs install                   symlink `hs` onto your PATH so it works anywhere
 
 .ENV
-  hs env init                  create .env from the template
-  hs env sync                  append vars added to .env.example
-  hs env tidy                  reformat .env back into the template layout
+  hs env-init                  create .env from the template
+  hs env-sync                  append vars added to .env.example
+  hs env-tidy                  reformat .env back into the template layout
   hs secrets                   fill any blank machine secrets (DB-safe)
   hs keys                      pull app API keys into .env (dashboard widgets)
 
@@ -81,14 +81,10 @@ case "$cmd" in
   setup)
     if [[ "${1:-}" == "--fresh" ]]; then shift; exec "$S/setup-fresh.sh" "$@"; fi
     exec "$ROOT/bootstrap.sh" "$@" ;;
-  env)
-    sub="${1:-}"; shift 2>/dev/null || true
-    case "$sub" in
-      init) run env-init.sh "$@" ;;
-      sync) run env-sync.sh "$@" ;;
-      tidy) run env-rebuild.sh "$@" ;;
-      *) echo "hs env {init|sync|tidy}" >&2; exit 1 ;;
-    esac ;;
+  env-init)              run env-init.sh "$@" ;;
+  env-sync)              run env-sync.sh "$@" ;;
+  env-tidy)              run env-rebuild.sh "$@" ;;
+  env)                   echo "hs: did you mean 'env-init', 'env-sync', or 'env-tidy'?" >&2; exit 1 ;;
   install)               install ;;
   help|-h|--help|"")     help ;;
   *) echo "hs: unknown command '$cmd' — try 'hs help'" >&2; exit 1 ;;
