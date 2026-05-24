@@ -66,6 +66,14 @@
         server: my-docker
         container: ntfy
 
+- Security:
+    - Vaultwarden:
+        icon: vaultwarden.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
+        description: Password Manager
+        server: my-docker
+        container: vaultwarden
+
 - Monitoring:
     - Uptime Kuma:
         icon: uptime-kuma.png
@@ -281,13 +289,6 @@
         description: PDF Tools
         server: my-docker
         container: stirling-pdf
-
-    - Vaultwarden:
-        icon: vaultwarden.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
-        description: Password Manager
-        server: my-docker
-        container: vaultwarden
 
     - Memos:
         icon: memos.png
