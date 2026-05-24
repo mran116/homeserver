@@ -49,7 +49,12 @@ if [[ -z "${SABNZBD_API_KEY:-}" ]]; then
   exit 0
 fi
 API="http://${SERVER_IP}:${SAB_PORT}/api"
-STATE="${CONFIG_PATH:-/opt/docker/data}/sab-watchdog.state"
+# Keep the data root clean — state lives in its own subfolder like every app's
+# data. mkdir is required: the writes below are guarded with `|| true`, so a
+# missing dir would silently drop the state (strikes never accumulate).
+STATE_DIR="${CONFIG_PATH:-/opt/docker/data}/sab-watchdog"
+mkdir -p "$STATE_DIR" 2>/dev/null || true
+STATE="$STATE_DIR/state"
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
