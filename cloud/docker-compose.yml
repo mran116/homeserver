@@ -91,14 +91,14 @@ services:
 
   # ===========================================================================
   # MATRIX + ELEMENT - Private encrypted messaging
-  # COMMENTED OUT - Enable after domain and Cloudflare are set up
+  # INACTIVE — enable with COMPOSE_PROFILES=matrix in .env (after the steps below)
   # Requires external access to be useful (people message from outside network)
   #
   # Setup:
   #   1. Buy domain and set up Cloudflare Tunnel
   #   2. Configure SMTP in .env
   #   3. Update MATRIX_SERVER_NAME to your domain
-  #   4. Uncomment and deploy
+  #   4. Add "matrix" to COMPOSE_PROFILES in .env and deploy
   #   5. Add matrix.yourdomain.com to Cloudflare routes
   #
   # Features:
@@ -108,20 +108,21 @@ services:
   #   - Disappearing messages
   #   - iOS and Android apps (Element)
   # ===========================================================================
-  # synapse:
-  #   image: matrixdotorg/synapse:latest
-  #   container_name: synapse
-  #   restart: unless-stopped
-  #   ports:
-  #     - "${MATRIX_PORT}:8008"
-  #   volumes:
-  #     - ${CONFIG_PATH}/synapse:/data
-  #   environment:
-  #     - TZ=${TZ}
-  #     - SYNAPSE_SERVER_NAME=${MATRIX_SERVER_NAME}
-  #     - SYNAPSE_REPORT_STATS=no
-  #   networks:
-  #     - home
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: synapse
+    restart: unless-stopped
+    profiles: ["matrix"]
+    ports:
+      - "${MATRIX_PORT}:8008"
+    volumes:
+      - ${CONFIG_PATH}/synapse:/data
+    environment:
+      - TZ=${TZ}
+      - SYNAPSE_SERVER_NAME=${MATRIX_SERVER_NAME}
+      - SYNAPSE_REPORT_STATS=no
+    networks:
+      - home
 
 networks:
   home:

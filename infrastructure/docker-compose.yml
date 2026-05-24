@@ -82,57 +82,59 @@ services:
 
   # ===========================================================================
   # BORGMATIC - Automated encrypted offsite backups
-  # COMMENTED OUT - Enable after setting up Backblaze B2
+  # INACTIVE — enable with COMPOSE_PROFILES=backup in .env (after the steps below)
   # Backups are useless if they live on the same machine!
   # Setup:
   #   1. Create Backblaze B2 account at backblaze.com (free 10GB)
   #   2. Create a bucket and application key
   #   3. Fill in B2 credentials in borgmatic-config/config.yaml
   #   4. Fill in BORG_PASSPHRASE in .env
-  #   5. Uncomment this service
+  #   5. Add "backup" to COMPOSE_PROFILES in .env
   # ===========================================================================
-  # borgmatic:
-  #   image: ghcr.io/borgmatic-collective/borgmatic:latest
-  #   container_name: borgmatic
-  #   restart: unless-stopped
-  #   environment:
-  #     - TZ=${TZ}
-  #     - BORGMATIC_CRON=0 2 * * *
-  #     - BORG_PASSPHRASE=${BORG_PASSPHRASE}
-  #   volumes:
-  #     - ${CONFIG_PATH}/borgmatic/config:/etc/borgmatic.d
-  #     - ${CONFIG_PATH}/borgmatic/data:/root/.borgmatic
-  #     - ${CONFIG_PATH}:/mnt/source/docker:ro
-  #     - ${MEDIA_PATH}:/mnt/source/media:ro
-  #     - /root/.ssh:/root/.ssh:ro
-  #   networks:
-  #     - home
+  borgmatic:
+    image: ghcr.io/borgmatic-collective/borgmatic:latest
+    container_name: borgmatic
+    restart: unless-stopped
+    profiles: ["backup"]
+    environment:
+      - TZ=${TZ}
+      - BORGMATIC_CRON=0 2 * * *
+      - BORG_PASSPHRASE=${BORG_PASSPHRASE}
+    volumes:
+      - ${CONFIG_PATH}/borgmatic/config:/etc/borgmatic.d
+      - ${CONFIG_PATH}/borgmatic/data:/root/.borgmatic
+      - ${CONFIG_PATH}:/mnt/source/docker:ro
+      - ${MEDIA_PATH}:/mnt/source/media:ro
+      - /root/.ssh:/root/.ssh:ro
+    networks:
+      - home
 
   # ===========================================================================
   # TAILSCALE - Private VPN access to entire network
-  # COMMENTED OUT - Enable after stack is tested and working
+  # INACTIVE — enable with COMPOSE_PROFILES=vpn in .env
   # Get auth key: https://login.tailscale.com/admin/settings/keys
   # After deploy: approve subnet route in Tailscale admin panel
   # ===========================================================================
-  # tailscale:
-  #   image: tailscale/tailscale:latest
-  #   container_name: tailscale-infra
-  #   hostname: ${TAILSCALE_HOSTNAME}
-  #   restart: unless-stopped
-  #   environment:
-  #     - TS_AUTHKEY=${TS_AUTHKEY}
-  #     - TS_STATE_DIR=/var/lib/tailscale
-  #     - TS_USERSPACE=false
-  #     - TS_ROUTES=${TAILSCALE_SUBNET}
-  #     - TS_EXTRA_ARGS=--advertise-routes=${TAILSCALE_SUBNET}
-  #   volumes:
-  #     - ${CONFIG_PATH}/tailscale-infra:/var/lib/tailscale
-  #     - /dev/net/tun:/dev/net/tun
-  #   cap_add:
-  #     - NET_ADMIN
-  #     - NET_RAW
-  #   networks:
-  #     - home
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-infra
+    hostname: ${TAILSCALE_HOSTNAME}
+    restart: unless-stopped
+    profiles: ["vpn"]
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+      - TS_ROUTES=${TAILSCALE_SUBNET}
+      - TS_EXTRA_ARGS=--advertise-routes=${TAILSCALE_SUBNET}
+    volumes:
+      - ${CONFIG_PATH}/tailscale-infra:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      - home
 
   # ===========================================================================
   # CLOUDFLARE TUNNEL - Secure public access, zero open ports
@@ -170,23 +172,24 @@ services:
 
   # ===========================================================================
   # DDNS-UPDATER - keep the Jellyfin (direct) A record pointed at a dynamic WAN IP
-  # COMMENTED OUT - Enable alongside the direct Jellyfin reverse-proxy path.
+  # INACTIVE — enable with COMPOSE_PROFILES=ddns in .env
   # Uses a scoped Cloudflare token (Zone → DNS → Edit). Sets PROXIED=false so the
   # record stays DNS-only (grey-cloud) — video must not traverse Cloudflare.
   # Then forward host 443 (+80 for the cert/redirect) on the Flint 3 → NPM.
   # ===========================================================================
-  # ddns-updater:
-  #   image: favonia/cloudflare-ddns:latest
-  #   container_name: ddns-updater
-  #   restart: unless-stopped
-  #   user: ${PUID}:${PGID}
-  #   environment:
-  #     - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
-  #     - DOMAINS=${DDNS_DOMAINS}
-  #     - PROXIED=false
-  #     - TZ=${TZ}
-  #   networks:
-  #     - home
+  ddns-updater:
+    image: favonia/cloudflare-ddns:latest
+    container_name: ddns-updater
+    restart: unless-stopped
+    user: ${PUID}:${PGID}
+    profiles: ["ddns"]
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
+      - DOMAINS=${DDNS_DOMAINS}
+      - PROXIED=false
+      - TZ=${TZ}
+    networks:
+      - home
 
 networks:
   home:
