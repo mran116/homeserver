@@ -88,6 +88,11 @@ run_each() {
   local action="$1"; shift
   for s in "$@"; do
     [[ -f "$s/docker-compose.yml" ]] || { warn "skip $s (no docker-compose.yml)"; continue; }
+    # Skip all-commented placeholder stacks (e.g. devops) — `docker compose` errors
+    # with "services must be a mapping" on an empty services: block.
+    local active
+    active=$(awk '/^services:/{i=1;next} /^[^[:space:]#]/{i=0} i&&/^  [A-Za-z0-9_-]+:[[:space:]]*$/{n++} END{print n+0}' "$s/docker-compose.yml")
+    [[ "${active:-0}" -eq 0 ]] && { say "skip $s (placeholder — no active services)"; continue; }
     say "$action: $s"
     case "$action" in
       up)     dc "$s" up -d ${STACK_UP_ARGS:-} || warn "$s failed" ;;

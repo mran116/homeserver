@@ -41,29 +41,28 @@ say "Fetching origin/$branch"
 for i in 1 2 3 4; do git fetch origin "$branch" 2>/dev/null && break || { warn "fetch failed (try $i)"; sleep $((i*2)); }; done
 
 incoming="$(git rev-list --count "HEAD..origin/$branch" 2>/dev/null || echo 0)"
-if [[ "$incoming" -eq 0 ]]; then
-  say "Already up to date — nothing to pull."
-  exit 0
-fi
+[[ "$incoming" -eq 0 ]] && say "No new commits — will still reconcile + redeploy (applies .env edits, restarts anything stopped)."
 
-changed_stacks="$(git diff --name-only "HEAD..origin/$branch" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
-plan "git pull origin $branch ($incoming new commit(s))"
-[[ -n "$(git status --porcelain)" ]] && plan "autostash local changes (Arcane edits) across the pull"
+changed_stacks="$(git diff --name-only "HEAD..origin/$branch" 2>/dev/null | cut -d/ -f1 | sort -u | tr '\n' ' ')"
+[[ "$incoming" -gt 0 ]] && plan "git pull origin $branch ($incoming new commit(s))"
+[[ "$incoming" -gt 0 && -n "$(git status --porcelain)" ]] && plan "autostash local changes (Arcane edits) across the pull"
 plan "reconcile: env-sync + gen-secrets + link-env + Homepage config + new-stack check + cron/hooks"
 [[ $PULL_IMAGES -eq 1 ]] && plan "docker compose pull (newer images)"
-plan "redeploy all stacks with --remove-orphans"
+plan "redeploy all stacks with --remove-orphans (applies .env, restarts anything stopped)"
 plan "run doctor (report)"
 [[ -n "${changed_stacks// /}" ]] && say "Changed paths: $changed_stacks"
 show_plan || exit 0
 gate || exit 0
 
-# --- pull --------------------------------------------------------------------
-say "Pulling origin/$branch"
-if [[ -n "$(git status --porcelain)" ]]; then
-  git pull --autostash origin "$branch" \
-    || die "git pull hit a conflict. Resolve it (local edits are in 'git stash list' if reapply failed), then re-run."
-else
-  git pull origin "$branch" || die "git pull failed."
+# --- pull (only when there are new commits) ----------------------------------
+if [[ "$incoming" -gt 0 ]]; then
+  say "Pulling origin/$branch"
+  if [[ -n "$(git status --porcelain)" ]]; then
+    git pull --autostash origin "$branch" \
+      || die "git pull hit a conflict. Resolve it (local edits are in 'git stash list' if reapply failed), then re-run."
+  else
+    git pull origin "$branch" || die "git pull failed."
+  fi
 fi
 
 # --- reconcile (keep the box matching the repo) ------------------------------
