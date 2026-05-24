@@ -47,7 +47,14 @@ config_path = (m.group(1).strip() if m else "") or "/opt/docker/data"
 
 def db_exists(sub):
     d = os.path.join(config_path, sub)
-    return os.path.isdir(d) and any(os.scandir(d))
+    if not os.path.isdir(d):
+        return False
+    try:
+        return any(os.scandir(d))
+    except PermissionError:
+        # An unreadable dir is almost certainly a live, container-owned DB data
+        # dir (e.g. Postgres, mode 700). Guard it rather than crash the script.
+        return True
 
 gen = lambda n=36: "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(n))
 out, filled, guarded = [], [], []
