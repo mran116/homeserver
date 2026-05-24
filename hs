@@ -33,6 +33,7 @@ EVERYDAY
   hs up|down|restart [stack]   start / stop / restart all stacks (or one)
   hs status [stack]            docker compose ps for each stack
   hs pull [stack]              pull newer images
+  hs logs <stack|container>    tail logs (-f to follow); stack = compose, else docker
 
 SETUP (first time)
   hs setup [--fresh]           run bootstrap (--fresh: full host setup on a new box)
@@ -66,6 +67,12 @@ install() {
     *) echo "Add it to your PATH (then restart your shell):"
        echo "  echo 'export PATH=\"$target:\$PATH\"' >> ~/.bashrc" ;;
   esac
+  # Tab-completion: bash-completion auto-loads a file named after the command.
+  local comp="$HOME/.local/share/bash-completion/completions"
+  mkdir -p "$comp"
+  ln -sf "$ROOT/scripts/hs-completion.bash" "$comp/hs"
+  echo "Linked: $comp/hs (tab-completion — restart your shell to load)"
+  echo "  zsh: run 'autoload -U +X bashcompinit && bashcompinit' before it loads, if needed"
 }
 
 cmd="${1:-help}"; shift || true
@@ -73,6 +80,15 @@ case "$cmd" in
   update)                run update.sh "$@" ;;
   doctor)                run doctor.sh "$@" ;;
   up|down|restart|pull|status) exec "$S/stack.sh" "$cmd" "$@" ;;
+  logs)
+    name="${1:-}"; shift 2>/dev/null || true
+    [[ -z "$name" ]] && { echo "usage: hs logs <stack|container> [-f] [service]" >&2; exit 1; }
+    cd "$ROOT"
+    if [[ -f "$name/docker-compose.yml" ]]; then
+      exec docker compose -f "$name/docker-compose.yml" --env-file .env logs --tail=200 "$@"
+    else
+      exec docker logs --tail=200 "$@" "$name"
+    fi ;;
   secrets)               run gen-secrets.sh "$@" ;;
   keys)                  run harvest-keys.sh "$@" ;;
   network)               run create-network.sh "$@" ;;

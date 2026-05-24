@@ -5,15 +5,16 @@
 # The one-command routine update. It:
 #   1. fetches; if nothing new, exits quietly (safe to run from cron)
 #   2. git pull (autostash — survives Arcane's in-place edits)
-#   3. env-sync   — append any new .env vars
-#   4. link-env   — wire up any new stack / fix symlinks
-#   5. make-dirs  — sync repo Homepage config → CONFIG_PATH (repo = truth)
-#   6. re-applies cron + git hooks IF already set up — keeps them matching the
+#   3. env-sync    — append any new .env vars
+#   4. gen-secrets — fill any blank machine secrets (DB-safe; e.g. a new stack)
+#   5. link-env    — wire up any new stack / fix symlinks
+#   6. make-dirs   — sync repo Homepage config → CONFIG_PATH (repo = truth)
+#   7. re-applies cron + git hooks IF already set up — keeps them matching the
 #      repo (fixes drift); won't impose them if you removed them
-#   7. if new .env vars were added, offers to tidy .env (interactive only)
-#   8. validates every stack's compose (aborts the redeploy if one is broken)
-#   9. redeploys all stacks with --remove-orphans (drops removed services)
-#  10. runs doctor — surfaces anything still needing you (e.g. a blank var)
+#   8. if new .env vars were added, offers to tidy .env (interactive only)
+#   9. validates every stack's compose (aborts the redeploy if one is broken)
+#  10. redeploys all stacks with --remove-orphans (drops removed services)
+#  11. runs doctor — surfaces anything still needing you (e.g. a blank var)
 #
 # Flags: --dry-run (preview only), --yes (no prompt — for cron), --images
 # (also `docker compose pull` newer images before redeploying).
@@ -25,7 +26,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 cd "$REPO_DIR"
 
-usage() { sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 PULL_IMAGES=0; for a in "$@"; do [[ "$a" == "--images" ]] && PULL_IMAGES=1; done
 require_cmd git
@@ -47,7 +48,7 @@ fi
 changed_stacks="$(git diff --name-only "HEAD..origin/$branch" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
 plan "git pull origin $branch ($incoming new commit(s))"
 [[ -n "$(git status --porcelain)" ]] && plan "autostash local changes (Arcane edits) across the pull"
-plan "reconcile: env-sync + link-env + Homepage config + cron/hooks (if set up)"
+plan "reconcile: env-sync + gen-secrets + link-env + Homepage config + cron/hooks (if set up)"
 [[ $PULL_IMAGES -eq 1 ]] && plan "docker compose pull (newer images)"
 plan "redeploy all stacks with --remove-orphans"
 plan "run doctor (report)"
@@ -67,6 +68,7 @@ fi
 # --- reconcile (keep the box matching the repo) ------------------------------
 before_vars="$(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE" 2>/dev/null | sort -u || true)"
 "$SCRIPT_DIR/env-sync.sh" --yes
+"$SCRIPT_DIR/gen-secrets.sh" --yes   # fill blank secrets a new stack added (DB-safe; no-op otherwise)
 "$SCRIPT_DIR/link-env.sh" --yes
 "$SCRIPT_DIR/make-dirs.sh" --yes
 # Re-apply cron / git hooks to match the repo, but ONLY if already set up — fixes

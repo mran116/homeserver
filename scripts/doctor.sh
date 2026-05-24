@@ -34,7 +34,7 @@ fi
 if [[ $have_daemon -eq 1 ]]; then
   say "Network"
   docker network inspect home >/dev/null 2>&1 && ok "'home' network exists" \
-    || bad "'home' network missing — run ./scripts/create-network.sh"
+    || bad "'home' network missing — run 'hs network'"
 
   say "Containers"
   restarting="$(docker ps -a --filter status=restarting --format '{{.Names}}' 2>/dev/null)"
@@ -42,10 +42,10 @@ if [[ $have_daemon -eq 1 ]]; then
   exited="$(docker ps -a    --filter status=exited       --format '{{.Names}}' 2>/dev/null)"
   if [[ -z "$restarting$unhealthy" ]]; then ok "none restarting or unhealthy"
   else
-    for n in $restarting; do bad "$n is restarting (crash loop) — docker logs $n"; done
-    for n in $unhealthy;  do bad "$n is unhealthy — docker logs $n"; done
+    for n in $restarting; do bad "$n is restarting (crash loop) — hs logs $n"; done
+    for n in $unhealthy;  do bad "$n is unhealthy — hs logs $n"; done
   fi
-  for n in $exited; do note "$n is stopped (Exited) — intentional? otherwise: docker logs $n"; done
+  for n in $exited; do note "$n is stopped (Exited) — intentional? otherwise: hs logs $n"; done
 fi
 
 say ".env"
@@ -55,9 +55,9 @@ if [[ -f "$ENV_FILE" ]]; then
     <(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE"  | sed 's/=$//' | sort -u) \
     <(grep -oE '^[A-Z0-9_]+=' .env.example | sed 's/=$//' | sort -u))"
   if [[ -z "$missing" ]]; then ok "in sync with .env.example"
-  else note "$(printf '%s' "$missing" | grep -c .) var(s) missing vs .env.example — run ./scripts/env-sync.sh"; fi
+  else note "$(printf '%s' "$missing" | grep -c .) var(s) missing vs .env.example — run 'hs env sync'"; fi
 else
-  bad ".env missing — run ./scripts/env-init.sh"
+  bad ".env missing — run 'hs env init'"
 fi
 
 say "Storage"
@@ -80,13 +80,13 @@ else bad "MEDIA_PATH ($med) does not exist"; fi
 
 say "Stack wiring"
 if [[ "$(current_value STACKS_PATH)" == "$REPO_DIR" ]]; then ok "STACKS_PATH = $REPO_DIR"
-else note "STACKS_PATH != repo path — run ./scripts/link-env.sh"; fi
+else note "STACKS_PATH != repo path — run 'hs update' (re-links it)"; fi
 bad_links=0
 for compose in */docker-compose.yml; do
   d="$(dirname "$compose")"
   [[ "$(readlink "$d/.env" 2>/dev/null)" == "../.env" ]] || { note "missing/incorrect symlink: $d/.env"; bad_links=1; }
 done
-[[ $bad_links -eq 0 ]] && ok "every stack has its .env symlink" || note "fix with ./scripts/link-env.sh"
+[[ $bad_links -eq 0 ]] && ok "every stack has its .env symlink" || note "fix with 'hs update'"
 
 say "Compose validity"
 ENV_ARG=(); [[ -f "$ENV_FILE" ]] && ENV_ARG=(--env-file "$ENV_FILE") || ENV_ARG=(--env-file .env.example)
@@ -137,7 +137,7 @@ PY
   else
     while read -r tag var stacks; do
       [[ -z "$tag" ]] && continue
-      if [[ "$tag" == REQ ]]; then bad "$var is blank but required ($stacks)"
+      if [[ "$tag" == REQ ]]; then bad "$var is blank but required ($stacks) — run 'hs secrets' (or 'hs keys' for app keys)"
       else note "$var blank — fine for optional widgets, set if you use it ($stacks)"; fi
     done <<<"$report"
   fi
