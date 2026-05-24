@@ -179,7 +179,10 @@ printf '%s\n\n' "${c_d}Press Enter to keep current value, type new value to repl
 
 navidrome_compute
 
-while IFS= read -r line; do
+# Feed the loop from fd 3, NOT stdin, so the `read` prompt below keeps reading
+# from the TERMINAL. Otherwise that inner read consumes the next KEYS line as the
+# user's answer — pasting hint rows into values and corrupting .env.
+while IFS= read -r -u 3 line; do
   [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
   IFS='|' read -r key url where <<<"$line"
   key="$(echo "$key" | xargs)"
@@ -206,7 +209,7 @@ while IFS= read -r line; do
     "-") update_env "$key" "";    CHANGED=1 ;;    # clear
     *)   update_env "$key" "$new"; CHANGED=1 ;;   # replace
   esac
-done <<<"$KEYS"
+done 3<<<"$KEYS"
 
 # Homepage only reads HOMEPAGE_VAR_* at container creation, so newly-written keys
 # don't reach its widgets until it's recreated. Offer to do it now.
