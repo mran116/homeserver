@@ -414,3 +414,37 @@ services:
     networks:
       - home
     restart: unless-stopped
+
+  # ===========================================================================
+  # TDARR - Library transcoder → HEVC/x265 to save space. OFF unless
+  # COMPOSE_PROFILES includes "tdarr". Heavy CPU/GPU; best on a capable box.
+  #   - Web UI on ${TDARR_PORT}. Use a HandBrake flow (framerate "same as
+  #     source", audio passthrough, MKV out) to avoid A/V-sync drift.
+  #   - TDARR_CACHE = transcode scratch — point it at a disk with FREE SPACE
+  #     (it writes the re-encoded file there before swapping in the original).
+  #   - HW (GPU) encode: add a `tdarr` block to docker-compose.override.yml
+  #     (see the .example). No GPU in the base, so it never fails without one.
+  # ===========================================================================
+  tdarr:
+    image: ghcr.io/haveagitgat/tdarr:latest
+    container_name: tdarr
+    profiles: ["tdarr"]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - internalNode=true
+      - serverIP=0.0.0.0
+      - serverPort=8266
+      - webUIPort=8265
+    volumes:
+      - ${CONFIG_PATH}/tdarr/server:/app/server
+      - ${CONFIG_PATH}/tdarr/configs:/app/configs
+      - ${CONFIG_PATH}/tdarr/logs:/app/logs
+      - ${MEDIA_PATH}:/media
+      - ${TDARR_CACHE:-/opt/docker/tdarr-cache}:/temp
+    ports:
+      - ${TDARR_PORT:-8265}:8265
+    networks:
+      - home
+    restart: unless-stopped
