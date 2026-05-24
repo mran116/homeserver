@@ -1,29 +1,41 @@
 ---
-# Homepage Widgets
-# Shows system stats + a search bar at the top of the dashboard
+# Homepage Widgets — top info/header bar (system stats + clock + search + weather)
+# The disk/CPU-temp readouts need host paths mounted into the Homepage container
+# (see dashboard/docker-compose.yml): ${CONFIG_PATH} -> /mnt/host/local,
+# ${MEDIA_PATH} -> /mnt/host/media, and /sys/class/thermal for CPU temp.
 
 - resources:
+    label: System
     cpu: true
     memory: true
-    disk: /            # NOTE: shows the Homepage container's disk. To report the
-                       # host data disk, bind-mount it and point this at that path.
-    label: Server
+    cputemp: true        # best-effort: needs /sys/class/thermal mounted (it is)
+    uptime: true
+    tempmin: 0
+    tempmax: 90
+    expanded: true
+
+- resources:
+    label: Local
+    disk: /mnt/host/local   # the SSD/NVMe where CONFIG_PATH lives
+
+- resources:
+    label: Media
+    disk: /mnt/host/media   # the media library (NAS)
+
+- datetime:
+    text_size: xl
+    format:
+      timeStyle: short
+      hour12: true
 
 - search:
     provider: duckduckgo
     target: _blank
 
-- datetime:
-    text_size: xl
-    format:
-      dateStyle: long
-      timeStyle: short
-      hour12: true
-
-# Weather — disabled until you add your coordinates (it errors with placeholders).
-# Find yours at https://www.latlong.net, then uncomment and fill in:
+# Weather — fill in YOUR coordinates, then uncomment (placeholders error out).
+# Find them at https://www.latlong.net
 # - openmeteo:
-#     label: Local Weather
+#     label: Weather
 #     latitude: 00.0000
 #     longitude: -00.0000
 #     timezone: America/Chicago

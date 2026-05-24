@@ -45,11 +45,14 @@ for d in "${base_dirs[@]}"; do [[ -d "$d" ]] || plan "create dir $d"; done
 new_app_dirs=(); for d in "${app_dirs[@]}"; do [[ -d "$d" ]] || new_app_dirs+=("$d"); done
 [[ ${#new_app_dirs[@]} -gt 0 ]] && plan "create ${#new_app_dirs[@]} per-app config dir(s) under $CONFIG_PATH"
 
-# Homepage config: repo is the source of truth. Mirror ./homepage/*.yaml into
-# CONFIG_PATH/homepage whenever anything differs (Homepage hot-reloads). Its
-# runtime logs/ live alongside and are never touched.
+# Homepage config: repo is the source of truth. Mirror ./homepage/*.{yaml,css,js}
+# into CONFIG_PATH/homepage whenever anything differs (Homepage hot-reloads — incl.
+# custom.css/custom.js). Its runtime logs/ live alongside and are never touched.
+shopt -s nullglob
+hp_files=(dashboard/homepage/*.yaml dashboard/homepage/*.css dashboard/homepage/*.js)
+shopt -u nullglob
 sync_homepage=0
-for f in dashboard/homepage/*.yaml; do
+for f in "${hp_files[@]}"; do
   cmp -s "$f" "$CONFIG_PATH/homepage/$(basename "$f")" 2>/dev/null || sync_homepage=1
 done
 [[ $sync_homepage -eq 1 ]] && plan "sync Homepage config → $CONFIG_PATH/homepage (repo is source of truth)"
@@ -65,5 +68,5 @@ mkdir -p "${dirs[@]}"
 if [[ -n "${PUID:-}" && -n "${PGID:-}" && ${#new_app_dirs[@]} -gt 0 ]]; then
   chown "$PUID:$PGID" "${new_app_dirs[@]}" 2>/dev/null || true
 fi
-[[ $sync_homepage -eq 1 ]] && cp dashboard/homepage/*.yaml "$CONFIG_PATH/homepage/"
+[[ $sync_homepage -eq 1 ]] && cp "${hp_files[@]}" "$CONFIG_PATH/homepage/"
 say "Directory layout ready."
