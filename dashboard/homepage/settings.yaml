@@ -1,12 +1,11 @@
 ---
-# Homepage Settings
-# https://gethomepage.dev/configs/settings/
+# Homepage Settings — https://gethomepage.dev/configs/settings/
+# Dark "tech dashboard" look. The cyan/teal accent + glass cards come from
+# custom.css (mirrored to CONFIG_PATH/homepage by make-dirs alongside this file).
 
 title: Home
-favicon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png
-
 theme: dark
-color: slate
+color: zinc            # neutral near-black base; accent is set in custom.css
 
 headerStyle: clean
 target: _blank
@@ -27,6 +26,9 @@ layout:
     style: row
     columns: 4
   Household:
+    style: row
+    columns: 4
+  Fitness:
     style: row
     columns: 4
   Records:

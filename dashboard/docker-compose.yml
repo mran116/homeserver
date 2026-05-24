@@ -26,6 +26,11 @@ services:
     volumes:
       - ${CONFIG_PATH}/homepage:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Read-only host paths for the resources widget (system-stats header):
+      # disk usage of the local SSD + the media library, and CPU temperature.
+      - ${CONFIG_PATH}:/mnt/host/local:ro
+      - ${MEDIA_PATH}:/mnt/host/media:ro
+      - /sys/class/thermal:/sys/class/thermal:ro
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
