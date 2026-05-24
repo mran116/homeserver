@@ -68,6 +68,23 @@ if command -v systemd-detect-virt >/dev/null && systemd-detect-virt -q --vm; the
   sudo systemctl enable --now qemu-guest-agent 2>/dev/null || true
 fi
 
+# ---- 4b. free port 53 for AdGuard (optional, opt-in) ------------------------
+# Fresh Ubuntu/Debian runs systemd-resolved on :53, which blocks AdGuard Home
+# (infrastructure stack). Offer to free it. Default NO — it changes host DNS and
+# only matters if you'll actually run AdGuard.
+if command -v systemctl >/dev/null && systemctl is-active --quiet systemd-resolved 2>/dev/null; then
+  echo
+  warn "systemd-resolved holds port 53 — AdGuard Home can't bind it until that's freed."
+  if ask_yn "Disable systemd-resolved and point /etc/resolv.conf at 1.1.1.1 so AdGuard can use :53? (skip if you won't run AdGuard)" N; then
+    sudo systemctl disable --now systemd-resolved
+    sudo rm -f /etc/resolv.conf
+    echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf >/dev/null
+    say "Port 53 freed; host DNS is 1.1.1.1 for now (switch the host to AdGuard once it's up)."
+  else
+    warn "Left systemd-resolved running — AdGuard won't start until you free :53 (see infrastructure/docker-compose.yml)."
+  fi
+fi
+
 # ---- 5. docker group for this user ------------------------------------------
 if ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
   say "Adding $USER to the 'docker' group"

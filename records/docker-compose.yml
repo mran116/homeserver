@@ -12,6 +12,11 @@ services:
     restart: unless-stopped
     volumes:
       - ${CONFIG_PATH}/paperless/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - home
 
@@ -25,6 +30,12 @@ services:
       - POSTGRES_PASSWORD=${PAPERLESS_DB_PASSWORD}
     volumes:
       - ${CONFIG_PATH}/paperless/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperless -d paperless"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - home
 
@@ -35,8 +46,10 @@ services:
     ports:
       - "${PAPERLESS_PORT}:8000"
     depends_on:
-      - paperless-db
-      - paperless-broker
+      paperless-db:
+        condition: service_healthy
+      paperless-broker:
+        condition: service_healthy
     volumes:
       - ${CONFIG_PATH}/paperless/data:/usr/src/paperless/data
       - ${CONFIG_PATH}/paperless/media:/usr/src/paperless/media
