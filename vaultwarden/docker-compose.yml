@@ -13,6 +13,10 @@ services:
   #
   # Mobile/Desktop: Use official Bitwarden app
   #   Point server URL to http://${SERVER_IP}:${VAULTWARDEN_PORT}
+  #
+  # Behind Cloudflare Tunnel / HTTPS: set VAULTWARDEN_DOMAIN=https://vault.${DOMAIN}
+  # in .env and use that URL — the browser web vault needs HTTPS (a plain
+  # http://IP address won't let you create or unlock an account).
   # ===========================================================================
   vaultwarden:
     image: vaultwarden/server:latest
@@ -24,6 +28,9 @@ services:
       - ${CONFIG_PATH}/vaultwarden:/data
     environment:
       - TZ=${TZ}
+      # Public HTTPS URL behind the Cloudflare Tunnel / reverse proxy. Set
+      # VAULTWARDEN_DOMAIN in .env (e.g. https://vault.${DOMAIN}); blank = LAN default.
+      - DOMAIN=${VAULTWARDEN_DOMAIN:-}
       - WEBSOCKET_ENABLED=true
       - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED}
       - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
