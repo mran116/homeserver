@@ -1,0 +1,59 @@
+/* ============================================================================
+ * Homepage "tech dashboard" theme — dark glass + cyan/teal accent.
+ *
+ * Pairs with settings.yaml (theme: dark, color: zinc). Mirrored to
+ * CONFIG_PATH/homepage by make-dirs alongside the *.yaml files.
+ *
+ * NOTE: Homepage's DOM/class names can shift between releases, so treat this as
+ * a STARTING POINT. Tweak selectors live with browser devtools (F12) and
+ * hard-refresh (Ctrl+Shift+R) after each change. The body background + .service-card
+ * rules are the most reliable; the rest is best-effort polish.
+ * ========================================================================== */
+
+:root {
+  --accent: 34, 211, 238;          /* cyan-400, as R,G,B for rgba() */
+}
+
+/* --- Background: near-black with a subtle cyan glow at the top -------------- */
+body {
+  background:
+    radial-gradient(1100px 560px at 50% -12%, rgba(var(--accent), 0.10), transparent 60%),
+    linear-gradient(180deg, #0a0c0e 0%, #070809 100%) !important;
+  background-attachment: fixed !important;
+}
+
+/* --- Glass cards: services, bookmarks, and the top info widgets ------------- */
+.service-card,
+.bookmark-card,
+#information-widgets .resource,
+#information-widgets > div {
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid rgba(var(--accent), 0.12) !important;
+  border-radius: 0.85rem !important;
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.service-card:hover,
+.bookmark-card:hover {
+  border-color: rgba(var(--accent), 0.45) !important;
+  transform: translateY(-1px);
+}
+
+/* --- Group headers in the accent color, uppercase/techy -------------------- */
+.services-group h2,
+h2.services-group-name {
+  color: rgb(var(--accent)) !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* --- Links / hovers pick up the accent ------------------------------------- */
+a:hover { color: rgb(var(--accent)) !important; }
+
+/* --- Resource usage bars tinted to the accent ------------------------------ */
+.resource-progress > div,
+[class*="bg-theme-5"] {
+  background-color: rgba(var(--accent), 0.65) !important;
+}
