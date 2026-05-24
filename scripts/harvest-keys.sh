@@ -4,7 +4,8 @@
 #
 # Walk through every external API key / credential the stack uses and prompt
 # for each one, with a direct link to the page where you find it. Writes
-# values straight into .env so you never edit it by hand.
+# values straight into .env so you never edit it by hand, then offers to
+# recreate the homepage container so its widgets pick the new values up.
 #
 # Re-run any time. Existing values are shown and kept by default; press Enter
 # to skip, type a new value to replace, or "-" to clear.
@@ -68,7 +69,7 @@ JELLYFIN_API_KEY         | http://${SERVER_IP}:${JELLYFIN_PORT}   | Dashboard �
 SEERR_API_KEY            | http://${SERVER_IP}:${SEERR_PORT}      | Settings → General → API Key
 AUDIOBOOKSHELF_TOKEN     | http://${SERVER_IP}:${AUDIOBOOKSHELF_PORT} | Settings → Users → your user → API Token
 
-# ---- Navidrome (token + salt are derived; see https://gethomepage.dev/widgets/services/navidrome/) ----
+# ---- Navidrome (token = md5(password+salt); the prompt above can compute it for you) ----
 NAVIDROME_USER           | http://${SERVER_IP}:${NAVIDROME_PORT}  | Your Navidrome username
 NAVIDROME_TOKEN          | http://${SERVER_IP}:${NAVIDROME_PORT}  | md5(password + salt)  — see Homepage docs
 NAVIDROME_SALT           | http://${SERVER_IP}:${NAVIDROME_PORT}  | Random salt you pick (any string)
@@ -125,6 +126,32 @@ detect_arr() {
   fi
 }
 
+# Navidrome: its Homepage widget needs token = md5(password + salt). Navidrome
+# shows no token in its UI, so the "manual" path is hand-computing an md5 — the
+# #1 source of a broken Navidrome widget. Compute it here instead. The password
+# is read ONCE and never stored; only username, computed token, and salt land in
+# .env. Interactive only; press n to fall through to manual entry below.
+navidrome_compute() {
+  if [[ -n "$(current_value NAVIDROME_TOKEN)" && $FORCE -eq 0 ]]; then
+    printf '  %s✓%s %-40s %s(set)%s\n' "$c_g" "$c_r" "NAVIDROME_TOKEN" "$c_d" "$c_r"
+    return 0
+  fi
+  printf '\n%sNavidrome%s — compute the Subsonic token from your password (md5(password+salt)).\n' "$c_b" "$c_r"
+  ask_yn "Compute the Navidrome token now? (password used once, never stored)" Y || return 0
+  local user pass salt token
+  ask "Navidrome username" "$(current_value NAVIDROME_USER)" user
+  read -r -s -p "  Navidrome password (hidden): " pass || true; echo
+  [[ -z "$pass" ]] && { warn "no password entered — leaving Navidrome for manual entry below"; return 0; }
+  salt="$(python3 -c 'import secrets; print(secrets.token_hex(8))')"
+  token="$(printf '%s' "${pass}${salt}" | python3 -c 'import sys, hashlib; print(hashlib.md5(sys.stdin.buffer.read()).hexdigest())')"
+  unset pass
+  update_env NAVIDROME_USER  "$user"
+  update_env NAVIDROME_TOKEN "$token"
+  update_env NAVIDROME_SALT  "$salt"
+  CHANGED=1
+  printf '  %s+%s NAVIDROME_USER / NAVIDROME_TOKEN / NAVIDROME_SALT written (token computed, password discarded)\n' "$c_g" "$c_r"
+}
+
 CHANGED=0
 printf '%s\n' "${c_b}Auto-detecting *arr API keys from config.xml${c_r}"
 detect_arr sonarr   SONARR_API_KEY
@@ -150,6 +177,8 @@ fi
 printf '%s\n' "${c_b}Homestack key harvester${c_r}"
 printf '%s\n\n' "${c_d}Press Enter to keep current value, type new value to replace, '-' to clear.${c_r}"
 
+navidrome_compute
+
 while IFS= read -r line; do
   [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
   IFS='|' read -r key url where <<<"$line"
@@ -173,11 +202,26 @@ while IFS= read -r line; do
   read -r -p "  > " new || true
 
   case "$new" in
-    "")  ;;                                   # keep
-    "-") update_env "$key" "" ;;               # clear
-    *)   update_env "$key" "$new" ;;           # replace
+    "")  ;;                                       # keep
+    "-") update_env "$key" "";    CHANGED=1 ;;    # clear
+    *)   update_env "$key" "$new"; CHANGED=1 ;;   # replace
   esac
 done <<<"$KEYS"
+
+# Homepage only reads HOMEPAGE_VAR_* at container creation, so newly-written keys
+# don't reach its widgets until it's recreated. Offer to do it now.
+if [[ $CHANGED -eq 1 ]]; then
+  echo
+  if ask_yn "Keys changed — recreate the homepage container now so its widgets pick them up?" Y; then
+    if ( cd "$REPO_DIR/dashboard" && docker compose up -d homepage ); then
+      say "Homepage recreated — widgets will reload with the new keys."
+    else
+      warn "Couldn't recreate homepage — do it manually: cd dashboard && docker compose up -d homepage"
+    fi
+  else
+    say "Skipped. Apply later with:  cd dashboard && docker compose up -d homepage   (or ./scripts/update.sh)"
+  fi
+fi
 
 echo
 printf '%sDone.%s Re-run with %s--force%s to revisit keys that already have a value.\n' \
