@@ -282,6 +282,15 @@ Create the network once before deploying anything:
 docker network create home
 ```
 
+### Shared `.env` variables (and splitting stacks across hosts)
+
+Everything reads from the single root `.env`. If you ever break the monolith up onto separate machines, here's what each piece needs:
+
+- **Global** — needed by (nearly) every stack: `SERVER_IP`, `TZ`, `PUID`, `PGID`, `CONFIG_PATH` (plus that stack's own path var: `MEDIA_PATH`, `PHOTOS_PATH`, `DOCS_PATH`, `SYNC_PATH`, `INCOMPLETE_PATH`).
+- **The dashboard (Homepage) couples to everything.** It re-reads *every* `*_PORT` and most app keys/logins (forwarded as `HOMEPAGE_VAR_*`) to build its tiles and widgets. So a split-out dashboard still needs all of those, and any app stack you move keeps its port/keys read by wherever the dashboard runs.
+- **Shared between two real app stacks:** `APP_USERNAME`, `APP_PASSWORD`, `SABNZBD_API_KEY`, `SONARR_API_KEY`, `RADARR_API_KEY`, `LIDARR_API_KEY` are used by **both** the dashboard widgets **and** the mediastack itself (qBittorrent + decluttarr/unpackerr/recyclarr) — so a standalone mediastack needs them too. The remaining widget keys are dashboard-only.
+- **Single-stack** (only the owning stack uses it): DB passwords, JWT/secret keys, VPN/WireGuard keys, Arcane keys, and remote-access tokens (Tailscale/Cloudflare).
+
 ---
 
 ## 🚀 Quick Start
