@@ -52,20 +52,6 @@
           username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
           password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
 
-    - Syncthing:
-        icon: syncthing.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SYNCTHING_PORT}}
-        description: File Sync
-        server: my-docker
-        container: syncthing
-
-    - ntfy:
-        icon: ntfy.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NTFY_PORT}}
-        description: Push Notifications
-        server: my-docker
-        container: ntfy
-
 - Security:
     - Vaultwarden:
         icon: vaultwarden.png
@@ -99,6 +85,13 @@
         description: Image Update Notifier
         server: my-docker
         container: diun
+
+    - ntfy:
+        icon: ntfy.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NTFY_PORT}}
+        description: Push Notifications
+        server: my-docker
+        container: ntfy
 
 - Media:
     - Jellyfin:
@@ -309,3 +302,10 @@
           url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_IMMICH_PORT}}
           key: {{HOMEPAGE_VAR_IMMICH_API_KEY}}
           version: 2
+
+    - Syncthing:
+        icon: syncthing.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SYNCTHING_PORT}}
+        description: File Sync
+        server: my-docker
+        container: syncthing
