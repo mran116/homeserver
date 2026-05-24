@@ -9,9 +9,9 @@
 # tracked compose. That keeps `git pull` clean on every host. scripts/stack.sh
 # (and update.sh) include this file automatically when it's present.
 #
-# Enable Jellyfin hardware transcoding for YOUR GPU below — uncomment ONE block
-# (you can only have a single `jellyfin:` key). No GPU? Leave it all commented;
-# Jellyfin falls back to software transcoding.
+# Enable hardware transcoding for Jellyfin / Plex / Tdarr below — uncomment the
+# block for your app + GPU (one key per app). No GPU? Leave it all commented;
+# everything falls back to software transcoding and nothing fails.
 # =============================================================================
 services:
 
@@ -38,6 +38,22 @@ services:
   #           - driver: nvidia
   #             count: 1
   #             capabilities: [gpu]
+
+  # ---- Plex hardware transcode (Intel /dev/dri; Plex Pass required) -------
+  # In Plex: Settings → Transcoder → "Use hardware acceleration when available".
+  # plex:
+  #   devices:
+  #     - /dev/dri:/dev/dri
+  #   group_add:
+  #     - "${RENDER_GID:-render}"
+
+  # ---- Tdarr hardware encode (Intel /dev/dri) -----------------------------
+  # For NVIDIA, copy the jellyfin NVENC block's `deploy:` section onto tdarr.
+  # tdarr:
+  #   devices:
+  #     - /dev/dri:/dev/dri
+  #   group_add:
+  #     - "${RENDER_GID:-render}"
 
   # ---- Per-host volume / path overrides -----------------------------------
   # Media that lives OUTSIDE ${MEDIA_PATH} (so the base `${MEDIA_PATH}:/data`
