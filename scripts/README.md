@@ -24,8 +24,8 @@ everywhere: `-n/--dry-run` (preview), `-y/--yes` (no prompt), `-h/--help`.
 | Routine "pull latest + redeploy" | `hs update` |
 | "Is anything wrong / what changed?" | `hs doctor` (read-only) |
 | Start / stop / restart stacks | `hs up` / `hs down` / `hs restart [stack]` |
-| New vars appeared in `.env.example` after a pull | `hs env-sync` |
-| Tidy `.env` back into the template layout | `hs env-tidy` |
+| New vars appeared in `.env.example` after a pull | `hs env sync` |
+| Tidy `.env` back into the template layout | `hs env tidy` |
 | A blank machine secret needs generating | `hs secrets` |
 | Pull app API keys for the dashboard | `hs keys` |
 | (Re)install the maintenance cron jobs | `hs cron` |
