@@ -540,6 +540,38 @@ come up when deployed — your way back in is never accidentally switched off.)
 
 ---
 
+## 🎞️ Hardware transcoding & library compression (optional)
+
+### Jellyfin / Plex hardware transcoding (playback)
+GPU passthrough can't be a plain env var (Compose can't conditionally attach a
+device, and a missing GPU would *fail* the deploy), so it lives in a **gitignored
+override file** — off by default:
+```bash
+cp mediastack/docker-compose.override.yml.example mediastack/docker-compose.override.yml
+# uncomment the block for your media server + GPU (Intel /dev/dri or NVIDIA)
+hs up mediastack
+```
+No GPU? Leave it commented — software transcoding still works, nothing fails.
+(Intel/Arc: set `RENDER_GID` in `.env` first — `getent group render | cut -d: -f3`.)
+
+### Tdarr — shrink your library to HEVC/x265
+A library transcoder that re-encodes to HEVC (and AV1) to reclaim disk space.
+**Off by default.** To turn it on:
+1. Add `tdarr` to `COMPOSE_PROFILES` in `.env` (e.g. `jellyfin,tunnel,tdarr`).
+2. Set **`TDARR_CACHE`** to a disk **with free space** — Tdarr writes the
+   re-encoded file there before swapping in the original (critical if your library
+   disk is nearly full).
+3. `hs up mediastack`, then open `http://SERVER_IP:8265`.
+4. **HW encode:** uncomment the `tdarr` block in the override file (above).
+5. **Avoid audio-sync drift** (the classic Tdarr gotcha, usually variable-frame-
+   rate sources): use a **HandBrake** flow with framerate **"same as source"
+   (variable)**, **audio = passthrough**, **MKV** output. Test on a few files
+   first, and don't auto-delete originals until you've confirmed they look/sound right.
+
+It's CPU/GPU-heavy — ideal on a capable box (e.g. with an Intel Arc), rough on a weak one.
+
+---
+
 ## 📋 Post-Deploy Setup
 
 ### Vaultwarden
