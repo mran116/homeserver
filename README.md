@@ -370,8 +370,14 @@ hs keys
 It grabs most keys automatically and shows you exactly where to copy the few that
 must come from an app's web page. Done.
 
-From here on, **everything is one command**: `hs update` (pull updates + redeploy),
-`hs doctor` (health check — tells you what to fix), `hs help` (everything else).
+**7. Updating later (do this anytime).** To get the newest version, just run —
+from any directory, no `git` commands needed:
+```bash
+hs update
+```
+It pulls the latest code, applies any new settings, and redeploys for you. The
+only other commands you'll need day-to-day: `hs doctor` (checks health and tells
+you exactly what to fix) and `hs help` (lists everything).
 
 ### The `hs` command — one entrypoint for everything
 
