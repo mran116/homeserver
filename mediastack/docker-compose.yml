@@ -68,7 +68,14 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/sabnzbd:/config
+      # Completed downloads land on the NAS so the *arr hardlink them into the
+      # library (same filesystem). The *arr need NO access to /incomplete.
       - ${MEDIA_PATH}/usenet:/data/usenet
+      # Incomplete + par2 repair + unpack scratch on a FAST LOCAL disk (SSD/NVMe) —
+      # NAS network mounts stall on that heavy random I/O. After deploy, set
+      # SAB → Config → Folders → "Temporary (incomplete) folder" to /incomplete
+      # (leave the Completed folder on /data/usenet).
+      - ${INCOMPLETE_PATH:-/opt/docker/incomplete}:/incomplete
     ports:
       - ${SABNZBD_PORT}:8080
     networks:
