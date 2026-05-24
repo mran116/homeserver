@@ -18,13 +18,8 @@ usage() { sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 parse_common_flags "$@"
 [[ -d "$REPO_DIR/.git" ]] || die "Not a git repository (no .git dir): $REPO_DIR"
 hook="$REPO_DIR/.git/hooks/pre-push"
-
-plan "install git pre-push hook → $hook (validates every stack's compose before a push)"
-[[ -f "$hook" ]] && plan "overwrite the existing pre-push hook"
-show_plan || exit 0
-gate || exit 0
-
-cat > "$hook" <<'HOOK'
+tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+cat > "$tmp" <<'HOOK'
 #!/usr/bin/env bash
 # Installed by scripts/install-hooks.sh — validates compose before pushing.
 # Bypass once with:  git push --no-verify
@@ -42,5 +37,13 @@ for f in */docker-compose.yml; do
 done
 exit $fail
 HOOK
-chmod +x "$hook"
-say "pre-push hook installed. It runs on every 'git push'; bypass once with 'git push --no-verify'."
+
+# Act only when the hook is missing or differs from the repo's version — a quiet
+# no-op when already in sync, so `hs update` can re-apply it every run, no churn.
+if   [[ ! -f "$hook" ]];                       then plan "install git pre-push hook → $hook"
+elif ! diff -q "$hook" "$tmp" >/dev/null 2>&1; then plan "update git pre-push hook → $hook (repo changed)"
+fi
+show_plan || exit 0
+gate || exit 0
+install -m 0755 "$tmp" "$hook"
+say "pre-push hook in sync. Runs on every 'git push'; bypass once with 'git push --no-verify'."
