@@ -1,33 +1,40 @@
 # scripts/
 
-Helper scripts for setting up and maintaining the homeserver. They're
-**location-independent** (each resolves the repo root from its own path) and
-share `lib/common.sh`.
+These are the building blocks behind the **`hs`** command — the single
+entrypoint for the homeserver. You rarely call them directly; run `hs <command>`
+instead. `hs` works from **any directory** (it resolves the repo location
+itself), so you never need to `cd` in.
 
-Most are **plan-then-apply**: they print what they'd change, then ask before
-doing it. Flags:
-- `--dry-run` — preview only, change nothing
-- `--yes` — apply without prompting (used by cron / `bootstrap.sh --yes`)
+```sh
+hs install     # symlink `hs` onto your PATH, then just type `hs ...` anywhere
+hs help        # list every command
+hs <cmd> -h    # help for one command
+```
+
+The scripts are **location-independent** and share `lib/common.sh`. Most are
+**plan-then-apply**: they print what they'd change, then ask. Flags are the same
+everywhere: `-n/--dry-run` (preview), `-y/--yes` (no prompt), `-h/--help`.
 
 ## When to run what
 
-| Situation | Run |
+| Situation | Command |
 |---|---|
-| Brand-new bare Ubuntu/Debian box | `./scripts/setup-fresh.sh` (installs Docker etc., then bootstrap) |
-| First-time setup of this repo on a host | `./bootstrap.sh` — **once** |
-| Routine "pull latest + redeploy" on a running host | `./scripts/update.sh` |
-| "Is anything wrong / what changed?" | `./scripts/doctor.sh` (read-only) |
-| New vars appeared in `.env.example` after a pull | `./scripts/env-sync.sh` |
-| Stack `.env` symlink missing / `STACKS_PATH` wrong | `./scripts/link-env.sh` |
-| A blank machine secret needs generating | `./scripts/gen-secrets.sh` |
-| Tidy `.env` back into the template layout | `./scripts/env-rebuild.sh` |
-| (Re)install the maintenance cron jobs | `./scripts/schedule-maintenance.sh` |
+| Brand-new bare Ubuntu/Debian box | `hs setup --fresh` |
+| First-time setup of this repo on a host | `hs setup` — **once** |
+| Routine "pull latest + redeploy" | `hs update` |
+| "Is anything wrong / what changed?" | `hs doctor` (read-only) |
+| Start / stop / restart stacks | `hs up` / `hs down` / `hs restart [stack]` |
+| New vars appeared in `.env.example` after a pull | `hs env sync` |
+| Tidy `.env` back into the template layout | `hs env tidy` |
+| A blank machine secret needs generating | `hs secrets` |
+| Pull app API keys for the dashboard | `hs keys` |
+| (Re)install the maintenance cron jobs | `hs cron` |
 
-**`bootstrap.sh` is for the first run.** It's the orchestrator that runs the setup
-steps below in order. It's safe to re-run (idempotent), but on a **live** stack
-you rarely need to — run the one specific step instead, or `./scripts/update.sh`
-to pull + redeploy. **`doctor.sh` will tell you which step to run** if something's
-off.
+**`hs setup` is the first run** — it orchestrates the setup steps below in order
+(idempotent). After that, **`hs doctor` tells you which command to run** if
+something's off, and `hs update` handles routine pull + redeploy.
+
+The tables below document the underlying scripts (what each `hs` command runs).
 
 ## Setup steps
 
