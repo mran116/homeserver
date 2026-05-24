@@ -226,18 +226,24 @@ git pull
 docker compose -f monitoring/docker-compose.yml --env-file .env up -d
 ```
 
-Or do both in one shot with `./scripts/update.sh` — it `git pull`s (autostashing
+Or do both in one shot with `hs update` — it `git pull`s (autostashing
 any in-place Arcane edits) and redeploys all stacks. Previews first; `--yes` to
 skip the prompt, `--dry-run` to only preview.
 
+> **`hs` is the single entrypoint** for every script. It runs from any directory
+> (no `cd`); run `hs install` once to put it on your PATH, then `hs help` lists
+> everything. The `./scripts/*.sh` files still work directly, but `hs <command>`
+> is the intended way.
+
 `.env` is gitignored, so `git pull` never touches your secrets. Never hand-copy these files between machines — always `git pull` so they can't land in the wrong place.
 
-For bulk operations across all stacks, use `scripts/stack.sh`:
+For bulk operations across all stacks:
 ```bash
-./scripts/stack.sh pull && ./scripts/stack.sh up   # update all images + redeploy
-./scripts/stack.sh down                            # stop everything (reverse order)
-./scripts/stack.sh status                          # ps for every stack
-./scripts/stack.sh restart mediastack              # target a specific stack
+hs pull && hs up            # update all images + redeploy
+hs down                     # stop everything (reverse order)
+hs status                   # ps for every stack
+hs restart mediastack       # target a specific stack
+hs logs mediastack -f       # follow a stack's logs
 ```
 
 ### Running only one stack (sparse-checkout)
@@ -660,21 +666,23 @@ asking you.
 all stacks in the right order — handy after a Diun update alert (`pull` then
 `up`) or for clean host-maintenance stop/start.
 
-**Targeted setup steps (live stack).** `bootstrap.sh` is the first-run
-orchestrator, but each phase is also a standalone script you can run on a
-running stack without triggering the rest. Every one **previews then asks to
-apply** (`--dry-run` to only preview, `--yes` for automation):
+**Targeted setup steps (live stack).** `hs setup` is the first-run orchestrator,
+but each phase is also runnable on its own without triggering the rest. Every one
+**previews then asks to apply** (`--dry-run` to only preview, `--yes` for
+automation):
 
 ```bash
-./scripts/doctor.sh          # read-only health check — what's wrong before you deploy
-./scripts/env-sync.sh        # append vars added to .env.example in a new version
-./scripts/env-rebuild.sh     # rewrite .env into .env.example's clean structure
-./scripts/gen-secrets.sh     # fill any newly-blank machine secret (DB-safe)
-./scripts/link-env.sh        # re-link the per-stack .env symlinks + STACKS_PATH
-./scripts/make-dirs.sh       # create any missing data/media dirs
-./scripts/create-network.sh  # (re)create the `home` docker network
-./scripts/schedule-maintenance.sh  # (re)install the maintenance cron jobs
+hs doctor          # read-only health check — what's wrong before you deploy
+hs env sync        # append vars added to .env.example in a new version
+hs env tidy        # rewrite .env into .env.example's clean structure
+hs secrets         # fill any newly-blank machine secret (DB-safe)
+hs network         # (re)create the `home` docker network
+hs cron            # (re)install the maintenance cron jobs
+hs hooks           # (re)install the git pre-push validation hook
 ```
+
+(`link-env` and `make-dirs` aren't separate commands — they run automatically
+inside `hs update`.)
 
 `env-rebuild.sh` reflows `.env` to mirror `.env.example`'s sections/order while
 keeping your values; vars you added that aren't in the template are preserved in
