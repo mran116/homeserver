@@ -77,6 +77,14 @@ elif [[ -d "$med" ]]; then
     note "MEDIA_PATH is empty and not a mountpoint — if it's a NAS share it isn't mounted (containers would see no media)"
   fi
 else bad "MEDIA_PATH ($med) does not exist"; fi
+inc="$(current_value INCOMPLETE_PATH)"
+if [[ -n "$inc" ]]; then
+  [[ -d "$inc" ]] && ok "INCOMPLETE_PATH ($inc) exists" || note "INCOMPLETE_PATH ($inc) missing — created on next 'hs update'"
+  if command -v findmnt >/dev/null; then
+    ftinc="$(findmnt -n -o FSTYPE --target "$inc" 2>/dev/null || true)"
+    case "$ftinc" in nfs*|cifs|smb*) bad "INCOMPLETE_PATH on a '$ftinc' mount — SAB stalls on network scratch; use local disk" ;; esac
+  fi
+fi
 
 say "Stack wiring"
 if [[ "$(current_value STACKS_PATH)" == "$REPO_DIR" ]]; then ok "STACKS_PATH = $REPO_DIR"
