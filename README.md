@@ -581,6 +581,9 @@ Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on fir
 **Nginx Proxy Manager owns host ports 80 and 443**
 Unlike every other service (whose host ports come from `.env`), NPM binds host `80` and `443` directly — it has to, to serve HTTP/HTTPS. If anything else on the host already uses those ports (another web server, a second reverse proxy), NPM won't start. Free them first.
 
+**SABnzbd scratch belongs on a fast local disk (especially with a NAS)**
+SAB's incomplete folder is where par2 verify/repair and unpack happen — heavy random I/O that **stalls and corrupts over a network mount**. So `MEDIA_PATH` on a NAS will give you slow, freezing, or wedged repairs. Point SAB's scratch at `INCOMPLETE_PATH` (a local SSD/NVMe, default `/opt/docker/incomplete`, mounted into SAB as `/incomplete`) and set **SAB → Config → Folders → "Temporary (incomplete) folder" = `/incomplete`**. Leave the **Completed folder on `/data/usenet`** (the NAS) so the *arr still hardlink imports into the library — they need no access to the scratch disk. A backup usenet provider on a different backbone also cuts repairs (fills missing articles instead of reconstructing).
+
 **Browsing Homepage by a name other than its IP**
 `HOMEPAGE_ALLOWED_HOSTS` defaults to `SERVER_IP:HOMEPAGE_PORT`. If you reach Homepage via a hostname, Tailscale name, or reverse-proxy domain, set `HOMEPAGE_ALLOWED_HOSTS` in `.env` to a comma-separated list of those names — otherwise Homepage shows a blank "host validation failed" page.
 

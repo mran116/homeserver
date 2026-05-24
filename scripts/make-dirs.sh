@@ -20,7 +20,7 @@ parse_common_flags "$@"
 require_env || exit 0
 load_env
 
-base_dirs=("$CONFIG_PATH" "$CONFIG_PATH/homepage" "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$SYNC_PATH")
+base_dirs=("$CONFIG_PATH" "$CONFIG_PATH/homepage" "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$SYNC_PATH" "${INCOMPLETE_PATH:-/opt/docker/incomplete}")
 
 # Per-app config dirs. Docker auto-creates a missing bind-mount source as
 # root:root mid-`up`, which then locks out any app that runs as PUID. Derive the
