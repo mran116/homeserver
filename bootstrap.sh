@@ -6,9 +6,9 @@
 # scripts/ in dependency order; every step PREVIEWS what it will do, then asks
 # to apply. Safe to re-run (idempotent), but on a LIVE stack you usually don't
 # need it — see "When to run what" in scripts/README.md. In short:
-#   ./scripts/update.sh   pull latest + redeploy (routine updates)
-#   ./scripts/doctor.sh   read-only health check (tells you which step to run)
-#   ./scripts/<step>.sh   a single targeted step (env-sync, link-env, ...)
+#   hs update   pull latest + redeploy (routine updates)
+#   hs doctor   read-only health check (tells you which step to run)
+#   hs help     list every command (single entrypoint for all the scripts)
 #
 # Flags:
 #   --dry-run   preview every step, change nothing
@@ -46,8 +46,13 @@ run link-env.sh
 run create-network.sh
 run schedule-maintenance.sh
 
+# Put `hs` on the user's PATH (+ tab-completion) so they can run it from anywhere.
+if [[ $DRY_RUN -eq 0 ]]; then
+  echo; say "── hs install"; "$REPO_DIR/hs" install || true
+fi
+
 say "Reminder: VPN keys + third-party tokens (Diun/Tailscale/Cloudflare) and"
-say "Homepage widget keys still need filling — run ./scripts/harvest-keys.sh later."
+say "Homepage widget keys still need filling — run 'hs keys' later."
 
 # ---- optional: start Arcane (final hand-off) --------------------------------
 echo
@@ -80,6 +85,6 @@ Next steps:
        vaultwarden → infrastructure → monitoring → dashboard → mediastack
        → household → records → knowledge → syncthing → cloud
   4. After the apps are up, run the key harvester:
-       ./scripts/harvest-keys.sh
+       hs keys
   5. Install the ntfy app and subscribe to "diun-updates" for image-update alerts.
 EOF

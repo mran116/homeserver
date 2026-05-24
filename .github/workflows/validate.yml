@@ -36,8 +36,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: bash syntax check
-        run: for s in bootstrap.sh scripts/*.sh scripts/lib/*.sh; do bash -n "$s" && echo "ok $s"; done
+        run: for s in hs bootstrap.sh scripts/*.sh scripts/*.bash scripts/lib/*.sh; do bash -n "$s" && echo "ok $s"; done
       - name: shellcheck (advisory)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-          shellcheck -x bootstrap.sh scripts/*.sh scripts/lib/*.sh || true
+          shellcheck -x hs bootstrap.sh scripts/*.sh scripts/lib/*.sh || true

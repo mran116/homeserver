@@ -34,7 +34,7 @@ fi
 if [[ $have_daemon -eq 1 ]]; then
   say "Network"
   docker network inspect home >/dev/null 2>&1 && ok "'home' network exists" \
-    || bad "'home' network missing — run ./scripts/create-network.sh"
+    || bad "'home' network missing — run 'hs network'"
 
   say "Containers"
   restarting="$(docker ps -a --filter status=restarting --format '{{.Names}}' 2>/dev/null)"
@@ -42,10 +42,10 @@ if [[ $have_daemon -eq 1 ]]; then
   exited="$(docker ps -a    --filter status=exited       --format '{{.Names}}' 2>/dev/null)"
   if [[ -z "$restarting$unhealthy" ]]; then ok "none restarting or unhealthy"
   else
-    for n in $restarting; do bad "$n is restarting (crash loop) — docker logs $n"; done
-    for n in $unhealthy;  do bad "$n is unhealthy — docker logs $n"; done
+    for n in $restarting; do bad "$n is restarting (crash loop) — hs logs $n"; done
+    for n in $unhealthy;  do bad "$n is unhealthy — hs logs $n"; done
   fi
-  for n in $exited; do note "$n is stopped (Exited) — intentional? otherwise: docker logs $n"; done
+  for n in $exited; do note "$n is stopped (Exited) — intentional? otherwise: hs logs $n"; done
 fi
 
 say ".env"
@@ -55,9 +55,9 @@ if [[ -f "$ENV_FILE" ]]; then
     <(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE"  | sed 's/=$//' | sort -u) \
     <(grep -oE '^[A-Z0-9_]+=' .env.example | sed 's/=$//' | sort -u))"
   if [[ -z "$missing" ]]; then ok "in sync with .env.example"
-  else note "$(printf '%s' "$missing" | grep -c .) var(s) missing vs .env.example — run ./scripts/env-sync.sh"; fi
+  else note "$(printf '%s' "$missing" | grep -c .) var(s) missing vs .env.example — run 'hs env sync'"; fi
 else
-  bad ".env missing — run ./scripts/env-init.sh"
+  bad ".env missing — run 'hs env init'"
 fi
 
 say "Storage"
@@ -77,16 +77,24 @@ elif [[ -d "$med" ]]; then
     note "MEDIA_PATH is empty and not a mountpoint — if it's a NAS share it isn't mounted (containers would see no media)"
   fi
 else bad "MEDIA_PATH ($med) does not exist"; fi
+inc="$(current_value INCOMPLETE_PATH)"
+if [[ -n "$inc" ]]; then
+  [[ -d "$inc" ]] && ok "INCOMPLETE_PATH ($inc) exists" || note "INCOMPLETE_PATH ($inc) missing — created on next 'hs update'"
+  if command -v findmnt >/dev/null; then
+    ftinc="$(findmnt -n -o FSTYPE --target "$inc" 2>/dev/null || true)"
+    case "$ftinc" in nfs*|cifs|smb*) bad "INCOMPLETE_PATH on a '$ftinc' mount — SAB stalls on network scratch; use local disk" ;; esac
+  fi
+fi
 
 say "Stack wiring"
 if [[ "$(current_value STACKS_PATH)" == "$REPO_DIR" ]]; then ok "STACKS_PATH = $REPO_DIR"
-else note "STACKS_PATH != repo path — run ./scripts/link-env.sh"; fi
+else note "STACKS_PATH != repo path — run 'hs update' (re-links it)"; fi
 bad_links=0
 for compose in */docker-compose.yml; do
   d="$(dirname "$compose")"
   [[ "$(readlink "$d/.env" 2>/dev/null)" == "../.env" ]] || { note "missing/incorrect symlink: $d/.env"; bad_links=1; }
 done
-[[ $bad_links -eq 0 ]] && ok "every stack has its .env symlink" || note "fix with ./scripts/link-env.sh"
+[[ $bad_links -eq 0 ]] && ok "every stack has its .env symlink" || note "fix with 'hs update'"
 
 say "Compose validity"
 ENV_ARG=(); [[ -f "$ENV_FILE" ]] && ENV_ARG=(--env-file "$ENV_FILE") || ENV_ARG=(--env-file .env.example)
@@ -137,7 +145,7 @@ PY
   else
     while read -r tag var stacks; do
       [[ -z "$tag" ]] && continue
-      if [[ "$tag" == REQ ]]; then bad "$var is blank but required ($stacks)"
+      if [[ "$tag" == REQ ]]; then bad "$var is blank but required ($stacks) — run 'hs secrets' (or 'hs keys' for app keys)"
       else note "$var blank — fine for optional widgets, set if you use it ($stacks)"; fi
     done <<<"$report"
   fi
@@ -152,6 +160,43 @@ elif command -v ss >/dev/null && ss -lntu 2>/dev/null | grep -qE '[:.]53\b'; the
   note "something is listening on :53 — verify it's AdGuard, not a conflict"
 else
   ok "no obvious :53 conflict"
+fi
+
+say "Stack profile"
+if [[ -f .stacks.local ]]; then
+  denied="$("$SCRIPT_DIR/stacks.sh" denied-list 2>/dev/null | tr '\n' ' ' | sed 's/  *$//')"
+  pending="$("$SCRIPT_DIR/stacks.sh" pending-list 2>/dev/null | tr '\n' ' ' | sed 's/  *$//')"
+  if [[ -z "$denied" ]]; then ok "no stacks excluded"
+  else printf '  %s·%s excluded from bulk deploy: %s  (hs stacks enable <name>)\n' "$c_dim" "$c_reset" "$denied"; fi
+  [[ -n "$pending" ]] && note "new/undecided stack(s): $pending  (run 'hs stacks reconcile')"
+  # Flag (don't remove) .env vars now unused because their only stack is disabled.
+  if [[ -n "$denied" && -f "$ENV_FILE" ]]; then
+    while read -r var stk; do
+      [[ -n "$var" ]] && printf '  %s·%s %s is set but unused (%s disabled)\n' "$c_dim" "$c_reset" "$var" "$stk"
+    done < <(python3 - "$ENV_FILE" "$denied" <<'PY'
+import sys, re, glob, pathlib
+env_path, denied = sys.argv[1], set(sys.argv[2].split())
+env = {}
+for ln in pathlib.Path(env_path).read_text().splitlines():
+    m = re.match(r'^([A-Z0-9_]+)=(.*)$', ln)
+    if m: env[m.group(1)] = re.split(r'\s+#', m.group(2), 1)[0].strip()
+refs = {}
+for f in glob.glob('*/docker-compose.yml'):
+    stack = pathlib.Path(f).parent.name
+    for ln in pathlib.Path(f).read_text().splitlines():
+        if ln.lstrip().startswith('#'):
+            continue
+        for m in re.finditer(r'\$\{([A-Z0-9_]+)', ln):
+            refs.setdefault(m.group(1), set()).add(stack)
+for var in sorted(refs):
+    st = refs[var]
+    if st and st <= denied and env.get(var):   # referenced ONLY by denied stacks, and set
+        print(f"{var} {','.join(sorted(st))}")
+PY
+)
+  fi
+else
+  ok "all stacks deploy (no profile yet)"
 fi
 
 echo

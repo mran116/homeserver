@@ -24,6 +24,13 @@ source "$REPO_DIR/scripts/lib/common.sh"
 # Deploy order: brought UP first→last, taken DOWN last→first.
 ORDER=(arcane vaultwarden infrastructure monitoring dashboard mediastack household fitness records knowledge syncthing cloud)
 
+# Bulk targets = the stack profile's deploy-list (everything minus DENIED), in
+# ORDER. Falls back to ORDER if the profile helper is unavailable.
+deploy_targets() {
+  mapfile -t targets < <("$REPO_DIR/scripts/stacks.sh" deploy-list 2>/dev/null)
+  [[ ${#targets[@]} -gt 0 ]] || targets=("${ORDER[@]}")
+}
+
 usage() { echo "Usage: $0 {up|down|restart|pull|status} [stack ...]"; exit 1; }
 
 # Interactive menu when run with no arguments.
@@ -47,16 +54,25 @@ menu() {
   esac
 }
 
-[[ -f "$ENV_FILE" ]] || { echo "No .env at $ENV_FILE — run ./bootstrap.sh first." >&2; exit 1; }
+for a in "$@"; do case "$a" in -h|--help) sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;; esac; done
+[[ -f "$ENV_FILE" ]] || { echo "No .env at $ENV_FILE — run 'hs setup' first." >&2; exit 1; }
 
 if [[ $# -ge 1 ]]; then
   cmd="$1"; shift
-  if [[ $# -gt 0 ]]; then targets=("$@"); explicit=1; else targets=("${ORDER[@]}"); explicit=0; fi
+  if [[ $# -gt 0 ]]; then targets=("$@"); explicit=1; else deploy_targets; explicit=0; fi
+  # Guard: an explicitly-named stack that doesn't exist is a typo — fail clearly
+  # rather than silently skipping it.
+  if [[ $explicit -eq 1 ]]; then
+    for s in "${targets[@]}"; do
+      [[ "$s" == -* ]] && continue   # a flag (passed through to docker compose), not a stack
+      [[ -f "$s/docker-compose.yml" ]] || die "No such stack: '$s' — pick from: ${ORDER[*]}"
+    done
+  fi
 else
   cmd="$(menu)"
   [[ -z "$cmd" ]] && { echo "Cancelled."; exit 0; }
   [[ "$cmd" == "INVALID" ]] && { echo "Invalid choice."; exit 1; }
-  targets=("${ORDER[@]}"); explicit=0
+  deploy_targets; explicit=0
 fi
 
 dc() {
@@ -67,8 +83,6 @@ dc() {
   [[ -f "$s/docker-compose.override.yml" ]] && f+=(-f "$s/docker-compose.override.yml")
   docker compose "${f[@]}" --env-file "$ENV_FILE" "$@"
 }
-
-reversed() { local i; for ((i=${#ORDER[@]}-1; i>=0; i--)); do echo "${ORDER[i]}"; done; }
 
 run_each() {
   local action="$1"; shift
@@ -89,7 +103,10 @@ case "$cmd" in
   pull)   run_each pull   "${targets[@]}" ;;
   status) run_each status "${targets[@]}" ;;
   down)
-    if [[ $explicit -eq 0 ]]; then mapfile -t targets < <(reversed); fi
+    if [[ $explicit -eq 0 ]]; then
+      rev=(); for ((i=${#targets[@]}-1; i>=0; i--)); do rev+=("${targets[i]}"); done
+      targets=("${rev[@]}")
+    fi
     run_each down "${targets[@]}"
     ;;
   restart)
