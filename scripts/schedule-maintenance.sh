@@ -36,9 +36,18 @@ sw_marker="# homestack-sab-watchdog"
 sw_line="*/5 * * * * cd $REPO_DIR && ./scripts/sab-watchdog.sh >> $REPO_DIR/sab-watchdog.log 2>&1 $sw_marker"
 
 cron_now="$(crontab -l 2>/dev/null || true)"
-grep -qF "$ks_marker" <<<"$cron_now" || plan "add nightly *arr key-sync cron (04:00) → key-sync.log"
-grep -qF "$pr_marker" <<<"$cron_now" || plan "add weekly image-prune cron (Sun 05:00) → image-prune.log"
-grep -qF "$sw_marker" <<<"$cron_now" || plan "add SABnzbd stall watchdog cron (every 5 min) → sab-watchdog.log"
+# Reconcile each managed line to EXACTLY match the repo. The drift fix: re-apply
+# a line when the existing one DIFFERS (repo changed), not only when its marker
+# is missing — so an improved schedule/command actually reaches the box.
+plan_line() {  # plan_line MARKER DESIRED_LINE DESCRIPTION
+  local existing; existing="$(grep -F "$1" <<<"$cron_now" || true)"
+  if   [[ -z "$existing"   ]]; then plan "add $3"
+  elif [[ "$existing" != "$2" ]]; then plan "update $3 (repo changed)"
+  fi
+}
+plan_line "$ks_marker" "$ks_line" "nightly *arr key-sync cron (04:00) → key-sync.log"
+plan_line "$pr_marker" "$pr_line" "weekly image-prune cron (Sun 05:00) → image-prune.log"
+plan_line "$sw_marker" "$sw_line" "SABnzbd stall watchdog cron (every 5 min) → sab-watchdog.log"
 
 show_plan || exit 0
 gate || exit 0

@@ -42,9 +42,10 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── syncthing/               private file sync
 │   ├── cloud/                   Immich (+ Matrix, commented)
 │   └── devops/                  Gitea + CI (commented, Phase 3)
+├── hs                       ← single entrypoint for all tooling (run: hs help)
 ├── reference/               ← NOT stacks — config you copy elsewhere
 │   └── home-assistant/          HA packages for the HA VM (/config/packages)
-├── scripts/                 ← bootstrap helpers (harvest-keys, stack.sh, …)
+├── scripts/                 ← internals behind `hs` (rarely run directly)
 └── data/                    ← all app config + data (bind mounts: jellyfin/, sonarr/, …)
 
 /mnt/media/                  ← Movies, TV, music, anime, books
@@ -226,18 +227,24 @@ git pull
 docker compose -f monitoring/docker-compose.yml --env-file .env up -d
 ```
 
-Or do both in one shot with `./scripts/update.sh` — it `git pull`s (autostashing
+Or do both in one shot with `hs update` — it `git pull`s (autostashing
 any in-place Arcane edits) and redeploys all stacks. Previews first; `--yes` to
 skip the prompt, `--dry-run` to only preview.
 
+> **`hs` is the single entrypoint** for every script. It runs from any directory
+> (no `cd`); run `hs install` once to put it on your PATH, then `hs help` lists
+> everything. The `./scripts/*.sh` files still work directly, but `hs <command>`
+> is the intended way.
+
 `.env` is gitignored, so `git pull` never touches your secrets. Never hand-copy these files between machines — always `git pull` so they can't land in the wrong place.
 
-For bulk operations across all stacks, use `scripts/stack.sh`:
+For bulk operations across all stacks:
 ```bash
-./scripts/stack.sh pull && ./scripts/stack.sh up   # update all images + redeploy
-./scripts/stack.sh down                            # stop everything (reverse order)
-./scripts/stack.sh status                          # ps for every stack
-./scripts/stack.sh restart mediastack              # target a specific stack
+hs pull && hs up            # update all images + redeploy
+hs down                     # stop everything (reverse order)
+hs status                   # ps for every stack
+hs restart mediastack       # target a specific stack
+hs logs mediastack -f       # follow a stack's logs
 ```
 
 ### Running only one stack (sparse-checkout)
@@ -303,15 +310,105 @@ The whole journey, start to finish, so you know where you're headed:
 1. Install Docker                         (one command)
 2. Clone the repo to /opt/docker/stacks
 3. Run ./bootstrap.sh                      → generates .env, secrets, *arr keys,
-                                             dirs, network, symlinks, starts Arcane
+                                             dirs, network, symlinks, installs `hs`,
+                                             starts Arcane
 4. Open Arcane → create admin
 5. Start the stacks in order from Arcane   → vaultwarden first, cloud last
+                                             (or pick which to run: hs stacks)
 6. Create your accounts in each app's UI   (Vaultwarden, Immich, Mealie, NPM…)
-7. Run ./scripts/harvest-keys.sh           → auto-detects *arr keys + collects UI-only keys, then redeploy consumers
+7. Run hs keys                             → auto-detects *arr keys + collects
+                                             UI-only keys, then redeploy consumers
 8. Verify on Homepage + Uptime Kuma        → everything green
 ```
 
 Most people are running in **under an hour**, most of it waiting for containers to pull.
+
+### 🟢 Step-by-step deploy (no Linux or Docker experience needed)
+
+This assumes your server already has **Ubuntu or Debian installed**. You'll
+copy-paste a few commands and click a few buttons — that's it. At any question,
+**press Enter to accept the suggested answer**.
+
+**1. Get to a terminal on the server.** Either use the machine directly, or from
+your own PC open a terminal and connect over SSH (use your server's address):
+```bash
+ssh youruser@192.168.1.100
+```
+> Don't know the address? On the server run `hostname -I` — it's the first one.
+
+**2. Download the project and run the one-time setup.** Copy-paste this whole block:
+```bash
+sudo apt update && sudo apt install -y git
+sudo mkdir -p /opt/docker && sudo chown -R $USER /opt/docker
+git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
+cd /opt/docker/stacks
+./scripts/setup-fresh.sh
+```
+`setup-fresh` installs Docker and everything it needs, asks a handful of simple
+questions (timezone, where to keep data — just press Enter for the defaults),
+**generates strong passwords for you**, installs the `hs` command, and starts the
+control panel. This takes a few minutes.
+
+**3. Open the control panel (Arcane).** In a web browser go to
+`http://YOUR_SERVER_IP:3552` (e.g. `http://192.168.1.100:3552`). Log in with
+**`arcane` / `arcane-admin`** and change the password when prompted.
+
+**4. Turn on the apps.** Arcane shows each "stack" (a group of related apps).
+Click each and press **Start**, in this order (let the first few finish first):
+`vaultwarden` → `infrastructure` → `monitoring` → `dashboard` → then the rest
+(`mediastack`, `household`, `records`, `knowledge`, `syncthing`, `cloud`).
+> Don't want some of them? Run `hs stacks` first to choose which to deploy.
+
+**5. Create your logins.** Your dashboard at `http://YOUR_SERVER_IP:3000` links to
+every app. Open each and create your account — **start with Vaultwarden** (your
+password manager) and turn on 2-factor.
+
+**6. Fill in the dashboard's live data.** Back in the terminal, run:
+```bash
+hs keys
+```
+It grabs most keys automatically and shows you exactly where to copy the few that
+must come from an app's web page. Done.
+
+**7. Updating later (do this anytime).** To get the newest version, just run —
+from any directory, no `git` commands needed:
+```bash
+hs update
+```
+It pulls the latest code, applies any new settings, and redeploys for you. The
+only other commands you'll need day-to-day: `hs doctor` (checks health and tells
+you exactly what to fix) and `hs help` (lists everything).
+
+### The `hs` command — one entrypoint for everything
+
+After setup you don't call the individual scripts — **`hs` wraps them all**, runs
+from **any directory**, and has consistent flags everywhere: `-n/--dry-run`
+(preview), `-y/--yes` (no prompt), `-h/--help`. `bootstrap.sh` installs it
+(`hs install` symlinks it onto your PATH and adds tab-completion).
+
+```bash
+hs help                          # list every command
+hs update                        # pull latest + redeploy (reconciles .env, dirs, cron, hooks)
+hs doctor                        # read-only health check — tells you exactly what to fix
+hs up | down | restart [stack]   # start / stop / restart all stacks (or one)
+hs status [stack]                # docker compose ps
+hs logs <stack|container> [-f]   # tail logs
+hs stacks                        # choose which stacks deploy (exclude apps you don't run)
+hs env init | sync | tidy        # create / top-up / reformat .env
+hs secrets                       # fill blank machine secrets (DB-safe)
+hs keys                          # pull app API keys for the dashboard widgets
+```
+
+`hs update` keeps the box matching the repo on every run — it tops up new `.env`
+vars, fills blank secrets, re-applies cron/hooks if you've set them up, and asks
+about any **new** stacks before redeploying. `hs doctor` is read-only and, for
+each problem, prints the exact `hs` command to fix it.
+
+### Detailed walkthrough (manual install, or what the easy path automates)
+
+*The numbered steps below are the same flow, broken down — handy for a manual
+install or to understand what `setup-fresh` did for you. If you used the
+beginner walkthrough above and it worked, skip ahead to **Post-Deploy Setup**.*
 
 ### 1 — Install Docker
 
@@ -321,7 +418,7 @@ sudo systemctl enable docker
 sudo usermod -aG docker $USER
 ```
 
-> **Brand-new machine?** After cloning (step 2), `./scripts/setup-fresh.sh` does the whole host setup for a fresh Ubuntu/Debian box: apt update/upgrade + base tools, Docker + compose, Docker log rotation, `qemu-guest-agent` if it's a VM, the docker group, then runs `bootstrap.sh`. You still mount your own media/data disks first, and do the firewall at your router.
+> **Brand-new machine?** After cloning (step 2), `hs setup --fresh` (a.k.a. `./scripts/setup-fresh.sh`) does the whole host setup for a fresh Ubuntu/Debian box: apt update/upgrade + base tools, Docker + compose, Docker log rotation, `qemu-guest-agent` if it's a VM, the docker group, then runs `bootstrap.sh`. You still mount your own media/data disks first, and do the firewall at your router.
 
 ### 2 — Clone the repo and run bootstrap
 
@@ -340,10 +437,11 @@ cd /opt/docker/stacks
 - **never generates or pre-seeds app API keys.** Each *arr creates its own key on first boot — bootstrap doesn't touch app config at all. You collect the keys *after* the apps are up (next step), which is safer: the script only ever reads app config, never writes it
 - **symlink the root `.env` into every stack folder** so Arcane and CLI both find it with no `--env-file` flag on reload
 - create the directory layout and the `home` docker network
-- sync `dashboard/homepage/*.yaml` into your config dir (re-synced on every `update.sh` — the repo is the source of truth)
+- sync `dashboard/homepage/*.yaml` into your config dir (re-synced on every `hs update` — the repo is the source of truth)
+- **install the `hs` command** onto your PATH (+ tab-completion) so everything afterward is just `hs <command>`
 - optionally start Arcane
 
-After the apps are up, run `./scripts/harvest-keys.sh`. It **auto-detects** the *arr API keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) straight from each app's generated `config.xml` and writes them to `.env`, then prompts you for the keys that can only come from a UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) are pasted in by hand. Then **redeploy** the consumers (Recyclarr, Unpackerr, Homepage) so they pick up the new keys.
+After the apps are up, run `hs keys`. It **auto-detects** the *arr API keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) straight from each app's generated `config.xml` and writes them to `.env`, then prompts you for the keys that can only come from a UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) are pasted in by hand. Then **redeploy** the consumers (Recyclarr, Unpackerr, Homepage) so they pick up the new keys.
 
 <details>
 <summary>Prefer to do it manually?</summary>
@@ -456,7 +554,7 @@ Then in the browser:
 Filling in API keys for ~15 services by hand is the worst part of any first run. Instead:
 
 ```bash
-./scripts/harvest-keys.sh
+hs keys
 ```
 
 It first **auto-detects** the *arr keys from each app's generated `config.xml`, then walks the rest (showing the exact URL + click path), prompts once, and writes straight to `.env`. Re-runnable; existing values are skipped unless you pass `--force`.
@@ -465,7 +563,7 @@ It first **auto-detects** the *arr keys from each app's generated `config.xml`, 
 The *arr keys rarely change, but if you ever regenerate one, you don't want to remember to re-run the script. `--sync` is a non-interactive mode that **detects the *arr keys and, only if one changed, recreates the consumers** (Unpackerr, Recyclarr, Homepage) so they pick up the new value — then exits silently:
 
 ```bash
-./scripts/harvest-keys.sh --sync
+hs keys --sync
 ```
 
 **`bootstrap.sh` offers to install this for you** — it prompts "Install a nightly cron job to auto-sync *arr API keys?" and, if you accept, adds the entry to your crontab (idempotently, keyed off a `# homestack-key-sync` marker so re-running won't duplicate it). So you don't have to touch cron by hand.
@@ -483,11 +581,11 @@ Both scripts are **location-independent** — they resolve the repo root from th
 
 ### Homepage
 - Config source of truth lives in `dashboard/homepage/` (this repo) — edit it here, not on the box
-- `make-dirs.sh` (run by `bootstrap.sh` and every `update.sh`) mirrors `*.yaml` into the runtime dir `/opt/docker/data/homepage/` (bind-mounted into the container); Homepage hot-reloads
+- `make-dirs` (run by `bootstrap.sh` and every `hs update`) mirrors `*.yaml` into the runtime dir `/opt/docker/data/homepage/` (bind-mounted into the container); Homepage hot-reloads
 - All ports/IPs/keys come from `.env` via `HOMEPAGE_VAR_*` — never hard-code them in `services.yaml`
 - `docker.yaml` enables the Docker integration: each tile shows a **live up/down dot + CPU/RAM** (the tile stays visible, in red, when a container is down). Aggregate up/down + history is the Uptime Kuma widget
 - Edit `widgets.yaml` to add your coordinates for the weather widget
-- To add a service: add its tile to `services.yaml` (with `server: my-docker` + `container: <name>`), then run `./scripts/update.sh`
+- To add a service: add its tile to `services.yaml` (with `server: my-docker` + `container: <name>`), then run `hs update`
 
 ---
 
@@ -656,25 +754,27 @@ Repeat per service. Now it's `jellyfin.home`, `paperless.home`, etc.
 monitors → publish. Share the link so the household can self-check instead of
 asking you.
 
-**Bulk operations.** `./scripts/stack.sh up|down|restart|pull|status` runs across
+**Bulk operations.** `hs up|down|restart|pull|status` runs across
 all stacks in the right order — handy after a Diun update alert (`pull` then
 `up`) or for clean host-maintenance stop/start.
 
-**Targeted setup steps (live stack).** `bootstrap.sh` is the first-run
-orchestrator, but each phase is also a standalone script you can run on a
-running stack without triggering the rest. Every one **previews then asks to
-apply** (`--dry-run` to only preview, `--yes` for automation):
+**Targeted setup steps (live stack).** `hs setup` is the first-run orchestrator,
+but each phase is also runnable on its own without triggering the rest. Every one
+**previews then asks to apply** (`--dry-run` to only preview, `--yes` for
+automation):
 
 ```bash
-./scripts/doctor.sh          # read-only health check — what's wrong before you deploy
-./scripts/env-sync.sh        # append vars added to .env.example in a new version
-./scripts/env-rebuild.sh     # rewrite .env into .env.example's clean structure
-./scripts/gen-secrets.sh     # fill any newly-blank machine secret (DB-safe)
-./scripts/link-env.sh        # re-link the per-stack .env symlinks + STACKS_PATH
-./scripts/make-dirs.sh       # create any missing data/media dirs
-./scripts/create-network.sh  # (re)create the `home` docker network
-./scripts/schedule-maintenance.sh  # (re)install the maintenance cron jobs
+hs doctor          # read-only health check — what's wrong before you deploy
+hs env sync        # append vars added to .env.example in a new version
+hs env tidy        # rewrite .env into .env.example's clean structure
+hs secrets         # fill any newly-blank machine secret (DB-safe)
+hs network         # (re)create the `home` docker network
+hs cron            # (re)install the maintenance cron jobs
+hs hooks           # (re)install the git pre-push validation hook
 ```
+
+(`link-env` and `make-dirs` aren't separate commands — they run automatically
+inside `hs update`.)
 
 `env-rebuild.sh` reflows `.env` to mirror `.env.example`'s sections/order while
 keeping your values; vars you added that aren't in the template are preserved in
@@ -871,7 +971,7 @@ cp mediastack/docker-compose.override.yml.example mediastack/docker-compose.over
   Toolkit on the host), pick NVENC in Jellyfin.
 - **No GPU:** leave it commented — Jellyfin uses software transcoding.
 
-`scripts/stack.sh` and `update.sh` auto-include the override when present, so no
+`hs up` and `hs update` auto-include the override when present, so no
 tracked file changes and no vendor lock-in. (Jellyfin also mounts the whole media
 root at `/data`, so any folder layout works — add libraries in the UI.)
 
