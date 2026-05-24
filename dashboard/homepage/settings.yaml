@@ -16,6 +16,9 @@ layout:
   Infrastructure:
     style: row
     columns: 4
+  Security:
+    style: row
+    columns: 4
   Monitoring:
     style: row
     columns: 4
