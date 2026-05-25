@@ -79,6 +79,7 @@ for d in "${scratch_dirs[@]}"; do
   [[ -d "$d" ]] && continue
   if mkdir -p "$d" 2>/dev/null; then
     [[ -n "${PUID:-}" && -n "${PGID:-}" ]] && chown "$PUID:$PGID" "$d" 2>/dev/null || true
+    chmod 775 "$d" 2>/dev/null || true
   else
     warn "scratch dir not created: $d (parent not writable). Once: sudo mkdir -p '$d' && sudo chown ${PUID:-1000}:${PGID:-1000} '$d'"
   fi
