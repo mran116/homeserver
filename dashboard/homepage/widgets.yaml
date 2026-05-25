@@ -16,7 +16,7 @@
     cpu: true
     memory: true
     uptime: true
-    expanded: true
+    expanded: false      # compact card — less wasted space than the big expanded one
 
 - resources:
     label: Local
