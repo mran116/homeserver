@@ -48,6 +48,13 @@ body {
   transform: translateY(-2px);
 }
 
+/* --- Density: tighter cards + gaps so tiles aren't mostly empty space ------ */
+/* Plain status-dot + link tiles (no widget) then read as compact launchers,   */
+/* while widget tiles grow only as tall as their data needs.                   */
+.service-card { padding: 0.5rem 0.65rem !important; }
+.service-card .service-title { font-size: 0.88rem; line-height: 1.2; }
+#services .services-group { row-gap: 0.5rem; }
+
 /* --- Group headers: accent, uppercase, with a thin divider ----------------- */
 .services-group h2,
 h2.services-group-name {

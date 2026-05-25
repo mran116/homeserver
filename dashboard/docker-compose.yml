@@ -108,6 +108,16 @@ services:
       # `user@realm!tokenid` (e.g. root@pam!homepage) as the ID + its secret.
       - HOMEPAGE_VAR_PROXMOX_TOKEN_ID=${PROXMOX_TOKEN_ID}
       - HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET=${PROXMOX_TOKEN_SECRET}
+      # Home Assistant lives on its own VM — full URL (http://ha-ip:8123) + a
+      # long-lived access token (HA → Profile → Long-Lived Access Tokens).
+      - HOMEPAGE_VAR_HASS_URL=${HASS_URL}
+      - HOMEPAGE_VAR_HASS_TOKEN=${HASS_TOKEN}
+      # Proxmox (and some HA setups) serve HTTPS with a self-signed cert, which
+      # Homepage rejects by default — leaving the Proxmox widget blank and its
+      # monitor red. Uncomment to let Homepage accept self-signed certs on your
+      # LAN. This relaxes outbound TLS verification for ALL widgets; on a homelan
+      # where everything else is plain http that's a fine trade-off.
+      # - NODE_TLS_REJECT_UNAUTHORIZED=0
     networks:
       - home
 
