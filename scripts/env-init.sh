@@ -51,9 +51,9 @@ ask "Documents library root"   "/mnt/documents"    DOCS_PATH
 echo
 say "SABnzbd scratch — incomplete downloads + par2 verify/repair + unpack. Keep on"
 say "a FAST LOCAL disk (SSD/NVMe), NOT the NAS — that work stalls over a network"
-say "mount. Use a separate path (default) or put it under the data dir,"
-say "e.g. $CONFIG_PATH/incomplete."
-ask "Incomplete/scratch path"  "/opt/docker/incomplete"  INCOMPLETE_PATH
+say "mount. RECOMMENDED: /opt/docker/incomplete (local SSD); or under the data dir,"
+say "e.g. $CONFIG_PATH/incomplete. (Torrents stay on the NAS — this is usenet-only.)"
+ask "SABnzbd incomplete/scratch path (recommended: local SSD)"  "/opt/docker/incomplete"  SAB_INCOMPLETE_PATH
 
 # Guard: CONFIG + scratch must live on LOCAL disk. findmnt resolves the nearest
 # existing ancestor, so this catches a NAS path even before the dir is created.
@@ -65,25 +65,25 @@ guard_local() {
   esac
 }
 guard_local "$CONFIG_PATH"     "CONFIG_PATH"
-guard_local "$INCOMPLETE_PATH" "INCOMPLETE_PATH"
+guard_local "$SAB_INCOMPLETE_PATH" "SAB_INCOMPLETE_PATH"
 
 echo
 plan "create .env from .env.example"
 plan "SERVER_IP=$SERVER_IP  TZ=$TZ  PUID=$PUID  PGID=$PGID"
 plan "CONFIG_PATH=$CONFIG_PATH  MEDIA_PATH=$MEDIA_PATH  PHOTOS_PATH=$PHOTOS_PATH  DOCS_PATH=$DOCS_PATH"
-plan "INCOMPLETE_PATH=$INCOMPLETE_PATH"
+plan "SAB_INCOMPLETE_PATH=$SAB_INCOMPLETE_PATH"
 show_plan || exit 0
 gate || exit 0
 
 cp .env.example "$ENV_FILE"
-python3 - "$SERVER_IP" "$TZ" "$PUID" "$PGID" "$CONFIG_PATH" "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$INCOMPLETE_PATH" "$ENV_FILE" <<'PY'
+python3 - "$SERVER_IP" "$TZ" "$PUID" "$PGID" "$CONFIG_PATH" "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$SAB_INCOMPLETE_PATH" "$ENV_FILE" <<'PY'
 import sys, re, pathlib
 ip, tz, puid, pgid, cfg, media, photos, docs, incomplete, path = sys.argv[1:]
 p = pathlib.Path(path)
 text = p.read_text()
 subs = {"SERVER_IP": ip, "TZ": tz, "PUID": puid, "PGID": pgid,
         "CONFIG_PATH": cfg, "MEDIA_PATH": media, "PHOTOS_PATH": photos, "DOCS_PATH": docs,
-        "INCOMPLETE_PATH": incomplete}
+        "SAB_INCOMPLETE_PATH": incomplete}
 for k, v in subs.items():
     text = re.sub(rf"(?m)^{k}=.*$", f"{k}={v}", text, count=1)
 p.write_text(text)
