@@ -10,50 +10,39 @@ color: zinc            # neutral near-black base; accent is set in custom.css
 headerStyle: clean
 statusStyle: dot       # clean coloured dot instead of the "running/unknown" text
 target: _blank
-useEqualHeights: true
+useEqualHeights: false # tiles size to content (compact) — no stretched empty space
 hideVersion: true
 hideErrors: true       # don't surface raw widget API errors (e.g. a key not set yet)
 
-# Three tabs keep the 9 sections organised and scroll-free. The system-stats
-# header (widgets.yaml) stays visible on every tab. `columns` is right-sized per
-# group so each section fills its row instead of leaving ragged empty space.
-#   • System – the boxes that run everything
-#   • Media  – watch / listen / grab
-#   • Home   – day-to-day household, records, photos, fitness
+# SINGLE PAGE — everything visible at once, no tabs. `style: column` lets the
+# sections pack SIDE BY SIDE in a responsive grid (the key fix: `style: row`
+# would force each section full-width into a stacked band). The two former
+# one-app sections are COMBINED, not deleted: Vaultwarden lives in
+# "Monitoring & Security", wger in "Household".
+#
+# `columns` is the number of tile-columns each section is wide — smaller = a
+# narrower section that packs more per row. These are a sensible starting point;
+# nudge them after seeing it live (Homepage hot-reloads) if the packing isn't
+# perfect on your screen width.
 layout:
   Infrastructure:
-    tab: System
-    style: row
-    columns: 4
-  Security:
-    tab: System
-    style: row
+    style: column
     columns: 2
-  Monitoring:
-    tab: System
-    style: row
-    columns: 4
+  Monitoring & Security:
+    style: column
+    columns: 2
   Media:
-    tab: Media
-    style: row
-    columns: 4
+    style: column
+    columns: 2
   Downloads:
-    tab: Media
-    style: row
-    columns: 4
+    style: column
+    columns: 2
   Household:
-    tab: Home
-    style: row
-    columns: 4
+    style: column
+    columns: 2
   Records:
-    tab: Home
-    style: row
-    columns: 3
+    style: column
+    columns: 1
   Cloud:
-    tab: Home
-    style: row
-    columns: 2
-  Fitness:
-    tab: Home
-    style: row
-    columns: 2
+    style: column
+    columns: 1
