@@ -1,17 +1,21 @@
 ---
 # Homepage Widgets — top info/header bar (system stats + clock + search + weather)
-# The disk/CPU-temp readouts need host paths mounted into the Homepage container
+# The disk readouts need host paths mounted into the Homepage container
 # (see dashboard/docker-compose.yml): ${CONFIG_PATH} -> /mnt/host/local,
-# ${MEDIA_PATH} -> /mnt/host/media, and /sys/class/thermal for CPU temp.
+# ${MEDIA_PATH} -> /mnt/host/media.
+#
+# NOTE: cputemp is intentionally OFF. CPU temperature needs real hardware thermal
+# sensors (/sys/class/thermal), which a Proxmox VM does not have — so it would
+# only ever read blank. On bare metal or a privileged LXC you can add
+# `cputemp: true` back (the /sys/class/thermal mount is still in the compose). To
+# show a temperature anyway, surface one your Home Assistant already tracks via a
+# `custom:` entity on the Home Assistant tile in services.yaml.
 
 - resources:
     label: System
     cpu: true
     memory: true
-    cputemp: true        # best-effort: needs /sys/class/thermal mounted (it is)
     uptime: true
-    tempmin: 0
-    tempmax: 90
     expanded: true
 
 - resources:
