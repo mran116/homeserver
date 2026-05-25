@@ -52,15 +52,47 @@
           username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
           password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
 
-- Security:
-    - Vaultwarden:
-        icon: vaultwarden.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
-        description: Password Manager
-        server: my-docker
-        container: vaultwarden
+    # Proxmox is the hypervisor host, not a container on this Docker engine, so it
+    # has no `server`/`container` dot. `siteMonitor` gives it a live up/down dot
+    # by polling the web UI; the widget shows the node (CPU/RAM, running VMs/LXCs).
+    # Needs PROXMOX_* in .env. NOTE: Proxmox uses a self-signed cert by default —
+    # if the dot stays red / the widget stays blank, enable self-signed TLS for
+    # Homepage (see NODE_TLS_REJECT_UNAUTHORIZED in dashboard/docker-compose.yml).
+    - Proxmox:
+        icon: proxmox.png
+        href: https://{{HOMEPAGE_VAR_PROXMOX_HOST}}:8006
+        description: Virtualization Host
+        siteMonitor: https://{{HOMEPAGE_VAR_PROXMOX_HOST}}:8006
+        widget:
+          type: proxmox
+          url: https://{{HOMEPAGE_VAR_PROXMOX_HOST}}:8006
+          username: {{HOMEPAGE_VAR_PROXMOX_TOKEN_ID}}
+          password: {{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}
 
-- Monitoring:
+    # Home Assistant runs on its OWN VM (not this Docker engine), so like Proxmox
+    # it has no container dot — `siteMonitor` gives it a live up/down, and the
+    # widget pulls metrics over HA's API. Fill HASS_URL/HASS_TOKEN in .env
+    # (HA: Profile → Long-Lived Access Tokens → Create Token). Uncomment `custom:`
+    # to surface specific sensors — e.g. a temperature HA already tracks, which is
+    # the way to get a "CPU temp" reading the VM itself can't provide.
+    - Home Assistant:
+        icon: home-assistant.png
+        href: {{HOMEPAGE_VAR_HASS_URL}}
+        description: Smart Home
+        siteMonitor: {{HOMEPAGE_VAR_HASS_URL}}
+        widget:
+          type: homeassistant
+          url: {{HOMEPAGE_VAR_HASS_URL}}
+          key: {{HOMEPAGE_VAR_HASS_TOKEN}}
+          # custom:
+          #   - state: sensor.processor_temperature   # e.g. HA's System Monitor / Proxmox temp
+          #     label: CPU
+          #   - state: sensor.home_power
+          #     label: Power
+          #   - template: "{{ states.light | selectattr('state','eq','on') | list | count }}"
+          #     label: Lights on
+
+- Monitoring & Security:
     - Uptime Kuma:
         icon: uptime-kuma.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
@@ -71,6 +103,13 @@
           type: uptimekuma
           url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
           slug: all
+
+    - Vaultwarden:
+        icon: vaultwarden.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
+        description: Password Manager
+        server: my-docker
+        container: vaultwarden
 
     - Dozzle:
         icon: dozzle.png
@@ -255,7 +294,6 @@
         server: my-docker
         container: actual-budget
 
-- Fitness:
     - wger:
         icon: wger.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_WGER_PORT}}

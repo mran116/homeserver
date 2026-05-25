@@ -494,6 +494,9 @@ qBittorrent uses `network_mode: service:gluetun` — it shares Gluetun's network
 **Homepage requires a hard refresh after config changes**
 After editing config files press `Ctrl+Shift+R` (or `Cmd+Shift+R` on Mac) to clear the browser cache and pick up changes.
 
+**Homepage tiles show "unknown" status (but widgets still load data)**
+The up/down dot comes from the Docker API; widget data comes from each app's own API. So if widgets populate but every tile reads "unknown", it's the Docker side that's broken, not the network. Homepage runs non-root (`PUID`/`PGID`) and can't read `/var/run/docker.sock` directly — that's why the dashboard stack ships a read-only **`dockerproxy`** sidecar and `dashboard/homepage/docker.yaml` points at `dockerproxy:2375`. Make sure that container is up (`docker ps | grep dockerproxy`); if not, recreate the stack so it starts: `hs update`. Proxmox and Home Assistant tiles get their dot from a `siteMonitor` HTTP check instead (they're not containers on this host); Proxmox's self-signed cert may need `NODE_TLS_REJECT_UNAUTHORIZED=0` (see `dashboard/docker-compose.yml`).
+
 **Vaultwarden admin panel**
 Access the admin panel at `http://YOUR_SERVER_IP:9930/admin` — requires `VAULTWARDEN_ADMIN_TOKEN`. Generate one with:
 ```bash

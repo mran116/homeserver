@@ -14,18 +14,20 @@ services:
   #
   # All port/IP/secret vars are forwarded from the root .env as HOMEPAGE_VAR_*
   # below — services.yaml references them via {{HOMEPAGE_VAR_*}} so .env stays
-  # the single source of truth. The docker.sock mount + homepage/docker.yaml let
-  # each tile show a live up/down dot + CPU/RAM (see homepage/docker.yaml).
+  # the single source of truth. Live up/down dots + CPU/RAM come from the Docker
+  # API via the `dockerproxy` service below (see homepage/docker.yaml) — Homepage
+  # stays non-root and never touches the raw socket.
   # ===========================================================================
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     restart: unless-stopped
+    depends_on:
+      - dockerproxy
     ports:
       - "${HOMEPAGE_PORT}:3000"
     volumes:
       - ${CONFIG_PATH}/homepage:/app/config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       # Read-only host paths for the resources widget (system-stats header):
       # disk usage of the local SSD + the media library, and CPU temperature.
       - ${CONFIG_PATH}:/mnt/host/local:ro
@@ -41,6 +43,10 @@ services:
 
       # ---- Port/IP aliases (forwarded from .env) ----
       - HOMEPAGE_VAR_SERVER_IP=${SERVER_IP}
+      # Proxmox host for the virtualization tile. Defaults to SERVER_IP (the
+      # common single-box case); set PROXMOX_HOST in .env if Proxmox lives
+      # elsewhere. The widget also needs the API-token vars further down.
+      - HOMEPAGE_VAR_PROXMOX_HOST=${PROXMOX_HOST:-${SERVER_IP}}
       - HOMEPAGE_VAR_ARCANE_PORT=${ARCANE_PORT}
       - HOMEPAGE_VAR_NPM_PORT=${NPM_PORT}
       - HOMEPAGE_VAR_ADGUARD_PORT=${ADGUARD_PORT}
@@ -97,6 +103,45 @@ services:
       - HOMEPAGE_VAR_ADGUARD_USERNAME=${ADGUARD_USERNAME}
       - HOMEPAGE_VAR_ADGUARD_PASSWORD=${ADGUARD_PASSWORD}
       - HOMEPAGE_VAR_IMMICH_API_KEY=${IMMICH_API_KEY}
+      # Proxmox API token for the virtualization widget (node CPU/RAM, VMs/LXCs).
+      # Create it in Proxmox: Datacenter → Permissions → API Tokens. Use
+      # `user@realm!tokenid` (e.g. root@pam!homepage) as the ID + its secret.
+      - HOMEPAGE_VAR_PROXMOX_TOKEN_ID=${PROXMOX_TOKEN_ID}
+      - HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET=${PROXMOX_TOKEN_SECRET}
+      # Home Assistant lives on its own VM — full URL (http://ha-ip:8123) + a
+      # long-lived access token (HA → Profile → Long-Lived Access Tokens).
+      - HOMEPAGE_VAR_HASS_URL=${HASS_URL}
+      - HOMEPAGE_VAR_HASS_TOKEN=${HASS_TOKEN}
+      # Proxmox (and some HA setups) serve HTTPS with a self-signed cert, which
+      # Homepage rejects by default — leaving the Proxmox widget blank and its
+      # monitor red. Uncomment to let Homepage accept self-signed certs on your
+      # LAN. This relaxes outbound TLS verification for ALL widgets; on a homelan
+      # where everything else is plain http that's a fine trade-off.
+      # - NODE_TLS_REJECT_UNAUTHORIZED=0
+    networks:
+      - home
+
+  # ===========================================================================
+  # DOCKER SOCKET PROXY - least-privilege, read-only gateway to the Docker API
+  #
+  # Homepage needs the Docker API to show each tile's live up/down dot + CPU/RAM.
+  # Reading /var/run/docker.sock directly requires running Homepage as root (or in
+  # the host's docker group); since Homepage runs as PUID/PGID it otherwise can't
+  # read the socket and every tile shows "unknown". This proxy mounts the socket
+  # as root and exposes ONLY the read-only Containers API on the internal `home`
+  # network, so Homepage stays non-root. Not published to the host — reachable
+  # only as `dockerproxy:2375` from other containers on the network.
+  # https://gethomepage.dev/configs/docker/
+  # ===========================================================================
+  dockerproxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    container_name: dockerproxy
+    restart: unless-stopped
+    environment:
+      - CONTAINERS=1   # allow the read-only containers API (status + stats)
+      - POST=0         # deny every write/POST endpoint — strictly read-only
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - home
 
