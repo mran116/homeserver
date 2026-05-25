@@ -8,6 +8,12 @@ detail, the mobile apps per service, the network diagram, and hardware specs.
 > Home Assistant integration is a **future goal** and lives in its own doc:
 > [HOME-ASSISTANT.md](HOME-ASSISTANT.md).
 
+## Contents
+- [Stacks in detail](#-stacks-in-detail) (per-service descriptions)
+- [Mobile Apps](#-mobile-apps)
+- [Network Architecture](#-network-architecture)
+- [Hardware Recommendations](#-hardware-recommendations)
+
 ---
 
 ## 📦 Stacks in detail
