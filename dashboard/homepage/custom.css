@@ -1,59 +1,123 @@
 /* ============================================================================
  * Homepage "tech dashboard" theme — dark glass + cyan/teal accent.
  *
- * Pairs with settings.yaml (theme: dark, color: zinc). Mirrored to
- * CONFIG_PATH/homepage by make-dirs alongside the *.yaml files.
+ * Pairs with settings.yaml (theme: dark, color: zinc, statusStyle: dot) and the
+ * tabbed layout. Mirrored to CONFIG_PATH/homepage by make-dirs alongside the
+ * *.yaml files.
  *
- * NOTE: Homepage's DOM/class names can shift between releases, so treat this as
- * a STARTING POINT. Tweak selectors live with browser devtools (F12) and
- * hard-refresh (Ctrl+Shift+R) after each change. The body background + .service-card
- * rules are the most reliable; the rest is best-effort polish.
+ * NOTE: Homepage's DOM/class names can shift between releases, so treat the
+ * fancier selectors (tabs, status dots) as best-effort polish — if a release
+ * renames them the layout still works, it just loses that bit of styling. The
+ * body background, .service-card and group-header rules are the most reliable.
+ * Tweak live with browser devtools (F12) and hard-refresh (Ctrl+Shift+R).
  * ========================================================================== */
 
 :root {
   --accent: 34, 211, 238;          /* cyan-400, as R,G,B for rgba() */
+  --card: 255, 255, 255;           /* white, tinted down for the glass fill */
 }
 
-/* --- Background: near-black with a subtle cyan glow at the top -------------- */
+/* --- Base: near-black with a soft cyan glow at the top --------------------- */
 body {
   background:
-    radial-gradient(1100px 560px at 50% -12%, rgba(var(--accent), 0.10), transparent 60%),
-    linear-gradient(180deg, #0a0c0e 0%, #070809 100%) !important;
+    radial-gradient(1200px 600px at 50% -15%, rgba(var(--accent), 0.10), transparent 60%),
+    linear-gradient(180deg, #0a0c0e 0%, #060708 100%) !important;
   background-attachment: fixed !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+::selection { background: rgba(var(--accent), 0.30); }
 
-/* --- Glass cards: services, bookmarks, and the top info widgets ------------- */
+/* --- Glass cards: services, bookmarks, and the top info widgets ------------ */
 .service-card,
 .bookmark-card,
 #information-widgets .resource,
 #information-widgets > div {
-  background: rgba(255, 255, 255, 0.035) !important;
-  border: 1px solid rgba(var(--accent), 0.12) !important;
-  border-radius: 0.85rem !important;
+  background: rgba(var(--card), 0.035) !important;
+  border: 1px solid rgba(var(--accent), 0.10) !important;
+  border-radius: 0.8rem !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px) saturate(130%);
   -webkit-backdrop-filter: blur(10px) saturate(130%);
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .service-card:hover,
 .bookmark-card:hover {
   border-color: rgba(var(--accent), 0.45) !important;
-  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(var(--accent), 0.20);
+  transform: translateY(-2px);
 }
 
-/* --- Group headers in the accent color, uppercase/techy -------------------- */
+/* --- Group headers: accent, uppercase, with a thin divider ----------------- */
 .services-group h2,
 h2.services-group-name {
   color: rgb(var(--accent)) !important;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 600;
+  font-size: 0.78rem;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(var(--accent), 0.15);
 }
 
-/* --- Links / hovers pick up the accent ------------------------------------- */
+/* --- Tabs: pill nav with an accent for the active tab ---------------------- */
+/* Best-effort: selectors target the tab list/buttons across recent releases. */
+#myTab,
+[role="tablist"] {
+  gap: 0.4rem;
+}
+#myTab a,
+#myTab button,
+[role="tablist"] a,
+[role="tablist"] button {
+  border-radius: 0.6rem !important;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+#myTab a:hover,
+#myTab button:hover,
+[role="tablist"] a:hover,
+[role="tablist"] button:hover {
+  color: rgb(var(--accent)) !important;
+  background: rgba(var(--accent), 0.10) !important;
+}
+/* Active/selected tab */
+#myTab a[aria-selected="true"],
+#myTab button[aria-selected="true"],
+[role="tablist"] [aria-selected="true"] {
+  color: rgb(var(--accent)) !important;
+  background: rgba(var(--accent), 0.14) !important;
+  box-shadow: inset 0 -2px 0 0 rgb(var(--accent));
+}
+
+/* --- Links / hovers pick up the accent ------------------------------------ */
 a:hover { color: rgb(var(--accent)) !important; }
 
-/* --- Resource usage bars tinted to the accent ------------------------------ */
+/* --- Status dots: crisp, with a subtle glow ------------------------------- */
+.status-dot,
+[class*="status"] span.rounded-full,
+[class*="status"] .rounded-full {
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* --- Resource usage bars + the top stats readouts tinted to the accent ---- */
 .resource-progress > div,
 [class*="bg-theme-5"] {
   background-color: rgba(var(--accent), 0.65) !important;
 }
+
+/* --- Search bar: glass to match the cards --------------------------------- */
+input[type="text"],
+input[type="search"] {
+  background: rgba(var(--card), 0.04) !important;
+  border: 1px solid rgba(var(--accent), 0.12) !important;
+  border-radius: 0.6rem !important;
+}
+
+/* --- Scrollbar ------------------------------------------------------------ */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--accent), 0.25);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent), 0.40); }

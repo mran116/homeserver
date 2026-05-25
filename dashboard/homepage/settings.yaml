@@ -8,35 +8,52 @@ theme: dark
 color: zinc            # neutral near-black base; accent is set in custom.css
 
 headerStyle: clean
+statusStyle: dot       # clean coloured dot instead of the "running/unknown" text
 target: _blank
 useEqualHeights: true
 hideVersion: true
+hideErrors: true       # don't surface raw widget API errors (e.g. a key not set yet)
 
+# Three tabs keep the 9 sections organised and scroll-free. The system-stats
+# header (widgets.yaml) stays visible on every tab. `columns` is right-sized per
+# group so each section fills its row instead of leaving ragged empty space.
+#   • System – the boxes that run everything
+#   • Media  – watch / listen / grab
+#   • Home   – day-to-day household, records, photos, fitness
 layout:
   Infrastructure:
+    tab: System
     style: row
     columns: 4
   Security:
+    tab: System
     style: row
-    columns: 4
+    columns: 2
   Monitoring:
+    tab: System
     style: row
     columns: 4
   Media:
+    tab: Media
     style: row
     columns: 4
   Downloads:
+    tab: Media
     style: row
     columns: 4
   Household:
-    style: row
-    columns: 4
-  Fitness:
+    tab: Home
     style: row
     columns: 4
   Records:
+    tab: Home
     style: row
-    columns: 4
+    columns: 3
   Cloud:
+    tab: Home
     style: row
-    columns: 4
+    columns: 2
+  Fitness:
+    tab: Home
+    style: row
+    columns: 2
