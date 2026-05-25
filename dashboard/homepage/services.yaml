@@ -92,15 +92,7 @@
           #   - template: "{{ states.light | selectattr('state','eq','on') | list | count }}"
           #     label: Lights on
 
-- Security:
-    - Vaultwarden:
-        icon: vaultwarden.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
-        description: Password Manager
-        server: my-docker
-        container: vaultwarden
-
-- Monitoring:
+- Monitoring & Security:
     - Uptime Kuma:
         icon: uptime-kuma.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
@@ -111,6 +103,13 @@
           type: uptimekuma
           url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
           slug: all
+
+    - Vaultwarden:
+        icon: vaultwarden.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
+        description: Password Manager
+        server: my-docker
+        container: vaultwarden
 
     - Dozzle:
         icon: dozzle.png
@@ -295,7 +294,6 @@
         server: my-docker
         container: actual-budget
 
-- Fitness:
     - wger:
         icon: wger.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_WGER_PORT}}
