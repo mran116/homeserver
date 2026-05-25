@@ -52,6 +52,19 @@
           username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
           password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
 
+    # Proxmox is the hypervisor host, not a container on this Docker engine, so it
+    # has no `server`/`container` status dot — just the link + the live node
+    # widget (CPU/RAM, running VMs/LXCs). Needs PROXMOX_* in .env to populate.
+    - Proxmox:
+        icon: proxmox.png
+        href: https://{{HOMEPAGE_VAR_PROXMOX_HOST}}:8006
+        description: Virtualization Host
+        widget:
+          type: proxmox
+          url: https://{{HOMEPAGE_VAR_PROXMOX_HOST}}:8006
+          username: {{HOMEPAGE_VAR_PROXMOX_TOKEN_ID}}
+          password: {{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}
+
 - Security:
     - Vaultwarden:
         icon: vaultwarden.png

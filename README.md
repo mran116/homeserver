@@ -649,9 +649,11 @@ Both scripts are **location-independent** — they resolve the repo root from th
 - Config source of truth lives in `dashboard/homepage/` (this repo) — edit it here, not on the box
 - `make-dirs` (run by `bootstrap.sh` and every `hs update`) mirrors `*.yaml` into the runtime dir `/opt/docker/data/homepage/` (bind-mounted into the container); Homepage hot-reloads
 - All ports/IPs/keys come from `.env` via `HOMEPAGE_VAR_*` — never hard-code them in `services.yaml`
-- `docker.yaml` enables the Docker integration: each tile shows a **live up/down dot + CPU/RAM** (the tile stays visible, in red, when a container is down). Aggregate up/down + history is the Uptime Kuma widget
+- `docker.yaml` enables the Docker integration: each tile shows a **live up/down dot + CPU/RAM** (the tile stays visible, in red, when a container is down). Aggregate up/down + history is the Uptime Kuma widget. Homepage reads the Docker API through the read-only **`dockerproxy`** sidecar (in the dashboard stack) rather than the raw socket, so it can run non-root and still report status — see the troubleshooting note below if tiles ever read "unknown"
+- Sections are organised into **tabs** (`System` / `Media` / `Home`) via `tab:` in `settings.yaml`; the system-stats header stays on every tab. `columns` is right-sized per section so rows fill evenly
+- **Proxmox** has a tile + node widget (CPU/RAM, VMs/LXCs). Set `PROXMOX_HOST` (optional — defaults to `SERVER_IP`) and a read-only `PROXMOX_TOKEN_ID`/`PROXMOX_TOKEN_SECRET` in `.env`
 - Edit `widgets.yaml` to add your coordinates for the weather widget
-- To add a service: add its tile to `services.yaml` (with `server: my-docker` + `container: <name>`), then run `hs update`
+- To add a service: add its tile to `services.yaml` (with `server: my-docker` + `container: <name>`), then run `hs update`. Services without a Homepage integration are just a status dot + launch link — that's expected. To embed an external page in a tile use a `widget: { type: iframe, src: ... }`
 
 ---
 
@@ -738,6 +740,9 @@ qBittorrent uses `network_mode: service:gluetun` — it shares Gluetun's network
 
 **Homepage requires a hard refresh after config changes**
 After editing config files press `Ctrl+Shift+R` (or `Cmd+Shift+R` on Mac) to clear the browser cache and pick up changes.
+
+**Homepage tiles show "unknown" status (but widgets still load data)**
+The up/down dot comes from the Docker API; the widget data comes from each app's own API. So if widgets populate but every tile reads "unknown", it's the Docker side that's broken, not the network. Homepage runs non-root (PUID/PGID) and so can't read `/var/run/docker.sock` directly — that's why the dashboard stack ships a read-only **`dockerproxy`** sidecar and `homepage/docker.yaml` points at `dockerproxy:2375`. Make sure that container is up (`hs status dashboard` / `docker ps | grep dockerproxy`) and that `docker.yaml` uses `host: dockerproxy` + `port: 2375` (not a raw `socket:`). After changes, recreate the stack so the proxy starts: `hs update` or `docker compose -f dashboard/docker-compose.yml up -d`.
 
 **Vaultwarden admin panel**
 Access the admin panel at `http://YOUR_SERVER_IP:9930/admin` — requires `VAULTWARDEN_ADMIN_TOKEN`. Generate one with:
