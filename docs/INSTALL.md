@@ -10,6 +10,18 @@ hardware transcoding, troubleshooting, and low-effort maintenance.
 > most people never need this file. Come back when you want the manual flow or a
 > specific app's setup.
 
+## Contents
+- [Directory Structure](#-directory-structure)
+- [Environment Variables](#-environment-variables)
+- [GitOps Workflow](#-gitops-workflow) · [updating the host](#updating-the-host) · [single stack (sparse-checkout)](#running-only-one-stack-sparse-checkout)
+- [How Stacks Connect](#-how-stacks-connect)
+- [Detailed walkthrough (manual install)](#-detailed-walkthrough-manual-install-or-what-the-easy-path-automates)
+- [Post-Deploy Setup](#-post-deploy-setup) (per-app)
+- [Hardware transcoding, Tdarr & the override file](#-hardware-transcoding-tdarr--the-override-file)
+- [Enabling Commented Services](#-enabling-commented-services)
+- [Common Gotchas / Troubleshooting](#-common-gotchas--troubleshooting)
+- [Maintenance](#-maintenance-set-it-and-forget-it)
+
 ---
 
 ## 🗂️ Directory Structure

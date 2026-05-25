@@ -28,8 +28,8 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 |---|---|---|
 | **arcane** | Arcane | Web UI to manage every stack — **deploy first** |
 | **vaultwarden** | Vaultwarden | Bitwarden-compatible password manager — **deploy second** |
-| **infrastructure** | Nginx Proxy Manager, AdGuard Home, Syncthing, ntfy, Tailscale\*, Cloudflare Tunnel\*, Borgmatic\* | Reverse proxy + SSL, DNS ad-blocking, file sync, push notifications, remote access, offsite backups |
-| **monitoring** | Uptime Kuma, Dozzle, Diun | Uptime heartbeats, live logs, image-update alerts |
+| **infrastructure** | Nginx Proxy Manager, AdGuard Home, Syncthing, ntfy, Tailscale\*, Cloudflare Tunnel\*, Borgmatic\* | The plumbing: clean HTTPS URLs, network-wide ad-blocking, your own Dropbox, phone alerts, secure remote access, offsite backups |
+| **monitoring** | Uptime Kuma, Dozzle, Diun | Know the moment something breaks — uptime checks, live logs, image-update alerts |
 | **dashboard** | Homepage | One launcher with live status widgets |
 | **mediastack** | Jellyfin\*/Plex\*, Sonarr/Radarr/Lidarr/Whisparr, Prowlarr, Bazarr, SABnzbd, qBittorrent+Gluetun, Navidrome, Audiobookshelf, Seerr, Recyclarr, Unpackerr, Decluttarr, Flaresolverr, Tdarr\* | Media server + fully automated acquisition, music & audiobooks, family requests |
 | **household** | Mealie, KitchenOwl, Donetick, Actual Budget | Recipes & meal planning, shopping lists, chores, budgeting |
@@ -182,16 +182,25 @@ Low-effort maintenance (log caps, image cleanup, update/outage alerts, backups) 
 
 ---
 
-## 🔒 Security Checklist
+## 🔒 Security
 
-- [ ] Strong master password on Vaultwarden
-- [ ] 2FA enabled on Vaultwarden, Arcane, and Immich admin
+**What protects you out of the box:**
+- **Zero open ports by default.** Nothing is exposed to the internet unless you opt in. Remote access is via **Cloudflare Tunnel** (outbound-only, no port-forwarding) or **Tailscale** (private WireGuard VPN) — your home IP is never exposed.
+- **Zero-knowledge password vault.** Vaultwarden is client-side encrypted — the server never sees your passwords, and they can't be reset/recovered by email.
+- **Secrets stay local.** All secrets live in a **gitignored `.env`**, never committed; `git pull` never touches them.
+- **Private by default.** Services bind to your LAN; AdGuard blocks trackers network-wide; all torrent traffic is forced through a VPN (Gluetun) or won't connect.
+- **Update awareness.** Diun alerts on new images (you review before applying); Uptime Kuma watches every service.
+
+**Hardening checklist (do these):**
+- [ ] Strong master password **+ 2FA** on Vaultwarden
+- [ ] 2FA on Arcane and Immich admin
 - [ ] `VAULTWARDEN_SIGNUPS_ALLOWED=false` after creating your account
-- [ ] NPM SSL certificates configured for local services
-- [ ] Tailscale for remote access; Cloudflare Tunnel for public services only
+- [ ] NPM SSL certificates for local services
+- [ ] Tailscale for remote admin; Cloudflare Tunnel for public services only (**never** stream Jellyfin through the tunnel — see below)
 - [ ] Arcane, Paperless, Actual Budget never exposed publicly
-- [ ] Diun notifying on image updates (manual review before applying)
-- [ ] Uptime Kuma monitoring all services with notifications configured
+- [ ] Diun + Uptime Kuma notifications wired up
+
+> Full remote-access & exposure design (tunnel vs. Tailscale vs. direct, and how Jellyfin is served): [docs/network-and-remote-access.md](docs/network-and-remote-access.md).
 
 ---
 
