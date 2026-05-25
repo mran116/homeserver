@@ -1,60 +1,121 @@
 # 📚 Reference
 
-Look-up material that doesn't belong in the install flow: Home Assistant
-integration, the mobile apps per service, the network diagram, and hardware specs.
+> 📖 **Docs:** [README](../README.md) · [Install & Setup](INSTALL.md) · [Remote-access design](network-and-remote-access.md) · [Home Assistant](HOME-ASSISTANT.md)
+
+Look-up material that doesn't belong in the install flow: per-service stack
+detail, the mobile apps per service, the network diagram, and hardware specs.
+
+> Home Assistant integration is a **future goal** and lives in its own doc:
+> [HOME-ASSISTANT.md](HOME-ASSISTANT.md).
 
 ---
 
-## 🏡 Home Assistant Integration
+## 📦 Stacks in detail
 
-Home Assistant runs separately on **Home Assistant OS** (not in this Docker stack) and acts as the smart home brain and family wall dashboard. It connects to many services in this stack to display everything in one place.
+Per-service descriptions for every stack. The README has the [compact overview](../README.md#-stacks); this is the full breakdown.
 
-### What HA connects to from this stack
+### Arcane — Stack Manager
+Compose-native stack manager. Deploy this first via SSH — every other stack is then managed through Arcane's UI, which reads and writes the compose files in this repo directly (no drift between UI and git).
 
-| Service | HA Integration | What you get |
-|---|---|---|
-| Jellyfin | HACS — Jellyfin integration | Media player card, now playing, playback control |
-| Navidrome | HACS — Navidrome integration | Music player card, currently playing |
-| Mealie | HACS — Mealie integration | Meal plan card, recipe count |
-| KitchenOwl | HACS — KitchenOwl integration | Shopping list on dashboard |
-| Donetick | HACS — Donetick integration | Chore list, tasks due today |
-| Google Calendar | Built-in | Family and shared calendars on dashboard |
-
-### Recommended HACS frontend cards for wall tablet
-
-| Card | Purpose |
+| Service | Purpose |
 |---|---|
-| Atomic Calendar Revive | Beautiful calendar card — color-coded calendars, agenda view |
-| Mushroom Cards | Modern, clean card designs for all your dashboard widgets |
-| Kiosk Mode | Hides HA header and sidebar for a clean full-screen tablet display |
+| Arcane | Web UI for managing Docker compose stacks. Edits the same files you commit to git. |
 
-### Wall tablet setup
+### Vaultwarden — Password Manager
+Deploy this second. Stores all secrets and API keys used across the rest of the stack. Uses the official Bitwarden app ecosystem.
 
-For a wall-mounted family dashboard running Home Assistant:
-
-1. Install HACS — see [hacs.xyz](https://hacs.xyz) for instructions
-2. Install Atomic Calendar Revive, Mushroom Cards, and Kiosk Mode via HACS
-3. Connect Google Calendar integration — Settings → Devices & Services → Add Integration → Google Calendar
-4. Connect Mealie, KitchenOwl, and Donetick via HACS integrations
-5. Build your dashboard — Settings → Dashboards
-6. Enable Kiosk Mode for full-screen display
-7. Use **Fully Kiosk Browser** (Android) or **Guided Access** (iOS) to lock the tablet to the dashboard
-
-### Recommended HA add-ons
-
-| Add-on | Purpose |
+| Service | Purpose |
 |---|---|
-| Terminal & SSH | Required for HACS installation |
-| Music Assistant | Connects Navidrome and other music sources to HA media players |
-| Studio Code Server | Edit HA config files from the browser |
+| Vaultwarden | Self-hosted Bitwarden-compatible password manager. Client-side encrypted — server never sees your passwords. Use the official Bitwarden app on all devices. |
 
-### Household automations (proactive nudges + alerts)
+### Infrastructure — Networking and Access
 
-Ready-made HA packages live in [`reference/home-assistant/`](../reference/home-assistant/) — copy them
-to your HA VM's `/config/packages/` to turn Donetick / Mealie / KitchenOwl /
-Calendar into morning briefings, chore digests, bin/meal/shopping reminders, and
-to route Diun + Uptime Kuma into a single alert stream. See
-[`reference/home-assistant/README.md`](../reference/home-assistant/README.md) for setup.
+| Service | Purpose |
+|---|---|
+| Nginx Proxy Manager | Reverse proxy with SSL certificate management. Gives all services clean local URLs and HTTPS. |
+| AdGuard Home | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. |
+| Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
+| ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone. |
+| Tailscale* | Zero-config VPN built on WireGuard. Gives secure remote access to your entire home network from anywhere. |
+| Cloudflare Tunnel* | Exposes selected services publicly with zero open ports on your router. Works with a custom domain. |
+| Borgmatic* | Automated encrypted offsite backups to Backblaze B2 or any remote storage. |
+
+*Profile-gated/optional — enable when ready.
+
+### Monitoring — Observability
+
+| Service | Purpose |
+|---|---|
+| Uptime Kuma | Heartbeat monitor for every service. Home Assistant reads this via the Uptime Kuma integration so "is X up?" surfaces on the family HA dashboard. |
+| Dozzle | Real-time Docker log viewer. Debugging tool — opened only when something is already known broken. |
+| Diun | Docker Image Update Notifier. Watches every running container and notifies when a new image is published. Does not auto-apply — pair with Arcane for one-click updates. |
+
+### Dashboard
+
+| Service | Purpose |
+|---|---|
+| Homepage | Service launcher with live stats widgets. Single bookmark to reach everything. |
+
+### Mediastack — Media Server
+
+| Service | Purpose |
+|---|---|
+| Jellyfin / Plex | Media server — stream movies, TV, music, and books to any device. Pick one via `COMPOSE_PROFILES`. |
+| Sonarr | TV show manager — monitors RSS feeds, grabs new episodes automatically. |
+| Radarr | Movie manager — monitors and automatically downloads movies. |
+| Lidarr | Music manager — monitors and automatically downloads music. |
+| Whisparr | Adult content manager. |
+| Prowlarr | Indexer manager — connects Sonarr/Radarr/Lidarr to torrent and usenet indexers. |
+| Bazarr | Subtitle automation — automatically downloads subtitles for all your media. |
+| SABnzbd | Usenet download client. |
+| qBittorrent | Torrent download client — routes through Gluetun VPN. |
+| Gluetun | VPN container — all torrent traffic routes through this for privacy. |
+| Navidrome | Dedicated music server — compatible with all Subsonic/Airsonic apps. |
+| Audiobookshelf | Audiobook, podcast and ebook server — with native iOS and Android apps. |
+| Seerr | Family media requests — family members search and request movies and shows without needing access to Radarr or Sonarr. You get notified, Radarr/Sonarr grabs it automatically, and it appears in Jellyfin. Essential for families. |
+| Recyclarr | Automatically syncs TRaSH Guides quality profiles to Sonarr and Radarr. |
+| Unpackerr | Automatically extracts completed downloads for Sonarr/Radarr/Lidarr. |
+| Decluttarr | Headless queue cleaner — removes stalled, failed, slow, or orphaned downloads (torrents **and** usenet) and has the *arr grab an alternative. No babysitting the queue. |
+| Flaresolverr | Cloudflare bypass for Prowlarr indexers that require it. |
+| Tdarr* | Library transcoder — re-encodes to HEVC/x265 (and AV1) to reclaim disk space. Off by default; see [INSTALL.md](INSTALL.md#-hardware-transcoding-tdarr--the-override-file). |
+
+### Household — Family Management
+
+| Service | Purpose |
+|---|---|
+| Mealie | Recipe manager and meal planner — paste any URL to import recipes, plan weekly meals, auto-generate shopping lists. |
+| KitchenOwl | Shopping list manager with real-time family sync and a great mobile app. Receives shopping lists from Mealie. |
+| Donetick | Chore and task manager with recurring schedules, family member assignment, and points/rewards for kids. |
+| Actual Budget | Local-first budget and finance tracker. Connect your bank via SimpleFIN ($15/yr) for automatic transaction sync. |
+
+### Fitness — Workout Tracking
+
+| Service | Purpose |
+|---|---|
+| wger | Self-hosted workout & fitness tracker — routines, set/rep/weight logging, body-weight and progress charts, a filterable exercise database, optional nutrition. Dumbbells are first-class (filter the exercise DB by "Dumbbell"); for resistance bands, add custom exercises and log reps (band level in notes), since wger has no native "band tension" metric. Runs as web + nginx + Postgres + Redis + Celery. |
+
+After deploy, register the first account, then (optionally) populate the exercise database immediately instead of waiting for the periodic sync: `docker exec wger python3 manage.py sync-exercises`.
+
+### Records — Document Management
+
+| Service | Purpose |
+|---|---|
+| Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
+| Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
+| Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |
+| DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. |
+
+### Cloud — Private Cloud Storage
+
+| Service | Purpose |
+|---|---|
+| Immich | Self-hosted Google Photos replacement. Backs up photos and videos from all family phones automatically. Face recognition, shared albums, timeline view, and a great mobile app. |
+| Matrix/Synapse* | Private end-to-end encrypted messaging server. Use the Element app. Perfect for private family communication. |
+
+### DevOps
+Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) — populated in Phase 3.
+
+\*Optional / profile-gated — see [Choosing what runs](../README.md#-choosing-what-runs).
 
 ---
 

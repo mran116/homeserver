@@ -1,5 +1,7 @@
 # 🛠️ Install & Setup Guide
 
+> 📖 **Docs:** [README](../README.md) · [Reference](REFERENCE.md) · [Remote-access design](network-and-remote-access.md) · [Home Assistant](HOME-ASSISTANT.md)
+
 The detailed how-to behind the [README](../README.md) quick start: full directory
 layout, the manual install flow, per-app post-deploy steps, optional services,
 hardware transcoding, troubleshooting, and low-effort maintenance.
