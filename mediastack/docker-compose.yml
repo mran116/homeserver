@@ -75,7 +75,7 @@ services:
       # NAS network mounts stall on that heavy random I/O. After deploy, set
       # SAB → Config → Folders → "Temporary (incomplete) folder" to /incomplete
       # (leave the Completed folder on /data/usenet).
-      - ${INCOMPLETE_PATH:-/opt/docker/incomplete}:/incomplete
+      - ${SAB_INCOMPLETE_PATH:-/opt/docker/incomplete}:/incomplete
     ports:
       - ${SABNZBD_PORT}:8080
     networks:
