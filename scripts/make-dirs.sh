@@ -20,7 +20,11 @@ parse_common_flags "$@"
 require_env || exit 0
 load_env
 
-base_dirs=("$CONFIG_PATH" "$CONFIG_PATH/homepage" "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$SYNC_PATH" "${SAB_INCOMPLETE_PATH:-/opt/docker/incomplete}")
+base_dirs=("$CONFIG_PATH" "$CONFIG_PATH/homepage" "$MEDIA_PATH" "$PHOTOS_PATH" "$DOCS_PATH" "$SYNC_PATH")
+
+# Local fast-scratch dirs (SAB usenet incomplete, Tdarr cache). Handled best-effort
+# below so a root-owned parent (e.g. /mnt) only warns — it never aborts make-dirs.
+scratch_dirs=("${SAB_INCOMPLETE_PATH:-/opt/docker/incomplete}" "${TDARR_CACHE:-/opt/docker/tdarr-cache}")
 
 # Per-app config dirs. Docker auto-creates a missing bind-mount source as
 # root:root mid-`up`, which then locks out any app that runs as PUID. Derive the
@@ -40,6 +44,7 @@ dirs=("${base_dirs[@]}" "${app_dirs[@]}")
 # CONFIG_PATH, which is covered by checking CONFIG_PATH itself.
 for d in "${base_dirs[@]}"; do [[ -d "$d" ]] || require_writable "$d"; done
 for d in "${base_dirs[@]}"; do [[ -d "$d" ]] || plan "create dir $d"; done
+for d in "${scratch_dirs[@]}"; do [[ -d "$d" ]] || plan "create scratch dir $d (PUID-owned, best-effort)"; done
 # Only the dirs that DON'T exist yet — so a pre-existing dir (e.g. a live DB data
 # dir) is never re-created or re-chowned below.
 new_app_dirs=(); for d in "${app_dirs[@]}"; do [[ -d "$d" ]] || new_app_dirs+=("$d"); done
@@ -68,5 +73,15 @@ mkdir -p "${dirs[@]}"
 if [[ -n "${PUID:-}" && -n "${PGID:-}" && ${#new_app_dirs[@]} -gt 0 ]]; then
   chown "$PUID:$PGID" "${new_app_dirs[@]}" 2>/dev/null || true
 fi
+# Scratch dirs (SAB usenet, Tdarr) — best-effort, NEVER abort. A root-owned parent
+# (e.g. /mnt) just warns with a one-time sudo hint; the /opt/docker default works.
+for d in "${scratch_dirs[@]}"; do
+  [[ -d "$d" ]] && continue
+  if mkdir -p "$d" 2>/dev/null; then
+    [[ -n "${PUID:-}" && -n "${PGID:-}" ]] && chown "$PUID:$PGID" "$d" 2>/dev/null || true
+  else
+    warn "scratch dir not created: $d (parent not writable). Once: sudo mkdir -p '$d' && sudo chown ${PUID:-1000}:${PGID:-1000} '$d'"
+  fi
+done
 [[ $sync_homepage -eq 1 ]] && cp "${hp_files[@]}" "$CONFIG_PATH/homepage/"
 say "Directory layout ready."
