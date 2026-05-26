@@ -85,20 +85,6 @@ if [[ -n "$inc" ]]; then
     case "$ftinc" in nfs*|cifs|smb*) bad "SAB_INCOMPLETE_PATH on a '$ftinc' mount — SAB stalls on network scratch; use local disk" ;; esac
   fi
 fi
-# DOWNLOADS_PATH (completed) must share MEDIA_PATH's filesystem or hardlinks break →
-# imports get COPIED (double storage). Only checked when explicitly set + different.
-dl="$(current_value DOWNLOADS_PATH)"
-if [[ -n "$dl" && "$dl" != "$med" ]]; then
-  if [[ -d "$dl" && -d "$med" ]] && command -v stat >/dev/null; then
-    if [[ "$(stat -c '%d' "$dl" 2>/dev/null)" != "$(stat -c '%d' "$med" 2>/dev/null)" ]]; then
-      bad "DOWNLOADS_PATH ($dl) is on a DIFFERENT filesystem than MEDIA_PATH ($med) — hardlinks break, imports get COPIED (double storage). Keep downloads on the same disk/mount as the library."
-    else
-      ok "DOWNLOADS_PATH ($dl) shares MEDIA_PATH's filesystem — hardlinks OK"
-    fi
-  else
-    note "DOWNLOADS_PATH ($dl) set — ensure it's the SAME filesystem as MEDIA_PATH or imports will be copied (double storage)"
-  fi
-fi
 
 say "Stack wiring"
 if [[ "$(current_value STACKS_PATH)" == "$REPO_DIR" ]]; then ok "STACKS_PATH = $REPO_DIR"
