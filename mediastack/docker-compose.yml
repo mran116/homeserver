@@ -69,15 +69,16 @@ services:
     volumes:
       - ${CONFIG_PATH}/sabnzbd:/config
       # Completed downloads land on the NAS so the *arr hardlink them into the
-      # library (same filesystem). The *arr need NO access to /incomplete.
+      # library (same filesystem). The *arr need NO access to /data/incomplete.
       # DOWNLOADS_PATH defaults to MEDIA_PATH — set it to relocate completed
       # downloads (keep it on the SAME filesystem as the library or hardlinks break).
       - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/usenet:/data/usenet
       # Incomplete + par2 repair + unpack scratch on a FAST LOCAL disk (SSD/NVMe) —
-      # NAS network mounts stall on that heavy random I/O. After deploy, set
-      # SAB → Config → Folders → "Temporary (incomplete) folder" to /incomplete
-      # (leave the Completed folder on /data/usenet).
-      - ${SAB_INCOMPLETE_PATH:-/opt/docker/incomplete}:/incomplete
+      # NAS network mounts stall on that heavy random I/O. Nested under /data so SAB's
+      # folder browser stays tidy (/data shows just usenet + incomplete). After deploy,
+      # set SAB → Config → Folders → "Temporary (incomplete) folder" to /data/incomplete
+      # (Completed stays /data/usenet). It's the SSD scratch — never hardlinked.
+      - ${SAB_INCOMPLETE_PATH:-/opt/docker/incomplete}:/data/incomplete
     ports:
       - ${SABNZBD_PORT}:8080
     networks:
