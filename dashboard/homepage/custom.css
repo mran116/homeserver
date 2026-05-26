@@ -55,6 +55,23 @@ body {
 .service-card .service-title { font-size: 0.88rem; line-height: 1.2; }
 #services .services-group { row-gap: 0.5rem; }
 
+/* --- Status as a card-edge stripe ----------------------------------------- */
+/* The card itself reads as the up/down indicator instead of an orphan dot. A
+ * subtle neutral edge on every card; turns green/amber/red when Homepage marks
+ * the service up / pending / down. Uses `:has()` on the status colour classes
+ * Homepage attaches to the small status indicator — best-effort if class names
+ * shift between releases (falls back to the neutral edge, never broken).      */
+.service-card { border-left-width: 3px !important; border-left-style: solid !important;
+                border-left-color: rgba(255, 255, 255, 0.06) !important; }
+.service-card:has([class*="text-emerald"]),
+.service-card:has([class*="text-green"])   { border-left-color: rgb(52, 211, 153) !important; }
+.service-card:has([class*="text-rose"]),
+.service-card:has([class*="text-red"])     { border-left-color: rgb(248, 113, 113) !important; }
+.service-card:has([class*="text-amber"]),
+.service-card:has([class*="text-yellow"])  { border-left-color: rgb(251, 191, 36) !important; }
+/* Tone the small status pill itself down — the edge stripe carries it now */
+.service-card span.rounded-full[class*="bg-"] { box-shadow: none !important; opacity: 0.65; }
+
 /* --- Group headers: accent, uppercase, with a thin divider ----------------- */
 .services-group h2,
 h2.services-group-name {
