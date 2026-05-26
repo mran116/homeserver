@@ -24,7 +24,7 @@ require_writable "$ENV_FILE"
 
 # User-facing / external credentials (VPN keys, third-party tokens, admin
 # passwords) are deliberately NOT here — they need a human or external account.
-SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET WGER_DB_PASSWORD WGER_SECRET_KEY WGER_SIGNING_KEY'
+SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET WGER_DB_PASSWORD WGER_SECRET_KEY WGER_SIGNING_KEY HOMARR_SECRET_KEY'
 
 # secrets_pass MODE(plan|apply) — emits "FILL <key>" / "GUARD <key>" lines; only
 # writes the file when MODE=apply. Single source of truth for both passes.
@@ -57,6 +57,10 @@ def db_exists(sub):
         return True
 
 gen = lambda n=36: "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(n))
+# Keys that need a specific encoding (Homarr requires 64-char hex per its docs).
+HEX_KEYS = {"HOMARR_SECRET_KEY"}
+def gen_for(k):
+    return secrets.token_hex(32) if k in HEX_KEYS else gen()
 out, filled, guarded = [], [], []
 for line in text.splitlines():
     mm = re.match(r"^([A-Z0-9_]+)=\s*(#.*)?$", line)
@@ -65,7 +69,7 @@ for line in text.splitlines():
         if k in DB_DIRS and db_exists(DB_DIRS[k]):
             out.append(line); guarded.append(k)
         else:
-            out.append(f"{k}={gen()}" if mode == "apply" else line); filled.append(k)
+            out.append(f"{k}={gen_for(k)}" if mode == "apply" else line); filled.append(k)
     else:
         out.append(line)
 if mode == "apply":

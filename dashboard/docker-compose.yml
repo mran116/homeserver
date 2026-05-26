@@ -145,6 +145,38 @@ services:
     networks:
       - home
 
+  # ===========================================================================
+  # HOMARR - Modern dashboard, running alongside Homepage for evaluation
+  # http://${SERVER_IP}:${HOMARR_PORT}
+  #
+  # Why both: Homarr covers the same *arr/qBit/SAB/Jellyfin/Plex/AdGuard
+  # integrations Homepage does but ships a cleaner default look + a drag-and-drop
+  # tile editor. Spun up next to Homepage so you can live with both for a few
+  # days and remove the loser (drop this service to revert, or remove `homepage`
+  # if Homarr wins). Settings + tile layout live in /appdata (gets created on
+  # first run by make-dirs).
+  #
+  # First-run setup is in the UI: visit the URL above and create the admin user.
+  # SECRET_ENCRYPTION_KEY encrypts any credentials Homarr stores; bootstrap fills
+  # it automatically (or generate manually: openssl rand -hex 32).
+  # Docker socket is mounted read-only so the container-status integration works
+  # without giving Homarr write access to the engine.
+  # ===========================================================================
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: homarr
+    restart: unless-stopped
+    ports:
+      - "${HOMARR_PORT}:7575"
+    volumes:
+      - ${CONFIG_PATH}/homarr:/appdata
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=${TZ}
+      - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET_KEY}
+    networks:
+      - home
+
 networks:
   home:
     external: true
