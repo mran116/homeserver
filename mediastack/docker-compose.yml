@@ -56,7 +56,7 @@ services:
       - QB_PASSWORD=${APP_PASSWORD}
     volumes:
       - ${CONFIG_PATH}/qbittorrent:/config
-      - ${MEDIA_PATH}/torrents:/data/torrents
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/torrents:/data/torrents
     restart: unless-stopped
 
   sabnzbd:
@@ -70,7 +70,9 @@ services:
       - ${CONFIG_PATH}/sabnzbd:/config
       # Completed downloads land on the NAS so the *arr hardlink them into the
       # library (same filesystem). The *arr need NO access to /incomplete.
-      - ${MEDIA_PATH}/usenet:/data/usenet
+      # DOWNLOADS_PATH defaults to MEDIA_PATH — set it to relocate completed
+      # downloads (keep it on the SAME filesystem as the library or hardlinks break).
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/usenet:/data/usenet
       # Incomplete + par2 repair + unpack scratch on a FAST LOCAL disk (SSD/NVMe) —
       # NAS network mounts stall on that heavy random I/O. After deploy, set
       # SAB → Config → Folders → "Temporary (incomplete) folder" to /incomplete
@@ -165,6 +167,11 @@ services:
     volumes:
       - ${CONFIG_PATH}/radarr:/config
       - ${MEDIA_PATH}:/data
+      # Downloads redirect — keeps /data/usenet + /data/torrents pointing at
+      # DOWNLOADS_PATH (default = MEDIA_PATH) so SAB/qbit and the *arr always agree
+      # on the path (required for imports + hardlinks). Same filesystem as the library.
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/usenet:/data/usenet
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/torrents:/data/torrents
     ports:
       - ${RADARR_PORT}:7878
     networks:
@@ -181,6 +188,8 @@ services:
     volumes:
       - ${CONFIG_PATH}/sonarr:/config
       - ${MEDIA_PATH}:/data
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/usenet:/data/usenet
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/torrents:/data/torrents
     ports:
       - ${SONARR_PORT}:8989
     networks:
@@ -197,6 +206,8 @@ services:
     volumes:
       - ${CONFIG_PATH}/lidarr:/config
       - ${MEDIA_PATH}:/data
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/usenet:/data/usenet
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/torrents:/data/torrents
     ports:
       - ${LIDARR_PORT}:8686
     networks:
@@ -214,6 +225,8 @@ services:
     volumes:
       - ${CONFIG_PATH}/whisparr:/config
       - ${MEDIA_PATH}:/data
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/usenet:/data/usenet
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/torrents:/data/torrents
     ports:
       - ${WHISPARR_PORT}:6969
     networks:
@@ -303,8 +316,8 @@ services:
       - UN_WHISPARR_0_PATHS_0=/data/torrents/adult
       - UN_WHISPARR_0_PATHS_1=/data/usenet/adult
     volumes:
-      - ${MEDIA_PATH}/torrents:/data/torrents
-      - ${MEDIA_PATH}/usenet:/data/usenet
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/torrents:/data/torrents
+      - ${DOWNLOADS_PATH:-${MEDIA_PATH}}/usenet:/data/usenet
     networks:
       - home
     restart: unless-stopped
