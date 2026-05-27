@@ -5,17 +5,19 @@
 # The one-command routine update. It:
 #   1. fetches; if nothing new, exits quietly (safe to run from cron)
 #   2. git pull (autostash — survives Arcane's in-place edits)
-#   3. env-sync    — append any new .env vars
-#   4. gen-secrets — fill any blank machine secrets (DB-safe; e.g. a new stack)
-#   5. link-env    — wire up any new stack / fix symlinks
-#   6. make-dirs   — sync repo Homepage config → CONFIG_PATH (repo = truth)
-#   7. asks about any NEW stacks (deploy or exclude); decided ones aren't re-asked
-#   8. re-applies cron + git hooks IF already set up — keeps them matching the
+#   3. env-sync          — append any new .env vars
+#   4. gen-secrets       — fill any blank machine secrets (DB-safe; e.g. a new stack)
+#   5. link-env          — wire up any new stack / fix symlinks
+#   6. make-dirs         — sync repo Homepage config → CONFIG_PATH (repo = truth)
+#   7. patch-qbit-auth   — drift-fix the qBit WebUI subnet whitelist (idempotent)
+#   8. seed-arr-quality  — move any new Sonarr/Radarr items onto the right profile
+#   9. asks about any NEW stacks (deploy or exclude); decided ones aren't re-asked
+#  10. re-applies cron + git hooks IF already set up — keeps them matching the
 #      repo (fixes drift); won't impose them if you removed them
-#   9. if new .env vars were added, offers to tidy .env (interactive only)
-#  10. validates every stack's compose (aborts the redeploy if one is broken)
-#  11. redeploys the enabled stacks with --remove-orphans (drops removed services)
-#  12. runs doctor — surfaces anything still needing you (e.g. a blank var)
+#  11. if new .env vars were added, offers to tidy .env (interactive only)
+#  12. validates every stack's compose (aborts the redeploy if one is broken)
+#  13. redeploys the enabled stacks with --remove-orphans (drops removed services)
+#  14. runs doctor — surfaces anything still needing you (e.g. a blank var)
 #
 # Flags: --dry-run (preview only), --yes (no prompt — for cron), --images
 # (also `docker compose pull` newer images before redeploying).
@@ -71,6 +73,11 @@ before_vars="$(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE" 2>/dev/null | sort -u || true
 "$SCRIPT_DIR/gen-secrets.sh" --yes   # fill blank secrets a new stack added (DB-safe; no-op otherwise)
 "$SCRIPT_DIR/link-env.sh" --yes
 "$SCRIPT_DIR/make-dirs.sh" --yes
+# Drift-protection: re-apply qBit subnet whitelist + re-seed *arr quality
+# profiles.  Both soft-skip when their respective containers aren't running,
+# so update is safe even on a partially-deployed host.
+"$SCRIPT_DIR/patch-qbit-auth.sh" --yes
+"$SCRIPT_DIR/seed-arr-quality.sh" --yes
 # Ask about any NEW stacks BEFORE redeploy (so you can exclude one before it ever
 # starts). Prompts each pending stack; --yes/cron leaves them pending (undecided).
 if [[ $ASSUME_YES -eq 1 ]]; then "$SCRIPT_DIR/stacks.sh" reconcile --yes; else "$SCRIPT_DIR/stacks.sh" reconcile; fi
