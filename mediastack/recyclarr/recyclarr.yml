@@ -36,11 +36,11 @@ sonarr:
           until_score: 10000
         min_format_score: 0
         quality_sort: top
-        # Fallback chain for older shows that don't have 1080p WEB-DL releases:
-        # 1080p WEB > 1080p HDTV > 720p WEB > 720p HDTV.  `quality_sort: top`
-        # means Sonarr always tries the highest tier first; lower tiers only
-        # win when nothing higher exists.  Cutoff stays at WEB 1080p, so a
-        # 720p grab still gets upgraded to 1080p if one shows up later.
+        # Full fallback chain for old shows (some 15+ years old) that may
+        # only exist at SD quality.  `quality_sort: top` keeps current shows
+        # grabbing the highest tier first; lower tiers only win when nothing
+        # higher exists.  Cutoff stays at WEB 1080p, so any sub-1080p grab
+        # still gets upgrade-searched if a 1080p release shows up later.
         qualities:
           - name: WEB 1080p
             qualities:
@@ -52,6 +52,14 @@ sonarr:
               - WEBDL-720p
               - WEBRip-720p
           - name: HDTV-720p
+          - name: Bluray-720p
+          - name: WEB 480p
+            qualities:
+              - WEBDL-480p
+              - WEBRip-480p
+          - name: DVD
+          - name: Bluray-480p
+          - name: SDTV
 
     custom_formats:
       # +50 for dual-audio releases so they win over single-language English.
