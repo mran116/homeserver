@@ -4,7 +4,9 @@
 # Replaces Cleanuparr; cleans the *arr download queues for BOTH torrents
 # (qBittorrent via Gluetun) and usenet (SABnzbd). API keys/creds come from
 # environment variables (set on the compose service from the root .env) via
-# ${VAR} substitution, so NO secrets live in this file.
+# the `!ENV VAR_NAME` YAML tag (decluttarr uses pyyaml-env-tag — plain "${VAR}"
+# is a literal string, and the curly-brace form "!ENV ${VAR}" looks up an env
+# var literally named "${VAR}" and fails). NO secrets live in this file.
 #
 # After deploy: check `docker logs decluttarr` shows every instance + download
 # client connected, then set general.test_run to false and redeploy.
@@ -46,24 +48,24 @@ jobs:
 instances:
   sonarr:
     - base_url: "http://sonarr:8989"
-      api_key: "${SONARR_API_KEY}"
+      api_key: !ENV SONARR_API_KEY
   radarr:
     - base_url: "http://radarr:7878"
-      api_key: "${RADARR_API_KEY}"
+      api_key: !ENV RADARR_API_KEY
   lidarr:
     - base_url: "http://lidarr:8686"
-      api_key: "${LIDARR_API_KEY}"
+      api_key: !ENV LIDARR_API_KEY
   whisparr:
     - base_url: "http://whisparr:6969"
-      api_key: "${WHISPARR_API_KEY}"
+      api_key: !ENV WHISPARR_API_KEY
 
 download_clients:
   qbittorrent:
     - base_url: "http://gluetun:8080"   # qBittorrent rides Gluetun's network namespace
-      username: "${APP_USERNAME}"
-      password: "${APP_PASSWORD}"
+      username: !ENV APP_USERNAME
+      password: !ENV APP_PASSWORD
       name: "qBittorrent"               # MUST match the client name configured in your *arr
   sabnzbd:
     - base_url: "http://sabnzbd:8080"
-      api_key: "${SABNZBD_API_KEY}"
+      api_key: !ENV SABNZBD_API_KEY
       name: "SABnzbd"                   # MUST match the client name configured in your *arr

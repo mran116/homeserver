@@ -23,6 +23,21 @@ bad()  { printf '  %s✗%s %s\n' "$c_red"    "$c_reset" "$*"; FAILS=$((FAILS+1))
 note() { printf '  %s!%s %s\n' "$c_yellow" "$c_reset" "$*"; WARNS=$((WARNS+1)); }
 have_daemon=0
 
+# Interactive = stdout is a TTY AND user didn't pass --quick.  When interactive,
+# any failed check auto-escalates to the matching `hs diagnose <area>` block so
+# the user gets the deep dive in one go.  When scripted (bootstrap, update,
+# cron), stays terse and just reports.
+QUICK=0; for a in "$@"; do [[ "$a" == "--quick" || "$a" == "-q" ]] && QUICK=1; done
+is_interactive() { [[ -t 1 ]] && [[ "$QUICK" -ne 1 ]]; }
+# Source diagnose.sh in library mode so we can call its diag_* functions.
+# Suppress its dispatch by checking BASH_SOURCE != $0 inside diagnose.sh.
+# shellcheck source=scripts/diagnose.sh disable=SC1091
+[[ -f "$SCRIPT_DIR/diagnose.sh" ]] && source "$SCRIPT_DIR/diagnose.sh"
+escalate() {
+  # escalate FUNCNAME — call diag_<area> only when interactive.
+  is_interactive && declare -F "$1" >/dev/null 2>&1 && "$1"
+}
+
 say "Docker"
 if ! command -v docker >/dev/null; then bad "docker not installed"
 else
@@ -46,6 +61,96 @@ if [[ $have_daemon -eq 1 ]]; then
     for n in $unhealthy;  do bad "$n is unhealthy — hs logs $n"; done
   fi
   for n in $exited; do note "$n is stopped (Exited) — intentional? otherwise: hs logs $n"; done
+
+  say "qBittorrent auth"
+  # Whitelist of the docker home subnet lets *arr apps + decluttarr reach qBit's
+  # API without password drift / IP-ban hazards. Set by scripts/patch-qbit-auth.sh.
+  qbit_running="$(docker ps --filter name=^qbittorrent$ --format '{{.Names}}' 2>/dev/null)"
+  if [[ -z "$qbit_running" ]]; then
+    printf '  %s·%s qbittorrent not running — skipping whitelist check\n' "$c_dim" "$c_reset"
+  else
+    cfg_path="$(current_value CONFIG_PATH)"
+    qbit_conf="${cfg_path:-/opt/docker/data}/qbittorrent/qBittorrent/qBittorrent.conf"
+    if [[ ! -f "$qbit_conf" ]]; then
+      note "qBittorrent.conf not found at $qbit_conf — fresh container? wait for it to write its config"
+    else
+      home_subnet="$(docker network inspect home --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null || true)"
+      wl_enabled="$(grep -F -m1 'WebUI\AuthSubnetWhitelistEnabled=' "$qbit_conf" 2>/dev/null | cut -d= -f2-)"
+      wl_list="$(grep    -F -m1 'WebUI\AuthSubnetWhitelist='        "$qbit_conf" 2>/dev/null | cut -d= -f2-)"
+      # whitelist is comma-separated; just check membership so multi-subnet setups pass.
+      includes_home=0
+      if [[ -n "$home_subnet" && -n "$wl_list" ]]; then
+        IFS=',' read -r -a _wl_parts <<<"$wl_list"
+        for _s in "${_wl_parts[@]}"; do [[ "${_s// /}" == "$home_subnet" ]] && includes_home=1; done
+      fi
+      if [[ "$wl_enabled" == "true" && $includes_home -eq 1 ]]; then
+        ok "WebUI subnet whitelist includes $home_subnet"
+      else
+        note "qBit WebUI subnet whitelist missing $home_subnet (enabled='${wl_enabled:-unset}', list='${wl_list:-unset}') — run './scripts/patch-qbit-auth.sh'"
+        escalate diag_qbit
+      fi
+    fi
+  fi
+
+  say "Recyclarr"
+  # Watch for silent template/sync failures (e.g. the v7->v8 breakage that
+  # silently bricked syncs for weeks).  Reads the most recent log file rather
+  # than the live state so this works even between cron runs.
+  cfg_path="$(current_value CONFIG_PATH)"
+  recyc_log_dir="${cfg_path:-/opt/docker/data}/recyclarr/logs/cli"
+  if [[ ! -d "$recyc_log_dir" ]]; then
+    printf '  %s·%s recyclarr logs dir missing — has it ever run?\n' "$c_dim" "$c_reset"
+  else
+    latest_log="$(ls -t "$recyc_log_dir"/*.log 2>/dev/null | head -n1)"
+    if [[ -z "$latest_log" ]]; then
+      printf '  %s·%s no recyclarr log files yet\n' "$c_dim" "$c_reset"
+    elif grep -q '^\[.*ERR\]' "$latest_log" 2>/dev/null; then
+      err_line="$(grep -m1 '^\[.*ERR\]' "$latest_log" | sed 's/.*ERR\] //; s/^[[:space:]]*//' | head -c 130)"
+      note "recyclarr last sync FAILED ($(basename "$latest_log")): $err_line"
+      note "  fix:  docker exec recyclarr recyclarr sync  (then re-check)"
+      escalate diag_recyclarr
+    else
+      ok "recyclarr last sync clean ($(basename "$latest_log"))"
+    fi
+  fi
+
+  say "Decluttarr"
+  # Each cycle (default 10min) starts with "*** Checking Instances ***" then logs
+  # one "OK | <name>" or "ERROR | -- | <name>" per configured app/client.  We
+  # grab the LAST such block within the past 30min and count OK vs ERROR.
+  if ! docker ps --format '{{.Names}}' | grep -qx decluttarr; then
+    printf '  %s·%s decluttarr not running\n' "$c_dim" "$c_reset"
+  else
+    # decluttarr only logs "Checking Instances" at startup (not every cycle), so
+    # we look at the WHOLE log for the latest connection-check result, then also
+    # verify the container is still actively logging (job runs in last 30min)
+    # to catch a stuck-but-not-crashed state.
+    last_check="$(docker logs decluttarr 2>&1 \
+                  | awk '/\*\*\* Checking Instances \*\*\*/{out=""; capture=1; next}
+                         capture && /^\s*INFO  +\| OK \| / {out = out $0 ORS; next}
+                         capture && /^ERROR  +\| -- / {out = out $0 ORS; next}
+                         capture && /\*\*\* Running jobs|Termination signal/ {capture=0}
+                         END {printf "%s", out}')"
+    recent_activity="$(docker logs --since 30m decluttarr 2>&1 | grep -c '^INFO ' || true)"
+    if [[ -z "$last_check" ]]; then
+      note "decluttarr never completed a connection check — has it ever cycled?"
+      escalate diag_decluttarr
+    elif [[ "$recent_activity" -eq 0 ]]; then
+      note "decluttarr hasn't logged anything in 30min — may be stuck"
+      escalate diag_decluttarr
+    else
+      err_count="$(printf '%s' "$last_check" | grep -cE '^ERROR  +\| --' || true)"
+      ok_count="$( printf '%s' "$last_check" | grep -cE '^\s*INFO  +\| OK \|' || true)"
+      if [[ "$err_count" -gt 0 ]]; then
+        bad_line="$(printf '%s' "$last_check" | grep -m1 -E '^ERROR  +\| --' | head -c 120)"
+        note "decluttarr last cycle had $err_count failed instance check(s): $bad_line"
+        note "  inspect:  docker logs decluttarr --tail 60"
+        escalate diag_decluttarr
+      else
+        ok "decluttarr last cycle: $ok_count instance(s) connected, no errors"
+      fi
+    fi
+  fi
 fi
 
 say ".env"

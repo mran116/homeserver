@@ -44,6 +44,8 @@ run gen-secrets.sh
 run make-dirs.sh
 run link-env.sh
 run create-network.sh
+run patch-qbit-auth.sh
+run seed-arr-quality.sh
 run schedule-maintenance.sh
 
 # Put `hs` on the user's PATH (+ tab-completion) so they can run it from anywhere.
