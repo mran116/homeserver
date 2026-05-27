@@ -51,7 +51,7 @@ bw sync --session "$BW_SESSION" >/dev/null
 
 # Find or create the folder.
 folder_id="$(bw list folders --session "$BW_SESSION" \
-  | jq -r --arg n "$FOLDER_NAME" '.[] | select(.name==$n) | .id' | head -n1)"
+  | jq -r --arg n "$FOLDER_NAME" '[.[] | select(.name==$n)][0].id // empty')"
 if [[ -z "$folder_id" ]]; then
   if (( DRY_RUN )); then
     echo "[dry-run] would create folder: $FOLDER_NAME"
@@ -88,7 +88,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   fi
   # skip empties — no point uploading unset placeholders
   if [[ -z "$val" ]]; then
-    ((skipped++)); continue
+    ((skipped+=1)); continue
   fi
 
   payload="$(bw get template item \
@@ -102,7 +102,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       echo "$payload" | bw encode | bw edit item "${existing[$key]}" --session "$BW_SESSION" >/dev/null
       echo "updated  $key"
     fi
-    ((updated++))
+    ((updated+=1))
   else
     if (( DRY_RUN )); then
       echo "[dry-run] create $key"
@@ -110,7 +110,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       echo "$payload" | bw encode | bw create item --session "$BW_SESSION" >/dev/null
       echo "created  $key"
     fi
-    ((created++))
+    ((created+=1))
   fi
 done < "$ENV_FILE"
 
