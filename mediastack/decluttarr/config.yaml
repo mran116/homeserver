@@ -14,7 +14,7 @@
 
 general:
   log_level: INFO
-  test_run: true            # SAFETY: only logs what it WOULD remove. Set false once verified.
+  test_run: false           # Live: removes stalled/failed/slow after max_strikes cycles.
   timer: 10                 # minutes between runs
 
 job_defaults:
