@@ -14,12 +14,17 @@
 #   - queue is NOT paused                      (user pause / disk-full pause skip)
 #   - there is work left (mbleft > 0)
 #   - mbleft is UNCHANGED since the last poll (a frozen SAB shows a non-zero
-#     speed but makes no real progress). ANY change resets it — downloading
-#     lowers mbleft, queuing more raises it; either way it's "alive". On the
-#     first poll (no baseline yet) speed ~0 (< 1 KB/s) stands in.
+#     speed but makes no real progress), OR kbps is BYTE-IDENTICAL to the last
+#     poll while > 0 (SAB's UI caches a stale speed reading even when the
+#     download threads are deadlocked; real network speeds never read identical
+#     to the byte across a 5-min interval). Either signal counts. mbleft can
+#     legitimately rise (Sonarr queuing more) while downloads are frozen, so
+#     the kbps-identity check is what catches that case.
 #   - the above held for STALL_MINUTES (debounce; any change resets the strikes)
-#   - an unreachable API is treated as "no action" (won't restart a SAB you
-#     stopped on purpose or one that's mid-deploy)
+#   - a SUSTAINED unreachable API also strikes (a wedged SAB stops serving HTTP
+#     entirely — observed in the wild). Short outages (deploy, manual restart)
+#     never reach the threshold because a brief unreachability resets in one
+#     cycle if SAB comes back.
 # After any action the strike counter resets (cooldown -> no restart loops).
 #
 # Flags: --dry-run (detect + log, never act).
@@ -58,15 +63,20 @@ STATE="$STATE_DIR/state"
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
-# check PREV_MBLEFT — print verdict: "STALLED ..." | "OK ..." | "UNREACHABLE ..."
-# A stall = actively downloading but mbleft is UNCHANGED versus PREV_MBLEFT (a
-# frozen SAB). Any change — down (progress) or up (more queued) — is "alive".
-# PREV empty (first poll, or an old state file) falls back to the speed signal.
+# check PREV_MBLEFT PREV_KBPS — print verdict: "STALLED ..." | "OK ..." | "UNREACHABLE ..."
+# A stall = actively downloading but EITHER mbleft is UNCHANGED versus
+# PREV_MBLEFT (a frozen SAB making no real progress) OR kbps reads identical
+# to PREV_KBPS while > 0 (SAB serves a cached stale speed even when its
+# download threads are deadlocked; real networks never read byte-identical
+# across a 5-min poll). The kbps-identity signal catches the case where
+# Sonarr is adding items so mbleft rises while downloads are frozen.
+# PREV_MBLEFT empty (first poll) falls back to the speed-near-zero signal.
 check() {
-  python3 - "$API" "$SABNZBD_API_KEY" "${1:-}" <<'PY'
+  python3 - "$API" "$SABNZBD_API_KEY" "${1:-}" "${2:-}" <<'PY'
 import sys, json, urllib.request, urllib.parse
 api, key = sys.argv[1], sys.argv[2]
-prev = sys.argv[3] if len(sys.argv) > 3 else ''
+prev_mbleft_arg = sys.argv[3] if len(sys.argv) > 3 else ''
+prev_kbps_arg   = sys.argv[4] if len(sys.argv) > 4 else ''
 url = api + '?' + urllib.parse.urlencode({'mode': 'queue', 'output': 'json', 'apikey': key})
 try:
     with urllib.request.urlopen(url, timeout=15) as r:
@@ -80,11 +90,14 @@ def num(v):
     except (TypeError, ValueError): return 0.0
 kbps, mbleft = num(q.get('kbpersec')), num(q.get('mbleft'))
 active = status == 'Downloading' and not paused and mbleft > 0
-# Compare whole-MB remaining. UNCHANGED = frozen (stall); any change resets.
-try:    prev_mb = int(float(prev)) if prev not in ('', 'None') else None
-except ValueError: prev_mb = None
+def parse_int(s):
+    try: return int(float(s)) if s not in ('', 'None') else None
+    except ValueError: return None
+prev_mb, prev_kb = parse_int(prev_mbleft_arg), parse_int(prev_kbps_arg)
 if prev_mb is not None:
-    stalled = active and round(mbleft) == prev_mb     # exactly unchanged
+    mbleft_frozen = round(mbleft) == prev_mb
+    kbps_frozen   = prev_kb is not None and round(kbps) == prev_kb and kbps > 0
+    stalled = active and (mbleft_frozen or kbps_frozen)
 else:
     stalled = active and kbps < 1.0                    # first-poll fallback
 print(f"{'STALLED' if stalled else 'OK'} status={status} paused={paused} kbps={kbps:.0f} mbleft={mbleft:.0f}")
@@ -113,30 +126,35 @@ except Exception: pass
 PY
 }
 
-# State carries "<strikes> <last_mbleft>" — last_mbleft feeds the no-progress
-# check on the next poll. Missing/old-format file just starts a fresh slate.
-prev_strikes=0; prev_mbleft=""
-[[ -f "$STATE" ]] && read -r prev_strikes prev_mbleft < "$STATE" 2>/dev/null
+# State carries "<strikes> <last_mbleft> <last_kbps>" — last_mbleft + last_kbps
+# both feed the next poll's stall detection. Old 2-field format reads cleanly
+# (last_kbps stays empty → kbps-identity check is skipped on the first new poll).
+prev_strikes=0; prev_mbleft=""; prev_kbps=""
+[[ -f "$STATE" ]] && read -r prev_strikes prev_mbleft prev_kbps < "$STATE" 2>/dev/null
 [[ "$prev_strikes" =~ ^[0-9]+$ ]] || prev_strikes=0
 
-verdict="$(check "$prev_mbleft")"; tag="${verdict%% *}"
+verdict="$(check "$prev_mbleft" "$prev_kbps")"; tag="${verdict%% *}"
 cur_mbleft="$(sed -n 's/.*mbleft=\([0-9]*\).*/\1/p' <<<"$verdict")"; [[ -n "$cur_mbleft" ]] || cur_mbleft=0
+cur_kbps="$(sed -n 's/.*kbps=\([0-9]*\).*/\1/p' <<<"$verdict")";    [[ -n "$cur_kbps" ]]   || cur_kbps=0
 
-# Anything but a real stall -> reset strikes, but remember the current mbleft as
-# next poll's baseline (on an unreachable API, keep the previous baseline).
-if [[ "$tag" != "STALLED" ]]; then
-  if [[ "$tag" == "UNREACHABLE" ]]; then
-    echo "0 ${prev_mbleft:-0}" > "$STATE" 2>/dev/null || true
-    log "SAB API unreachable ($verdict) — no action"
-  else
-    echo "0 $cur_mbleft" > "$STATE" 2>/dev/null || true
-  fi
+# A sustained UNREACHABLE is also a wedge (observed: SAB stops serving HTTP
+# entirely when fully deadlocked). Accumulate strikes; the threshold (15 min)
+# is far longer than any normal deploy or manual restart, so brief outages
+# never escalate.
+if [[ "$tag" == "UNREACHABLE" ]]; then
+  strikes=$(( prev_strikes + 1 ))
+  echo "$strikes ${prev_mbleft:-0} ${prev_kbps:-0}" > "$STATE" 2>/dev/null || true
+  log "SAB API unreachable ($verdict) — strike $strikes/$THRESHOLD"
+  (( strikes < THRESHOLD )) && exit 0
+elif [[ "$tag" != "STALLED" ]]; then
+  echo "0 $cur_mbleft $cur_kbps" > "$STATE" 2>/dev/null || true
   exit 0
+else
+  strikes=$(( prev_strikes + 1 ))
+  echo "$strikes $cur_mbleft $cur_kbps" > "$STATE" 2>/dev/null || true
+  log "stall detected ($verdict) — strike $strikes/$THRESHOLD"
+  (( strikes < THRESHOLD )) && exit 0
 fi
-
-strikes=$(( prev_strikes + 1 )); echo "$strikes $cur_mbleft" > "$STATE" 2>/dev/null || true
-log "stall detected ($verdict) — strike $strikes/$THRESHOLD"
-(( strikes < THRESHOLD )) && exit 0
 
 if [[ $DRY_RUN -eq 1 ]]; then
   log "[dry-run] threshold reached — would pause/resume, then restart sabnzbd if still stalled"
