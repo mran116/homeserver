@@ -1,0 +1,16 @@
+[Unit]
+Description=Homestack backup — DB dumps + config/photo/document mirror to the media array
+Documentation=file:///mnt/media/backups/RECOVERY.md
+Wants=docker.service
+After=docker.service
+RequiresMountsFor=/mnt/media /opt/docker/data
+OnFailure=homestack-notify-failure@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/docker/stacks/scripts/backup.sh
+# Be gentle — this runs while other services are live.
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=2h
