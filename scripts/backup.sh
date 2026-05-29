@@ -17,12 +17,21 @@
 # Run as root (needs to read root-owned /opt/docker/data and /mnt/photos).
 set -uo pipefail
 
-BACKUP_ROOT="/mnt/media/backups"
-DATA_SRC="/opt/docker/data"
-PHOTOS_SRC="/mnt/photos"
-DOCS_SRC="/mnt/documents"
+# Paths are configurable via .env; the defaults preserve the original hardcoded
+# layout, so an unset var (or absent .env) keeps the previous behavior exactly.
 ENV_SRC="/opt/docker/stacks/.env"
-KEEP_DAYS=7
+if [ -f "$ENV_SRC" ]; then
+  set -a                       # export each KEY=value while sourcing
+  # shellcheck source=/dev/null
+  . "$ENV_SRC"
+  set +a
+fi
+
+BACKUP_ROOT="${BACKUP_PATH:-/mnt/media/backups}"
+DATA_SRC="${CONFIG_PATH:-/opt/docker/data}"
+PHOTOS_SRC="${PHOTOS_PATH:-/mnt/photos}"
+DOCS_SRC="${DOCS_PATH:-/mnt/documents}"
+KEEP_DAYS="${BACKUP_KEEP_DAYS:-7}"
 
 TS="$(date +%Y%m%d-%H%M%S)"
 DB_DIR="$BACKUP_ROOT/db"
