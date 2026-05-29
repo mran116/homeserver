@@ -23,7 +23,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$REPO_DIR"
+cd "$REPO_DIR" || exit 1
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
@@ -145,7 +145,9 @@ diag_decluttarr() {
 # sonarr / radarr — shared logic
 # -----------------------------------------------------------------------------
 diag_arr() {
-  local svc="$1" expected_profile="$2" cf_id="$3" cf_name="$4" cf_expected_score="$5" items_endpoint="$6"
+  # CF_ID / CF_NAME / CF_EXPECTED_SCORE reach the embedded Python via env vars
+  # the callers set inline (see diag_sonarr/diag_radarr), so they aren't params.
+  local svc="$1" expected_profile="$2" items_endpoint="$3"
   hdr "$svc"
   if ! docker ps --format '{{.Names}}' | grep -qx "$svc"; then
     bad_line "container not running"; return
@@ -249,11 +251,11 @@ PY
 
 diag_sonarr() {
   EXPECTED_PROFILE="WEB-1080p"  CF_ID="69aa1e159f97d860440b04cd6d590c4f"  CF_NAME="Language: Not English"  CF_EXPECTED_SCORE="-10000" \
-    diag_arr sonarr "WEB-1080p" "69aa1e159f97d860440b04cd6d590c4f" "Language: Not English" "-10000" "/series"
+    diag_arr sonarr "WEB-1080p" "/series"
 }
 diag_radarr() {
   EXPECTED_PROFILE="WEB-Only"  CF_ID=""  CF_NAME=""  CF_EXPECTED_SCORE="0" \
-    diag_arr radarr "WEB-Only" "" "" "0" "/movie"
+    diag_arr radarr "WEB-Only" "/movie"
 }
 
 # -----------------------------------------------------------------------------
