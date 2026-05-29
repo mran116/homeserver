@@ -23,13 +23,17 @@ services:
       - SERVER_COUNTRIES=${VPN_SERVER_COUNTRIES}
       - VPN_PORT_FORWARDING=${VPN_PORT_FORWARDING:-on}
       - VPN_PORT_FORWARDING_PROVIDER=${VPN_PORT_FORWARDING_PROVIDER:-protonvpn}
-      - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh /gluetun/update-port.sh
+      - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh /scripts/update-port.sh
       - QB_USERNAME=${APP_USERNAME}
       - QB_PASSWORD=${APP_PASSWORD}
       - QB_PORT=${BITTORRENT_PORT}
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/gluetun:/gluetun
+      # Pushes the forwarded VPN port into qBittorrent on each refresh (the
+      # VPN_PORT_FORWARDING_UP_COMMAND above). Version-controlled so a fresh
+      # deploy reproduces it — gluetun's image has no curl, so it uses wget.
+      - ./gluetun/update-port.sh:/scripts/update-port.sh:ro
     ports:
       # qBittorrent WebUI is served via gluetun's network namespace.
       # Host port comes from .env; container-internal port matches WEBUI_PORT below.
