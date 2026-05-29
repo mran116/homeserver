@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
-cd "$REPO_DIR"
+cd "$REPO_DIR" || exit 1
 
 FAILS=0; WARNS=0
 ok()   { printf '  %s✓%s %s\n' "$c_green"  "$c_reset" "$*"; }
