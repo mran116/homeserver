@@ -65,16 +65,26 @@ dump_pg paperless-db
 dump_pg wger-db
 dump_mysql npm-db
 
-# Vaultwarden (SQLite): take a consistent online .backup if sqlite3 exists in
-# the image; the file then rides along in the config mirror below. If sqlite3
-# is absent we fall back to the live-file copy (good enough in WAL mode).
+# Vaultwarden (SQLite): take a consistent online .backup — this is the whole
+# password DB, so a torn live-file copy is not acceptable. Prefer the HOST's
+# sqlite3 against the DB file (the vaultwarden image ships no sqlite3); fall
+# back to an in-container .backup, then to the plain live-file copy. The
+# resulting db.sqlite3.bak rides along in the config mirror below, and the
+# restore in RECOVERY.md prefers it over the live file.
 if running vaultwarden; then
-  if docker exec vaultwarden sh -c 'command -v sqlite3 >/dev/null 2>&1'; then
+  vw_db="$DATA_SRC/vaultwarden/db.sqlite3"
+  if command -v sqlite3 >/dev/null 2>&1 && [ -f "$vw_db" ]; then
+    if sqlite3 "$vw_db" ".backup '${vw_db}.bak'"; then
+      log "vaultwarden: wrote consistent db.sqlite3.bak (host sqlite3)"
+    else
+      log "WARN: host sqlite3 .backup failed — relying on live-file copy"
+    fi
+  elif docker exec vaultwarden sh -c 'command -v sqlite3 >/dev/null 2>&1'; then
     docker exec vaultwarden sh -c 'sqlite3 /data/db.sqlite3 ".backup /data/db.sqlite3.bak"' \
-      && log "vaultwarden: wrote consistent db.sqlite3.bak" \
+      && log "vaultwarden: wrote consistent db.sqlite3.bak (in-container sqlite3)" \
       || log "WARN: vaultwarden sqlite .backup failed"
   else
-    log "NOTE: sqlite3 not in vaultwarden image; relying on live-file copy"
+    log "NOTE: no sqlite3 on host or in image; relying on live-file copy"
   fi
 fi
 
