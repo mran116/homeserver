@@ -51,10 +51,38 @@ x-wger-env: &wger-env
 
 services:
 
+  # ---- init: chown static/media to wger's container UID -----------------------
+  # The wger image runs gunicorn as a fixed user (uid 1000), NOT configurable via
+  # PUID/PGID like LSIO images. make-dirs.sh creates ${CONFIG_PATH}/wger/* owned
+  # by the repo's PUID (typically 1001 = your shell user) — which means the wger
+  # container can't write to its static/media bind-mounts and collectstatic
+  # fails with PermissionError on /home/wger/static/node. This one-shot fixes
+  # ownership before wger starts; runs on every `up`, exits in <1s, idempotent.
+  wger-init-perms:
+    image: busybox
+    container_name: wger-init-perms
+    user: "0:0"
+    restart: "no"
+    command: ["sh", "-c", "chown -R 1000:1000 /static /media && echo 'wger perms ok'"]
+    volumes:
+      - ${CONFIG_PATH}/wger/static:/static
+      - ${CONFIG_PATH}/wger/media:/media
+    # Doesn't need the network, but attach so compose doesn't create an unused
+    # `fitness_default` network just for this one-shot.
+    networks:
+      - home
+
   # ---- web app (gunicorn) — runs migrations + collectstatic on startup --------
   wger:
     <<: *wger-common
     container_name: wger
+    depends_on:
+      wger-db:
+        condition: service_healthy
+      wger-cache:
+        condition: service_healthy
+      wger-init-perms:
+        condition: service_completed_successfully
     environment:
       <<: *wger-env
       SITE_URL: http://${SERVER_IP}:${WGER_PORT}

@@ -30,6 +30,8 @@ hs — homeserver command. Run from anywhere.
 EVERYDAY
   hs update [-n|-y|--images]   pull latest + redeploy (reconciles .env, dirs, …)
   hs doctor                    read-only health check — what's wrong / what to run
+  hs diagnose [area]           deep root-cause for one subsystem (decluttarr|sonarr|radarr|recyclarr|qbit|all)
+  hs sonarr-fix [--apply]      force-import items Sonarr blocked with the parser/grab series-ID mismatch
   hs up|down|restart [stack]   start / stop / restart all stacks (or one)
   hs status [stack]            docker compose ps for each stack
   hs pull [stack]              pull newer images
@@ -91,6 +93,8 @@ cmd="${1:-help}"; shift || true
 case "$cmd" in
   update)                run update.sh "$@" ;;
   doctor)                run doctor.sh "$@" ;;
+  diagnose)              run diagnose.sh "$@" ;;
+  sonarr-fix)            exec "$S/sonarr-bulk-import.py" "$@" ;;
   up|down|restart|pull|status) exec "$S/stack.sh" "$cmd" "$@" ;;
   logs)
     name="${1:-}"; shift 2>/dev/null || true
