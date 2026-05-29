@@ -74,7 +74,7 @@ current_value() {
 
 backup_env() {
   # backup_env — timestamped copy of $ENV_FILE (keeps history; .env.* is gitignored)
-  local b="$ENV_FILE.bak.$(date +%Y%m%d-%H%M%S)"
+  local b; b="$ENV_FILE.bak.$(date +%Y%m%d-%H%M%S)"
   cp "$ENV_FILE" "$b"
   say "Backed up current .env to $b"
 }
