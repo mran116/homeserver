@@ -108,8 +108,13 @@ After deploy, register the first account, then (optionally) populate the exercis
 |---|---|
 | Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
 | Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
-| Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |
 | DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. |
+
+### Knowledge — Notes
+
+| Service | Purpose |
+|---|---|
+| Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. A private, self-hosted scratchpad. |
 
 ### Cloud — Private Cloud Storage
 

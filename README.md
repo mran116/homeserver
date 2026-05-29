@@ -34,7 +34,8 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 | **mediastack** | Jellyfin\*/Plex\*, Sonarr/Radarr/Lidarr/Whisparr, Prowlarr, Bazarr, SABnzbd, qBittorrent+Gluetun, Navidrome, Audiobookshelf, Seerr, Recyclarr, Unpackerr, Decluttarr, Flaresolverr, Tdarr\* | Media server + fully automated acquisition, music & audiobooks, family requests |
 | **household** | Mealie, KitchenOwl, Donetick, Actual Budget | Recipes & meal planning, shopping lists, chores, budgeting |
 | **fitness** | wger | Workout & fitness tracker (routines, logging, progress charts) |
-| **records** | Paperless-ngx, Stirling PDF, Memos, DocuSeal\* | Document OCR/search, PDF tools, quick notes, e-signing |
+| **records** | Paperless-ngx, Stirling PDF, DocuSeal\* | Document OCR/search, PDF tools, e-signing |
+| **knowledge** | Memos | Frictionless quick-capture notes (markdown + tags) |
 | **cloud** | Immich, Matrix/Synapse\* | Photo/video backup (Google Photos replacement), encrypted messaging |
 | **devops** | Gitea + Actions runner | Self-hosted git/CI — *Phase 3 (future)* |
 
