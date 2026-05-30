@@ -95,17 +95,17 @@ make it integrate cleanly:
   (Tunnel CNAMEs + the Jellyfin DNS-only A record). Admin tools resolve
   **internally only**, so they're invisible from outside.
 
-## TLS (automatic, via DNS-01)
+## TLS (one wildcard cert, via DNS-01)
 
 - Domain registered/managed at **Cloudflare** (`example.com`).
-- **Caddy issues a browser-trusted cert per hostname via the Let's Encrypt
-  DNS-01 challenge** using a scoped Cloudflare API token (Zone → DNS → Edit +
-  Zone → Read, for `example.com` only). DNS-01 means **nothing is exposed
-  publicly to validate** (so internal-only names get real certs too), certs
-  **auto-renew**, and they persist in the `caddy/data` volume. *(Prefer a single
-  `*.example.com` wildcard cert? You can — see docs/caddy.md.)*
-- Every route Caddy generates from container labels gets its cert automatically,
-  so both the split-horizon internal path and the public path are valid HTTPS. This is
+- **Caddy issues one wildcard cert `*.example.com` via the DNS-01 challenge**
+  using a scoped Cloudflare API token (Zone → DNS → Edit + Zone → Read, for
+  `example.com` only). DNS-01 means **nothing is exposed publicly to validate**
+  (so internal-only names are covered too), the cert **auto-renews**, and it
+  persists in the `caddy/data` volume. One wildcard also keeps individual
+  service names **out of public Certificate Transparency logs**.
+- Every service shares one `*.example.com` Caddy site (host-matched routes from
+  container labels), so both the split-horizon internal path and the public path are valid HTTPS. This is
   what removes the mixed-content/embedding pain (e.g. Homepage inside HA).
 
 ## Remote access
@@ -173,7 +173,7 @@ hardening note; wrapping the whole domain breaks the Bitwarden clients.
 - [ ] Create a Tunnel; copy its token
 - [ ] `.env`: set `DOMAIN`, `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_DNS_API_TOKEN`,
       `DDNS_DOMAINS=jellyfin.example.com`
-- [ ] Caddy: enable the profile; it auto-issues a cert per hostname
+- [ ] Caddy: enable the profile; it auto-issues the `*.example.com` wildcard cert
       (DNS-01 / Cloudflare token)
 - [ ] Caddy: add the two `caddy:` labels to each service in the matrix — routes
       and their certs generate themselves

@@ -95,8 +95,10 @@ services:
     ports:
       - ${SABNZBD_PORT}:8080
     labels:
-      caddy: sabnzbd.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8080}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@sabnzbd: "host sabnzbd.${DOMAIN}"
+      caddy.handle: "@sabnzbd"
+      caddy.handle.reverse_proxy: "{{upstreams 8080}}"
     networks:
       - home
     restart: unless-stopped
@@ -125,8 +127,10 @@ services:
     ports:
       - ${JELLYFIN_PORT}:8096
     labels:
-      caddy: jellyfin.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8096}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@jellyfin: "host jellyfin.${DOMAIN}"
+      caddy.handle: "@jellyfin"
+      caddy.handle.reverse_proxy: "{{upstreams 8096}}"
     networks:
       - home
     restart: unless-stopped
@@ -152,8 +156,10 @@ services:
     ports:
       - ${PLEX_PORT:-32400}:32400
     labels:
-      caddy: plex.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 32400}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@plex: "host plex.${DOMAIN}"
+      caddy.handle: "@plex"
+      caddy.handle.reverse_proxy: "{{upstreams 32400}}"
     networks:
       - home
     restart: unless-stopped
@@ -174,8 +180,10 @@ services:
     ports:
       - ${SEERR_PORT}:5055
     labels:
-      caddy: requests.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 5055}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@requests: "host requests.${DOMAIN}"
+      caddy.handle: "@requests"
+      caddy.handle.reverse_proxy: "{{upstreams 5055}}"
     networks:
       - home
     restart: unless-stopped
@@ -196,8 +204,10 @@ services:
     ports:
       - ${RADARR_PORT}:7878
     labels:
-      caddy: radarr.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 7878}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@radarr: "host radarr.${DOMAIN}"
+      caddy.handle: "@radarr"
+      caddy.handle.reverse_proxy: "{{upstreams 7878}}"
     networks:
       - home
     restart: unless-stopped
@@ -215,8 +225,10 @@ services:
     ports:
       - ${SONARR_PORT}:8989
     labels:
-      caddy: sonarr.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8989}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@sonarr: "host sonarr.${DOMAIN}"
+      caddy.handle: "@sonarr"
+      caddy.handle.reverse_proxy: "{{upstreams 8989}}"
     networks:
       - home
     restart: unless-stopped
@@ -234,8 +246,10 @@ services:
     ports:
       - ${LIDARR_PORT}:8686
     labels:
-      caddy: lidarr.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8686}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@lidarr: "host lidarr.${DOMAIN}"
+      caddy.handle: "@lidarr"
+      caddy.handle.reverse_proxy: "{{upstreams 8686}}"
     networks:
       - home
     restart: unless-stopped
@@ -254,8 +268,10 @@ services:
     ports:
       - ${WHISPARR_PORT}:6969
     labels:
-      caddy: whisparr.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 6969}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@whisparr: "host whisparr.${DOMAIN}"
+      caddy.handle: "@whisparr"
+      caddy.handle.reverse_proxy: "{{upstreams 6969}}"
     networks:
       - home
     restart: unless-stopped
@@ -275,8 +291,10 @@ services:
     ports:
       - ${PROWLARR_PORT}:9696
     labels:
-      caddy: prowlarr.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 9696}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@prowlarr: "host prowlarr.${DOMAIN}"
+      caddy.handle: "@prowlarr"
+      caddy.handle.reverse_proxy: "{{upstreams 9696}}"
     networks:
       - home
     restart: unless-stopped
@@ -312,8 +330,10 @@ services:
     ports:
       - ${BAZARR_PORT}:6767
     labels:
-      caddy: bazarr.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 6767}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@bazarr: "host bazarr.${DOMAIN}"
+      caddy.handle: "@bazarr"
+      caddy.handle.reverse_proxy: "{{upstreams 6767}}"
     networks:
       - home
     restart: unless-stopped
@@ -372,8 +392,10 @@ services:
     ports:
       - ${AUDIOBOOKSHELF_PORT}:80
     labels:
-      caddy: audiobooks.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 80}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@audiobooks: "host audiobooks.${DOMAIN}"
+      caddy.handle: "@audiobooks"
+      caddy.handle.reverse_proxy: "{{upstreams 80}}"
     networks:
       - home
     restart: unless-stopped
@@ -461,8 +483,10 @@ services:
     ports:
       - ${NAVIDROME_PORT}:4533
     labels:
-      caddy: music.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 4533}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@music: "host music.${DOMAIN}"
+      caddy.handle: "@music"
+      caddy.handle.reverse_proxy: "{{upstreams 4533}}"
     networks:
       - home
     restart: unless-stopped
@@ -500,8 +524,10 @@ services:
     ports:
       - ${TDARR_PORT:-8265}:8265
     labels:
-      caddy: tdarr.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8265}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@tdarr: "host tdarr.${DOMAIN}"
+      caddy.handle: "@tdarr"
+      caddy.handle.reverse_proxy: "{{upstreams 8265}}"
     networks:
       - home
     restart: unless-stopped

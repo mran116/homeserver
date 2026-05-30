@@ -33,8 +33,10 @@ services:
       - ENCRYPTION_KEY=${ARCANE_ENCRYPTION_KEY}
       - JWT_SECRET=${ARCANE_JWT_SECRET}
     labels:
-      caddy: arcane.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 3552}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@arcane: "host arcane.${DOMAIN}"
+      caddy.handle: "@arcane"
+      caddy.handle.reverse_proxy: "{{upstreams 3552}}"
     networks:
       - home
 

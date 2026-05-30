@@ -68,8 +68,10 @@ services:
       - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER}
       - PAPERLESS_ADMIN_PASSWORD=${PAPERLESS_ADMIN_PASSWORD}
     labels:
-      caddy: paperless.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8000}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@paperless: "host paperless.${DOMAIN}"
+      caddy.handle: "@paperless"
+      caddy.handle.reverse_proxy: "{{upstreams 8000}}"
     networks:
       - home
 
@@ -92,8 +94,10 @@ services:
       - TZ=${TZ}
       - DOCKER_ENABLE_SECURITY=false
     labels:
-      caddy: pdf.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8080}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@pdf: "host pdf.${DOMAIN}"
+      caddy.handle: "@pdf"
+      caddy.handle.reverse_proxy: "{{upstreams 8080}}"
     networks:
       - home
 

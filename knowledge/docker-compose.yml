@@ -15,8 +15,10 @@ services:
     ports:
       - "${MEMOS_PORT}:5230"
     labels:
-      caddy: memos.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 5230}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@memos: "host memos.${DOMAIN}"
+      caddy.handle: "@memos"
+      caddy.handle.reverse_proxy: "{{upstreams 5230}}"
     networks:
       - home
     restart: unless-stopped
@@ -51,8 +53,10 @@ services:
     ports:
       - "${KARAKEEP_PORT}:3000"
     labels:
-      caddy: bookmarks.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 3000}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@bookmarks: "host bookmarks.${DOMAIN}"
+      caddy.handle: "@bookmarks"
+      caddy.handle.reverse_proxy: "{{upstreams 3000}}"
     networks:
       - home
 
