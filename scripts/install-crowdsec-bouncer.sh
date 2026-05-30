@@ -27,8 +27,11 @@ command -v apt-get >/dev/null || die "Debian/Ubuntu (apt) only. On other distros
 KEY="${CROWDSEC_BOUNCER_KEY:-}"
 [[ -n "$KEY" ]] || die "CROWDSEC_BOUNCER_KEY is blank — run 'hs secrets', then redeploy the crowdsec engine so it registers the key, then re-run this."
 
-# Engine reachable on the local API?
-if ! curl -fsS -m 5 -o /dev/null "http://127.0.0.1:8080/health" 2>/dev/null; then
+# Engine reachable on the local API? Probe the CONNECTION, not the HTTP status —
+# the LAPI may answer /health with 401/404 depending on version, so `curl -f`
+# (fail on non-2xx) would wrongly report a healthy engine as down. Without -f,
+# curl exits 0 if it got ANY response (i.e. the port is listening).
+if ! curl -s -m 5 -o /dev/null "http://127.0.0.1:8080/" 2>/dev/null; then
   warn "CrowdSec engine not answering on 127.0.0.1:8080 — start it first:"
   warn "  add 'crowdsec' to COMPOSE_PROFILES, then: hs up infrastructure"
   die "engine not reachable"

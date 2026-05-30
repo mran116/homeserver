@@ -192,10 +192,15 @@ if [[ -n "$inc" ]]; then
 fi
 
 say "OS updates"
-if command -v systemctl >/dev/null && systemctl is-enabled --quiet unattended-upgrades 2>/dev/null; then
-  ok "unattended-upgrades enabled — OS security patches auto-apply"
+# The real gate is the APT::Periodic config, not whether the unit is "enabled"
+# (the unit can be enabled while periodic runs are off, or static while the timer
+# drives it). apt-config reflects the effective value.
+if command -v apt-config >/dev/null 2>&1 && apt-config dump 2>/dev/null | grep -E '^APT::Periodic::Unattended-Upgrade "[1-9]' >/dev/null 2>&1; then
+  ok "unattended-upgrades active — OS security patches auto-apply"
+elif command -v dpkg >/dev/null 2>&1 && dpkg -l unattended-upgrades 2>/dev/null | grep -q '^ii'; then
+  note "unattended-upgrades installed but periodic runs are off — enable APT::Periodic::Unattended-Upgrade \"1\" (run scripts/setup-fresh.sh)"
 else
-  note "unattended-upgrades not enabled — OS won't auto-patch (run scripts/setup-fresh.sh, or: sudo apt-get install -y unattended-upgrades)"
+  note "unattended-upgrades not set up — OS won't auto-patch (run scripts/setup-fresh.sh)"
 fi
 [[ -f /var/run/reboot-required ]] && bad "reboot pending — a security update (often the kernel) needs a reboot to take effect: sudo reboot"
 
