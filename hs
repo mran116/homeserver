@@ -34,6 +34,7 @@ EVERYDAY
   hs sonarr-fix [--apply]      force-import items Sonarr blocked with the parser/grab series-ID mismatch
   hs up|down|restart [stack]   start / stop / restart all stacks (or one)
   hs status [stack]            docker compose ps for each stack
+  hs enable|disable <feature>  guided turn-on/off of an optional feature (run `hs enable` to list)
   hs pull [stack]              pull newer images
   hs logs <stack|container>    tail logs (-f to follow); stack = compose, else docker
   hs stacks [enable|disable|reconcile]  choose which stacks deploy
@@ -99,6 +100,7 @@ case "$cmd" in
   diagnose)              run diagnose.sh "$@" ;;
   sonarr-fix)            exec "$S/sonarr-bulk-import.py" "$@" ;;
   up|down|restart|pull|status) exec "$S/stack.sh" "$cmd" "$@" ;;
+  enable|disable)        exec "$S/enable.sh" "$cmd" "$@" ;;
   logs)
     name="${1:-}"; shift 2>/dev/null || true
     [[ -z "$name" ]] && { echo "usage: hs logs <stack|container> [-f] [service]" >&2; exit 1; }
