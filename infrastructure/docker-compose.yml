@@ -115,6 +115,39 @@ services:
       - home
 
   # ===========================================================================
+  # CROWDSEC - intrusion detection/prevention (engine). OPT-IN: COMPOSE_PROFILES=crowdsec.
+  # Reads NPM access logs + host SSH auth, runs detection scenarios + a community
+  # IP blocklist, and exposes a local API on 127.0.0.1:8080 for a bouncer to act on.
+  # The ENFORCER (firewall bouncer) is a HOST package, not a container — after this
+  # is up, run scripts/install-crowdsec-bouncer.sh to install + wire it (blocks in
+  # the INPUT + DOCKER-USER chains). Engine alone = detection + console visibility;
+  # the bouncer adds the actual blocking. Full guide: docs/crowdsec.md
+  # ===========================================================================
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    restart: unless-stopped
+    profiles: ["crowdsec"]
+    environment:
+      - GID=${PGID:-1000}
+      - TZ=${TZ}
+      - COLLECTIONS=crowdsecurity/nginx crowdsecurity/sshd crowdsecurity/linux crowdsecurity/http-cve crowdsecurity/base-http-scenarios
+      # Pre-register the host firewall bouncer with a known key (gen-secrets fills it).
+      - BOUNCER_KEY_firewall=${CROWDSEC_BOUNCER_KEY}
+      # Optional: enroll into app.crowdsec.net for a web dashboard + alerts.
+      - ENROLL_KEY=${CROWDSEC_ENROLL_KEY:-}
+      - ENROLL_INSTANCE_NAME=homestack
+    ports:
+      - "127.0.0.1:8080:8080"        # Local API — loopback only, for the host bouncer
+    volumes:
+      - ${CONFIG_PATH}/crowdsec/data:/var/lib/crowdsec/data        # decisions, bouncers, machines (SQLite)
+      - ${CONFIG_PATH}/npm/data/logs:/var/log/npm:ro               # NPM access logs to scan
+      - /var/log/auth.log:/var/log/auth.log:ro                     # host SSH auth (journald-only hosts: see docs)
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.d/homestack.yaml:ro
+    networks:
+      - home
+
+  # ===========================================================================
   # BORGMATIC - Automated encrypted offsite backups
   # INACTIVE — enable with COMPOSE_PROFILES=backup in .env (after the steps below)
   # Backups are useless if they live on the same machine!
