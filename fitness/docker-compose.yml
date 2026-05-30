@@ -48,6 +48,17 @@ x-wger-env: &wger-env
   CELERY_BROKER: redis://wger-cache:6379/2
   CELERY_BACKEND: redis://wger-cache:6379/2
   USE_CELERY: "True"
+  # Auto-sync the exercise + ingredient databases from wger.de on wger's built-in
+  # celery-beat schedule (exercises/images/videos ~weekly, ingredients monthly,
+  # Open Food Facts deltas daily, exercise API cache refreshed periodically).
+  # All default to False in the image, so without these the databases only
+  # update when you manually run the `sync-*` / `download-*` management commands.
+  SYNC_EXERCISES_CELERY: "True"
+  SYNC_EXERCISE_IMAGES_CELERY: "True"
+  SYNC_EXERCISE_VIDEOS_CELERY: "True"
+  SYNC_INGREDIENTS_CELERY: "True"
+  SYNC_OFF_DAILY_DELTA_CELERY: "True"
+  CACHE_API_EXERCISES_CELERY: "True"
 
 services:
 
