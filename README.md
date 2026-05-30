@@ -69,6 +69,8 @@ Most people are running in **under an hour**, most of it waiting for containers 
 
 Assumes your server already has **Ubuntu or Debian installed**. Copy-paste a few commands, click a few buttons. At any question, **press Enter for the suggested answer**.
 
+> 📖 Want the gentle, fully-explained version (what each step does, choosing what to install, first logins, troubleshooting)? → [docs/beginner-guide.md](docs/beginner-guide.md).
+
 **1. Get to a terminal on the server** — directly, or over SSH:
 ```bash
 ssh youruser@192.168.1.100
