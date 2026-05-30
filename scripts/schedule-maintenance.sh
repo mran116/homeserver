@@ -8,6 +8,9 @@
 #     (never containers, volumes, or your bind-mounted data).
 #   - SABnzbd stall watchdog (sab-watchdog.sh) every 5 min — recovers a wedged
 #     SAB (pause/resume, then container restart as a last resort).
+#   - storage mount watchdog (mount-watchdog.sh) every 5 min — ntfy alert if a
+#     media/photos/docs/sync mount drops offline (so a detached disk/NAS doesn't
+#     fail apps silently).
 #
 # Idempotent (keyed off marker comments). Flags: --dry-run, --yes.
 # =============================================================================
@@ -34,6 +37,8 @@ pr_marker="# homestack-image-prune"
 pr_line="0 5 * * 0 docker image prune -af >> $REPO_DIR/image-prune.log 2>&1 $pr_marker"
 sw_marker="# homestack-sab-watchdog"
 sw_line="*/5 * * * * cd $REPO_DIR && ./scripts/sab-watchdog.sh >> $REPO_DIR/sab-watchdog.log 2>&1 $sw_marker"
+mw_marker="# homestack-mount-watchdog"
+mw_line="*/5 * * * * cd $REPO_DIR && ./scripts/mount-watchdog.sh >> $REPO_DIR/mount-watchdog.log 2>&1 $mw_marker"
 
 cron_now="$(crontab -l 2>/dev/null || true)"
 # Reconcile each managed line to EXACTLY match the repo. The drift fix: re-apply
@@ -48,11 +53,12 @@ plan_line() {  # plan_line MARKER DESIRED_LINE DESCRIPTION
 plan_line "$ks_marker" "$ks_line" "nightly *arr key-sync cron (04:00) → key-sync.log"
 plan_line "$pr_marker" "$pr_line" "weekly image-prune cron (Sun 05:00) → image-prune.log"
 plan_line "$sw_marker" "$sw_line" "SABnzbd stall watchdog cron (every 5 min) → sab-watchdog.log"
+plan_line "$mw_marker" "$mw_line" "storage mount watchdog cron (every 5 min) → mount-watchdog.log"
 
 show_plan || exit 0
 gate || exit 0
 
-new_cron="$( { printf '%s\n' "$cron_now" | grep -vF "$ks_marker" | grep -vF "$pr_marker" | grep -vF "$sw_marker"; echo "$ks_line"; echo "$pr_line"; echo "$sw_line"; } )"
+new_cron="$( { printf '%s\n' "$cron_now" | grep -vF "$ks_marker" | grep -vF "$pr_marker" | grep -vF "$sw_marker" | grep -vF "$mw_marker"; echo "$ks_line"; echo "$pr_line"; echo "$sw_line"; echo "$mw_line"; } )"
 if printf '%s\n' "$new_cron" | crontab -; then
   say "Cron installed. Remove later with 'crontab -e' (delete the homestack-* lines)."
 else
@@ -60,4 +66,5 @@ else
   warn "  $ks_line"
   warn "  $pr_line"
   warn "  $sw_line"
+  warn "  $mw_line"
 fi
