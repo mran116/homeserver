@@ -48,6 +48,40 @@ services:
       - home
 
   # ===========================================================================
+  # CADDY (caddy-docker-proxy) — config-as-code reverse proxy + automatic HTTPS.
+  # OPT-IN alternative to Nginx Proxy Manager: only runs with COMPOSE_PROFILES=caddy.
+  # NPM and Caddy both bind :80/:443 — run ONE. Routes GENERATE THEMSELVES from
+  # container labels; a single wildcard cert (*.${DOMAIN}) via Cloudflare DNS-01
+  # covers every service, internal + external, auto-renewing, zero per-host setup.
+  # Add two labels to a service and its HTTPS route appears. Full guide + the
+  # NPM→Caddy cutover: docs/caddy.md
+  # ===========================================================================
+  caddy:
+    build: ./caddy
+    container_name: caddy
+    restart: unless-stopped
+    profiles: ["caddy"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"          # HTTP/3
+    environment:
+      - CADDY_INGRESS_NETWORKS=home
+      - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
+    volumes:
+      # read-only docker socket — Caddy reads container labels to build routes.
+      # Harden later by pointing at the dashboard stack's docker-socket-proxy.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${CONFIG_PATH}/caddy/data:/data
+      - ${CONFIG_PATH}/caddy/config:/config
+    labels:
+      # Global options (labels with no site address). One wildcard cert for all.
+      caddy.email: ${ACME_EMAIL}
+      caddy.acme_dns: "cloudflare {env.CLOUDFLARE_DNS_API_TOKEN}"
+    networks:
+      - home
+
+  # ===========================================================================
   # ADGUARD HOME - Network-wide DNS ad/tracker blocking + local DNS
   # http://${SERVER_IP}:${ADGUARD_PORT}
   #
