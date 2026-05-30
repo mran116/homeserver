@@ -35,7 +35,7 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 | **household** | Mealie, KitchenOwl, Donetick, Actual Budget | Recipes & meal planning, shopping lists, chores, budgeting |
 | **fitness** | wger | Workout & fitness tracker (routines, logging, progress charts) |
 | **records** | Paperless-ngx, Stirling PDF, Memos, DocuSeal\* | Document OCR/search, PDF tools, quick notes, e-signing |
-| **cloud** | Immich, Matrix/Synapse\* | Photo/video backup (Google Photos replacement), encrypted messaging |
+| **cloud** | Immich | Photo/video backup (Google Photos replacement) |
 | **devops** | Gitea + Actions runner | Self-hosted git/CI — *Phase 3 (future)* |
 
 \*Optional / profile-gated — see [Choosing what runs](#-choosing-what-runs).
@@ -146,8 +146,9 @@ COMPOSE_PROFILES=jellyfin,tunnel
 | `backup` | borgmatic offsite backups |
 | `vpn` | tailscale |
 | `ddns` | cloudflare-ddns (direct Jellyfin A record) |
-| `matrix` | Synapse (Matrix) |
 | `tdarr` | Tdarr library transcoder |
+| `crowdsec` | CrowdSec IDS/IPS |
+| `caddy` | Caddy reverse proxy (alt to NPM) |
 
 Read **natively by Docker Compose**, so **Arcane, `hs`, and plain `docker compose` all honor it** — set once and it persists. ⚠️ **Include a media server** (`jellyfin` or `plex`) or you'll have none.
 

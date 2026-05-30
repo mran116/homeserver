@@ -261,7 +261,6 @@ Find the line that starts with `COMPOSE_PROFILES=` and add any of these words
 | `tunnel` | Secure remote access (Cloudflare) |
 | `ddns` | Keeps your home address up to date for a web domain |
 | `tdarr` | Automatically shrinks video files |
-| `matrix` | A private chat server |
 
 Example: `COMPOSE_PROFILES=jellyfin,backup,vpn`
 

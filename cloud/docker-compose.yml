@@ -89,40 +89,11 @@ services:
     networks:
       - home
 
-  # ===========================================================================
-  # MATRIX + ELEMENT - Private encrypted messaging
-  # INACTIVE — enable with COMPOSE_PROFILES=matrix in .env (after the steps below)
-  # Requires external access to be useful (people message from outside network)
-  #
-  # Setup:
-  #   1. Buy domain and set up Cloudflare Tunnel
-  #   2. Configure SMTP in .env
-  #   3. Update MATRIX_SERVER_NAME to your domain
-  #   4. Add "matrix" to COMPOSE_PROFILES in .env and deploy
-  #   5. Add matrix.yourdomain.com to Cloudflare routes
-  #
-  # Features:
-  #   - End to end encrypted by default
-  #   - Voice and video calls
-  #   - File sharing
-  #   - Disappearing messages
-  #   - iOS and Android apps (Element)
-  # ===========================================================================
-  synapse:
-    image: matrixdotorg/synapse:latest
-    container_name: synapse
-    restart: unless-stopped
-    profiles: ["matrix"]
-    ports:
-      - "${MATRIX_PORT}:8008"
-    volumes:
-      - ${CONFIG_PATH}/synapse:/data
-    environment:
-      - TZ=${TZ}
-      - SYNAPSE_SERVER_NAME=${MATRIX_SERVER_NAME}
-      - SYNAPSE_REPORT_STATS=no
-    networks:
-      - home
+# Matrix/Synapse was removed — high-maintenance, low family adoption (see the app
+# review). Reach the family via HA notifications / the companion app instead. If
+# you ever genuinely need a self-hosted Matrix server, recover the old service
+# block from git history. Any existing data in ${CONFIG_PATH}/synapse is left on
+# disk, untouched.
 
 networks:
   home:
