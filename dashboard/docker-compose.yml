@@ -115,6 +115,9 @@ services:
       # LAN. This relaxes outbound TLS verification for ALL widgets; on a homelan
       # where everything else is plain http that's a fine trade-off.
       # - NODE_TLS_REJECT_UNAUTHORIZED=0
+    labels:
+      caddy: dash.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 3000}}"
     networks:
       - home
 

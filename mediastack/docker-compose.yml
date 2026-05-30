@@ -94,6 +94,9 @@ services:
       - ${SAB_INCOMPLETE_PATH:-/opt/docker/incomplete}:/data/incomplete
     ports:
       - ${SABNZBD_PORT}:8080
+    labels:
+      caddy: sabnzbd.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8080}}"
     networks:
       - home
     restart: unless-stopped
@@ -121,6 +124,9 @@ services:
     # then uncomment your GPU. Hosts without a GPU just run software transcoding.
     ports:
       - ${JELLYFIN_PORT}:8096
+    labels:
+      caddy: jellyfin.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8096}}"
     networks:
       - home
     restart: unless-stopped
@@ -145,6 +151,9 @@ services:
       - ${MEDIA_PATH}:/data
     ports:
       - ${PLEX_PORT:-32400}:32400
+    labels:
+      caddy: plex.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 32400}}"
     networks:
       - home
     restart: unless-stopped
@@ -164,6 +173,9 @@ services:
       - ${CONFIG_PATH}/seerr:/app/config
     ports:
       - ${SEERR_PORT}:5055
+    labels:
+      caddy: requests.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 5055}}"
     networks:
       - home
     restart: unless-stopped
@@ -183,6 +195,9 @@ services:
       - ${MEDIA_PATH}:/data
     ports:
       - ${RADARR_PORT}:7878
+    labels:
+      caddy: radarr.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 7878}}"
     networks:
       - home
     restart: unless-stopped
@@ -199,6 +214,9 @@ services:
       - ${MEDIA_PATH}:/data
     ports:
       - ${SONARR_PORT}:8989
+    labels:
+      caddy: sonarr.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8989}}"
     networks:
       - home
     restart: unless-stopped
@@ -215,6 +233,9 @@ services:
       - ${MEDIA_PATH}:/data
     ports:
       - ${LIDARR_PORT}:8686
+    labels:
+      caddy: lidarr.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8686}}"
     networks:
       - home
     restart: unless-stopped
@@ -232,6 +253,9 @@ services:
       - ${MEDIA_PATH}:/data
     ports:
       - ${WHISPARR_PORT}:6969
+    labels:
+      caddy: whisparr.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 6969}}"
     networks:
       - home
     restart: unless-stopped
@@ -250,6 +274,9 @@ services:
       - ${CONFIG_PATH}/prowlarr:/config
     ports:
       - ${PROWLARR_PORT}:9696
+    labels:
+      caddy: prowlarr.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 9696}}"
     networks:
       - home
     restart: unless-stopped
@@ -284,6 +311,9 @@ services:
       - ${MEDIA_PATH}:/data        # whole media root (matches the *arr); layout-agnostic
     ports:
       - ${BAZARR_PORT}:6767
+    labels:
+      caddy: bazarr.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 6767}}"
     networks:
       - home
     restart: unless-stopped
@@ -341,6 +371,9 @@ services:
       - ${MEDIA_PATH}:/data
     ports:
       - ${AUDIOBOOKSHELF_PORT}:80
+    labels:
+      caddy: audiobooks.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 80}}"
     networks:
       - home
     restart: unless-stopped
@@ -427,6 +460,9 @@ services:
       - ${MUSIC_PATH:-${MEDIA_PATH}/music}:/music:ro
     ports:
       - ${NAVIDROME_PORT}:4533
+    labels:
+      caddy: music.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 4533}}"
     networks:
       - home
     restart: unless-stopped
@@ -463,6 +499,9 @@ services:
       - ${TDARR_CACHE:-/opt/docker/tdarr-cache}:/temp
     ports:
       - ${TDARR_PORT:-8265}:8265
+    labels:
+      caddy: tdarr.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8265}}"
     networks:
       - home
     restart: unless-stopped

@@ -202,7 +202,7 @@ Low-effort maintenance (log caps, image cleanup, update/outage alerts, backups) 
 - [ ] Strong master password **+ 2FA** on Vaultwarden
 - [ ] 2FA on Arcane and Immich admin
 - [ ] `VAULTWARDEN_SIGNUPS_ALLOWED=false` after creating your account
-- [ ] Caddy wildcard cert (`*.${DOMAIN}` via Cloudflare DNS-01) covering local services
+- [ ] Caddy auto-HTTPS (per-hostname certs via Cloudflare DNS-01) covering local services
 - [ ] Tailscale for remote admin; Cloudflare Tunnel for public services only (**never** stream Jellyfin through the tunnel — see below)
 - [ ] Arcane, Paperless, Actual Budget never exposed publicly
 - [ ] Diun + Uptime Kuma notifications wired up

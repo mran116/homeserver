@@ -25,11 +25,13 @@ container on port 8989." New service later? Add the two labels, push — it's
 routed and HTTPS'd. The config lives in the compose file, so it's in git
 (GitOps-friendly) and travels with the service.
 
-## Automatic HTTPS (internal + external, one wildcard cert)
+## Automatic HTTPS (internal + external, via Cloudflare DNS-01)
 
-Caddy issues **one wildcard cert `*.${DOMAIN}`** via Cloudflare **DNS-01**, so it
-needs no inbound ports for issuance and covers **every** name — LAN and public —
-with browser-trusted certs that **auto-renew**. The global config is set once via
+Caddy obtains a browser-trusted cert for **each** service hostname automatically
+via the Cloudflare **DNS-01** challenge, so issuance needs **no inbound ports**
+and works even for **internal-only** names that aren't reachable from the
+internet. Certs **auto-renew** and persist in the `caddy/data` volume (so a
+redeploy reuses them, it doesn't re-issue). The global config is set once via
 labels on the `caddy` service itself (`caddy.email`, `caddy.acme_dns`).
 
 Requirements (all already vars you have):
@@ -37,8 +39,13 @@ Requirements (all already vars you have):
 - `CLOUDFLARE_DNS_API_TOKEN` — scoped token (Zone → DNS → Edit + Zone → Read)
 - `ACME_EMAIL` — for Let's Encrypt expiry notices
 
-For **internal** names, point AdGuard's DNS rewrites (`*.${DOMAIN}` → server IP)
-at the box, and the same wildcard cert serves them over HTTPS.
+For **internal** names, add a single wildcard **DNS rewrite** in AdGuard
+(`*.${DOMAIN}` → server LAN IP) pointing at the box; Caddy then serves every
+current and future route over HTTPS with no further DNS changes.
+
+> Prefer one **wildcard cert** (`*.${DOMAIN}`) instead of per-host? You can —
+> see the caddy-docker-proxy wildcard pattern — but per-host DNS-01 is the
+> default here because the labels stay dead simple (two per service).
 
 ## Turn it on
 

@@ -34,6 +34,9 @@ services:
       - WEBSOCKET_ENABLED=true
       - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED}
       - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+    labels:
+      caddy: vault.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 80}}"
     networks:
       - home
 

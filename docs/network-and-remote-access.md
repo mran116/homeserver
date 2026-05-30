@@ -95,16 +95,17 @@ make it integrate cleanly:
   (Tunnel CNAMEs + the Jellyfin DNS-only A record). Admin tools resolve
   **internally only**, so they're invisible from outside.
 
-## TLS (one wildcard cert)
+## TLS (automatic, via DNS-01)
 
 - Domain registered/managed at **Cloudflare** (`mranlab.com`).
-- **Caddy issues a wildcard cert `*.mranlab.com` via the Let's Encrypt DNS-01
-  challenge** using a scoped Cloudflare API token (Zone → DNS → Edit + Zone →
-  Read, for `mranlab.com` only). DNS-01 means **nothing is exposed publicly to
-  validate**, the cert **auto-renews**, and one cert covers every service —
-  public and internal alike.
-- Every route Caddy generates from container labels uses that wildcard, so both
-  the split-horizon internal path and the public path are valid HTTPS. This is
+- **Caddy issues a browser-trusted cert per hostname via the Let's Encrypt
+  DNS-01 challenge** using a scoped Cloudflare API token (Zone → DNS → Edit +
+  Zone → Read, for `mranlab.com` only). DNS-01 means **nothing is exposed
+  publicly to validate** (so internal-only names get real certs too), certs
+  **auto-renew**, and they persist in the `caddy/data` volume. *(Prefer a single
+  `*.mranlab.com` wildcard cert? You can — see docs/caddy.md.)*
+- Every route Caddy generates from container labels gets its cert automatically,
+  so both the split-horizon internal path and the public path are valid HTTPS. This is
   what removes the mixed-content/embedding pain (e.g. Homepage inside HA).
 
 ## Remote access
@@ -172,10 +173,10 @@ hardening note; wrapping the whole domain breaks the Bitwarden clients.
 - [ ] Create a Tunnel; copy its token
 - [ ] `.env`: set `DOMAIN`, `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_DNS_API_TOKEN`,
       `DDNS_DOMAINS=jellyfin.mranlab.com`
-- [ ] Caddy: enable the profile; it issues the `*.mranlab.com` wildcard cert
-      (DNS-01 / Cloudflare token) automatically
+- [ ] Caddy: enable the profile; it auto-issues a cert per hostname
+      (DNS-01 / Cloudflare token)
 - [ ] Caddy: add the two `caddy:` labels to each service in the matrix — routes
-      generate themselves on the wildcard cert
+      and their certs generate themselves
 - [ ] AdGuard (Flint 3): rewrite `*.mranlab.com` → the server's LAN IP (Caddy)
 - [ ] Uncomment `cloudflared` + `ddns-updater`; deploy `infrastructure`
 - [ ] Cloudflare Tunnel: add public hostnames (requests/photos/audiobooks/music/
