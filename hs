@@ -52,6 +52,7 @@ SETUP (first time)
 MAINTENANCE
   hs cron                      (re)install the maintenance cron jobs
   hs seed-monitors             seed Uptime Kuma from monitoring/uptime-kuma/seed.json (+ntfy alerts)
+  hs mounts                    check storage mounts now; ntfy alert if any are offline (also runs every 5 min via cron)
   hs hooks                     (re)install the git pre-push validation hook
   hs network                   (re)create the shared `home` docker network
 
@@ -112,6 +113,7 @@ case "$cmd" in
   network)               run create-network.sh "$@" ;;
   cron)                  run schedule-maintenance.sh "$@" ;;
   seed-monitors)         run seed-uptime-kuma.sh "$@" ;;
+  mounts)                run mount-watchdog.sh "$@" ;;
   hooks)                 run install-hooks.sh "$@" ;;
   setup)
     if [[ "${1:-}" == "--fresh" ]]; then shift; exec "$S/setup-fresh.sh" "$@"; fi
