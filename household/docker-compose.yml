@@ -20,6 +20,9 @@ services:
       - TZ=${TZ}
       - MAX_WORKERS=1
       - WEB_CONCURRENCY=1
+    labels:
+      caddy: mealie.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 9000}}"
     networks:
       - home
 
@@ -40,6 +43,9 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+    labels:
+      caddy: kitchenowl.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8080}}"
     networks:
       - home
 
@@ -64,6 +70,9 @@ services:
       - DT_ENV=selfhosted
       - DT_SQLITE_PATH=/donetick-data/donetick.db
       - DT_JWT_SECRET=${DONETICK_JWT_SECRET}
+    labels:
+      caddy: tasks.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 2021}}"
     networks:
       - home
 
@@ -83,6 +92,9 @@ services:
       - ${CONFIG_PATH}/actual-budget:/data
     environment:
       - TZ=${TZ}
+    labels:
+      caddy: budget.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 5006}}"
     networks:
       - home
 

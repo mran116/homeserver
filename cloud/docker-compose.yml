@@ -39,6 +39,9 @@ services:
         condition: service_healthy
       immich-redis:
         condition: service_healthy
+    labels:
+      caddy: photos.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 2283}}"
     networks:
       - home
 

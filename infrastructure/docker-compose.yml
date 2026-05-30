@@ -3,10 +3,10 @@ services:
   # ===========================================================================
   # CADDY (caddy-docker-proxy) — config-as-code reverse proxy + automatic HTTPS.
   # The reverse proxy for this stack. Enable with COMPOSE_PROFILES=caddy (or
-  # `hs enable caddy`). Routes GENERATE THEMSELVES from container labels; a single
-  # wildcard cert (*.${DOMAIN}) via Cloudflare DNS-01 covers every service,
-  # internal + external, auto-renewing, zero per-host setup. Add two labels to a
-  # service and its HTTPS route appears. Full guide: docs/caddy.md
+  # `hs enable caddy`). Routes GENERATE THEMSELVES from container labels; a
+  # browser-trusted cert per hostname via Cloudflare DNS-01 (works for internal-
+  # only names too), auto-renewing and persisted in the data volume. Add two
+  # labels to a service and its HTTPS route appears. Full guide: docs/caddy.md
   # ===========================================================================
   caddy:
     build: ./caddy
@@ -28,7 +28,7 @@ services:
       - ${CONFIG_PATH}/caddy/config:/config
       - ${CONFIG_PATH}/caddy/logs:/var/log/caddy        # access logs for CrowdSec to scan
     labels:
-      # Global options (labels with no site address). One wildcard cert for all.
+      # Global options (labels with no site address): ACME email + DNS-01 issuer.
       caddy.email: ${ACME_EMAIL}
       caddy.acme_dns: "cloudflare {env.CLOUDFLARE_DNS_API_TOKEN}"
       # JSON access log to a file so the CrowdSec engine can parse it.
@@ -67,6 +67,9 @@ services:
       - ${CONFIG_PATH}/adguard/conf:/opt/adguardhome/conf
     environment:
       - TZ=${TZ}
+    labels:
+      caddy: dns.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 3000}}"
     networks:
       - home
 
