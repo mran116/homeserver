@@ -8,11 +8,12 @@
 # SILENTLY (e.g. the *arr log "root folder doesn't exist" forever). This catches
 # that and pushes a phone alert so you know immediately, not days later.
 #
-# Watches the storage paths from .env that are declared as their own mount in
-# /etc/fstab (a dedicated disk, NAS share, or mergerfs pool); if such a path is
-# not currently mounted, it pushes ONE ntfy alert per outage plus a recovery
-# notice. Plain local dirs (single-disk setups) have no fstab entry and are
-# never flagged — so it works unchanged, false-alarm-free, on any deployment.
+# Watches every storage path from .env (MEDIA/PHOTOS/DOCS/SYNC). It records when
+# a path is first seen healthy, then alerts only if a previously-healthy path
+# later goes empty + unmounted — i.e. the disk/NAS dropped. Paths that were never
+# populated (an unused dir on the OS disk) are never flagged, so it works on any
+# layout (mergerfs, NAS, plain dirs) with zero config and no false alarms. One
+# ntfy alert per outage + a recovery notice.
 #
 # Runs from cron (schedule-maintenance.sh installs it every 5 min). Manual run:
 #   hs mounts        (or ./scripts/mount-watchdog.sh)
@@ -36,49 +37,44 @@ TOPIC="${NTFY_TOPIC:-diun-updates}"
 STATE_DIR="${CONFIG_PATH:-/opt/docker/data}/.mount-watchdog"
 mkdir -p "$STATE_DIR" 2>/dev/null || { STATE_DIR="/tmp/.mount-watchdog"; mkdir -p "$STATE_DIR"; }
 
-# Returns a reason string (and rc 0) if the path is "offline", else rc 1.
-#
-# To avoid false alarms (best UX), we ONLY watch paths that are SUPPOSED to be
-# their own mount — i.e. they have an /etc/fstab entry (a dedicated disk, a NAS
-# share, a mergerfs pool). Such a path "offline" = it has an fstab entry but is
-# not currently mounted (exactly the disk-detach / NAS-down case). A plain local
-# directory with no fstab entry (e.g. a single-disk setup, or an unused folder)
-# is never flagged — so this adapts to each deployment with zero config.
-down_reason() {
+# "Present" = the path is a mountpoint OR has any content. This watches EVERY
+# configured path (not just fstab entries), but to avoid false alarms it only
+# ALERTS on a regression: a path we've previously seen healthy that has since
+# gone empty + unmounted (the disk/NAS dropped). A path that was never populated
+# (e.g. an unused sync dir on the OS disk) is never marked "seen", so it never
+# alerts. Adapts to any layout — mergerfs pools, NAS shares, plain dirs — with
+# zero config and no crying wolf.
+is_present() {
   local path="$1"
-  [[ -z "$path" ]] && return 1
-  # Is this path a declared mount target in fstab? (field 2, skipping comments)
-  awk -v p="$path" '$0 !~ /^[[:space:]]*#/ && $2==p {f=1} END{exit !f}' /etc/fstab 2>/dev/null || return 1
-  # It's meant to be a mount — is it actually mounted right now?
-  if command -v mountpoint >/dev/null 2>&1; then
-    mountpoint -q "$path" 2>/dev/null && return 1
-    echo "declared in /etc/fstab but not mounted"; return 0
-  fi
-  # No mountpoint(1): fall back to an emptiness check.
-  [[ -d "$path" && -n "$(ls -A "$path" 2>/dev/null)" ]] && return 1
-  echo "declared in /etc/fstab but appears unmounted (empty)"; return 0
+  [[ -d "$path" ]] || return 1
+  command -v mountpoint >/dev/null 2>&1 && mountpoint -q "$path" 2>/dev/null && return 0
+  [[ -n "$(ls -A "$path" 2>/dev/null)" ]] && return 0
+  return 1
 }
 
 alerts=0
 check() {  # check NAME PATH
-  local name="$1" path="$2" reason flag
+  local name="$1" path="$2" flag seen
   [[ -z "$path" ]] && return 0
   flag="$STATE_DIR/${name}.down"
-  if reason="$(down_reason "$path")"; then
-    if [[ ! -f "$flag" ]]; then
-      warn "$name OFFLINE: $path — $reason"
-      if [[ "${DRY_RUN:-0}" -ne 1 ]]; then
-        "$SCRIPT_DIR/notify.sh" "$TOPIC" "⚠️ Storage offline: $name" \
-          "$path is $reason. Apps using it will fail (e.g. *arr 'root folder doesn't exist'). Check the disk/NAS and remount." || true
-        : > "$flag"
-      fi
-      alerts=$((alerts + 1))
+  seen="$STATE_DIR/${name}.seen"
+  if is_present "$path"; then
+    : > "$seen"                       # high-water mark: we've seen it healthy
+    if [[ -f "$flag" ]]; then
+      say "$name recovered: $path"
+      [[ "${DRY_RUN:-0}" -ne 1 ]] && "$SCRIPT_DIR/notify.sh" "$TOPIC" "✅ Storage recovered: $name" "$path is back." || true
+      rm -f "$flag"
     fi
-  elif [[ -f "$flag" ]]; then
-    say "$name recovered: $path"
-    [[ "${DRY_RUN:-0}" -ne 1 ]] && "$SCRIPT_DIR/notify.sh" "$TOPIC" "✅ Storage recovered: $name" "$path is mounted again." || true
-    rm -f "$flag"
+  elif [[ -f "$seen" && ! -f "$flag" ]]; then   # was healthy before, now gone → real drop
+    warn "$name OFFLINE: $path — was populated before, now empty/not mounted"
+    if [[ "${DRY_RUN:-0}" -ne 1 ]]; then
+      "$SCRIPT_DIR/notify.sh" "$TOPIC" "⚠️ Storage offline: $name" \
+        "$path was populated before and is now empty / not mounted — the disk or NAS likely dropped. Apps using it will fail (e.g. *arr 'root folder doesn't exist'). Check the mount." || true
+      : > "$flag"
+    fi
+    alerts=$((alerts + 1))
   fi
+  # else: down but never seen healthy → an unused/empty dir; stay quiet.
 }
 
 # The storage roots that, if they vanish, break apps. All optional — a blank var
