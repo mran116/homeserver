@@ -1,53 +1,67 @@
-# Beginner's Guide — from blank server to running homelab
+# The Super Simple Setup Guide
 
-A complete, copy-paste walkthrough. **No Linux or Docker experience needed.**
-At every prompt, pressing **Enter** takes the safe default.
+This sets up your own private "app server" at home — a web page that links to ~30
+apps (for movies, photos, documents, passwords, recipes, workouts, and more).
 
-> If a step's command starts with `sudo`, it may ask for your password — type it
-> (you won't see characters as you type; that's normal) and press Enter.
+**You do not need to know anything about Linux, Docker, or coding.** You'll mostly
+**copy text, paste it, and press Enter.** Follow the steps in order. Don't skip.
 
-Time: ~20 minutes of you, plus some unattended download time.
-
----
-
-## What you'll end up with
-
-A web **dashboard** linking to ~30 self-hosted apps (media library, photos,
-documents, passwords, recipes, fitness, and more), all managed from one place,
-with automatic backups and update alerts.
+> 💡 When you "copy-paste a command," you copy the grey box, paste it into the
+> black window (the terminal), and press the **Enter** key. That's it.
 
 ---
 
-## Before you start — the checklist
+## What you need first
 
-1. **A computer/server** with **Ubuntu or Debian** already installed, that stays
-   on. (A spare PC, a NUC, or a VM all work.)
-2. **Its IP address.** On the server, run `hostname -I` and note the first number
-   (e.g. `192.168.1.100`). You'll use it a lot — call it **`YOUR_IP`**.
-3. **Your storage mounted.** If you keep media on a separate drive or NAS, mount
-   it now and note the path (e.g. `/mnt/media`). One drive for everything is
-   simplest. *(Different layout? See [porting-to-your-own-layout.md](porting-to-your-own-layout.md).)*
-4. **About 30 minutes** and the password for your server login.
+- [ ] A computer that will be your server, with **Ubuntu** or **Debian** already
+      installed, and that you can leave turned on.
+- [ ] That computer plugged into your internet (cable is best).
+- [ ] About **30 minutes**.
 
-That's it. Everything else is automated below.
+If you have those three things, you're ready. 👍
 
 ---
 
-## Step 1 — Open a terminal on the server
+## Part 1 — Find your server's address
 
-Either sit at the server, or connect from another computer over SSH:
+Every device on your network has an address that looks like `192.168.1.100`.
+You need your server's address.
+
+**On the server**, open the **Terminal** app (it's a black window where you type),
+type this, and press Enter:
+
+```bash
+hostname -I
+```
+
+You'll see one or more numbers. **Write down the first one.** Example: `192.168.1.100`.
+
+From now on, whenever this guide says **YOUR_IP**, use that number.
+
+---
+
+## Part 2 — Connect to the server (skip if you're sitting at it)
+
+If you want to control the server from a *different* computer, open its Terminal
+and type this (put in your server's username and YOUR_IP):
 
 ```bash
 ssh youruser@YOUR_IP
 ```
-(Replace `youruser` with your server username and `YOUR_IP` with the address from
-the checklist.)
+
+It may ask "are you sure?" — type **yes** and Enter. Then type your server
+password and Enter.
+
+> 😟 The password won't show any dots or stars as you type. **That's normal.**
+> Just type it and press Enter.
+
+If you're sitting right at the server, ignore this part — just open the Terminal.
 
 ---
 
-## Step 2 — Download the project and run one-time setup
+## Part 3 — Install everything (one big copy-paste)
 
-Copy-paste this whole block and press Enter:
+Copy this **entire grey box**, paste it into the Terminal, and press Enter:
 
 ```bash
 sudo apt update && sudo apt install -y git
@@ -57,196 +71,161 @@ cd /opt/docker/stacks
 ./scripts/setup-fresh.sh
 ```
 
-**What this does for you, automatically:**
-- Installs Docker and all dependencies
-- Asks a few simple questions: your **timezone**, and **where to store data**
-  (press Enter for defaults, or type your media path from the checklist)
-- **Generates all strong passwords and secret keys** (you never invent these)
-- Creates all the folders, the private network, and the symlinks
-- Installs the **`hs`** command (your one control command) and a control panel
+It might ask for your password again — type it (no dots appear) and Enter.
 
-> You'll be asked things like *"Media library root [/mnt/media]"*. Type your path
-> or press Enter. When in doubt, **Enter**.
+**Now it does the hard work by itself** (installs everything, makes all your
+passwords for you). This takes a few minutes. **Let it run.**
 
-When it finishes, it may offer to start the control panel — say **yes**.
+### It will ask you a few easy questions
 
-### The storage paths you'll be asked about
+Each question shows a suggested answer in `[brackets]`. **If you're not sure, just
+press Enter** to accept it. Here's what the questions mean:
 
-Setup prompts for these (Enter = the default shown). This is where all your data
-lives — get them right now and you won't touch them again. You can also edit them
-later in `/opt/docker/stacks/.env`.
+| It asks about… | In plain English | Just press Enter unless… |
+|---|---|---|
+| **Timezone** | Your local time, so logs/schedules are right | …it guessed the wrong region |
+| **Config folder** | Where the apps keep their settings | …always press Enter (keep it on this computer) |
+| **Media folder** | Where your movies/TV/music go | …your movies are on a different drive (type that drive's path) |
+| **Photos folder** | Where your photos go | …you want them somewhere specific |
+| **Documents folder** | Where scanned documents go | …you want them somewhere specific |
+| **Downloads scratch** | Temporary space while downloading | …press Enter (keep it on this computer) |
 
-| Setting | Default | What goes here | Put it on… |
-|---|---|---|---|
-| `CONFIG_PATH` | `/opt/docker/data` | App settings + **databases** | **Local disk only** — databases corrupt on a NAS |
-| `MEDIA_PATH` | `/mnt/media` | Movies, TV, music, books **+ downloads** | One drive/pool (must hold downloads too, for instant imports) |
-| `PHOTOS_PATH` | `/mnt/photos` | Immich photo/video library | Local or NAS |
-| `DOCS_PATH` | `/mnt/documents` | Paperless documents | Local or NAS |
-| `SYNC_PATH` | `/mnt/sync` | Syncthing synced folders | Local or NAS |
-| `SAB_INCOMPLETE_PATH` | `/opt/docker/incomplete` | Usenet download scratch space | **Fast local disk (SSD)** — heavy work stalls on a NAS |
-| `BACKUP_PATH` | `/mnt/media/backups` | Nightly backups | **A different physical disk** from `CONFIG_PATH`, so one dead disk can't lose both |
+> 🧠 **The only rule that matters:** your **movies/TV folder** and your
+> **downloads** should be on the **same drive**. If everything is on one disk,
+> you're automatically fine — just press Enter through all of it.
 
-**The golden rules:**
-- **`CONFIG_PATH` = local disk, always.** Never a network share — databases corrupt.
-- **All media + downloads share one filesystem** under `MEDIA_PATH`. Folder names
-  and nesting don't matter; *same drive/pool* does (see
-  [porting-to-your-own-layout.md](porting-to-your-own-layout.md)).
-- **`BACKUP_PATH` on a separate disk** from your config/data, or a backup is
-  pointless when that disk dies.
+When it's done it may ask **"Start the control panel now?"** → type **y** and Enter.
 
-Two more advanced paths exist in `.env` if you need them: `STACKS_PATH` (where
-this project lives) and `MUSIC_PATH` (override Navidrome's music folder; defaults
-to `MEDIA_PATH/music`). Most people leave both alone.
+✅ **You now have everything set up.** No apps are running yet — that's next.
 
 ---
 
-## Step 3 — Choose what gets installed (optional but worth it)
+## Part 4 — Open the control panel
 
-You don't have to run everything. There are **two** levels of choice:
-
-### A) Whole apps/stacks — `hs stacks`
-```bash
-hs stacks
-```
-This walks you through each group of apps (media, household, documents, photos,
-etc.) and lets you pick **deploy** or **skip**. Skipped ones never start and use
-no resources. You can re-run it anytime to add/remove.
-
-### B) Options & your media server — `COMPOSE_PROFILES` in `.env`
-Open the settings file:
-```bash
-nano /opt/docker/stacks/.env
-```
-Find the line starting `COMPOSE_PROFILES=` and pick from:
-
-| Add this word | Turns on |
-|---|---|
-| `jellyfin` *(default)* or `plex` | your media server (pick one) |
-| `tunnel` | Cloudflare Tunnel (secure remote access) |
-| `vpn` | Tailscale (private remote access) |
-| `backup` | automatic encrypted backups |
-| `ddns` | auto-update your domain's IP |
-| `matrix` | Matrix chat server |
-| `tdarr` | automatic video transcoding |
-
-Combine with commas, e.g. `COMPOSE_PROFILES=jellyfin,backup,vpn`.
-Save in nano with **Ctrl+O, Enter**, then exit with **Ctrl+X**.
-
-> Not sure? Leave it as `jellyfin` for now — you can change it later and re-run
-> `hs update`.
-
----
-
-## Step 4 — Open the control panel (Arcane)
-
-In a web browser on any computer on your network, go to:
+On any computer, open a web browser (Chrome, Firefox, etc.) and go to this address
+(use YOUR_IP):
 
 ```
 http://YOUR_IP:3552
 ```
 
-Log in with **`arcane` / `arcane-admin`** and **change the password immediately**
-(top-right → settings).
+Example: `http://192.168.1.100:3552`
 
-This is your "engine room" — start/stop apps and watch them run.
+A login page appears. Type:
+- Username: **arcane**
+- Password: **arcane-admin**
 
----
+**The very first thing to do:** change that password (look for a settings/profile
+button, usually top-right). Pick a new password and save it somewhere safe.
 
-## Step 5 — Turn on the apps (in order)
-
-In Arcane, click each stack and press **Start**, **in this order** — let the first
-few finish before starting the next:
-
-```
-1. vaultwarden       (passwords)
-2. infrastructure    (proxy, ad-block, networking)
-3. monitoring        (uptime + alerts)
-4. dashboard         (your homepage)
-5. mediastack        (movies/TV/music/downloads)
-6. household, records, knowledge, syncthing, cloud, fitness  (the rest)
-```
-
-> Prefer the command line? `hs up vaultwarden`, `hs up infrastructure`, … or
-> `hs up` to start everything at once.
-
-Give them a couple of minutes. Check health anytime with:
-```bash
-hs doctor
-```
-It's a read-only checkup that tells you in plain English what (if anything) still
-needs attention.
+> This control panel is where you turn apps on and off. Think of it as the
+> light switches for your server.
 
 ---
 
-## Step 6 — Create your logins
+## Part 5 — Turn the apps on (in this order!)
 
-Open your **dashboard** at `http://YOUR_IP:3000` — it has a tile linking to every
-app. For each app you want to use, click it and create your account. Notes:
+In the control panel you'll see a list of "stacks" (groups of apps). Click each
+one and press the **Start** button, **in this exact order**. Wait about a minute
+between each of the first four:
 
-- **Start with Vaultwarden** (passwords) and turn on 2FA — then store every other
-  password you create in it.
-- **Most apps:** the first account you create becomes the admin.
-- **qBittorrent:** default login is `admin` / `adminadmin` — change it.
-- **Paperless:** no signup needed — its admin login was auto-created for you (find
-  it in `.env` as `PAPERLESS_ADMIN_USER` / `PAPERLESS_ADMIN_PASSWORD`).
-- **Media folders:** in Sonarr/Radarr, go to *Settings → Media Management → Root
-  Folders* and point them at your library under `/data` (e.g. `/data/tv`,
-  `/data/movies`, or whatever your folders are called).
+1. **vaultwarden** ← your password vault
+2. **infrastructure** ← the plumbing (networking, ad-blocking)
+3. **monitoring** ← keeps an eye on everything
+4. **dashboard** ← your main home page
+5. **mediastack** ← movies, TV, music, downloads
+6. Then the rest: **household, records, knowledge, syncthing, cloud, fitness**
 
-*(Full per-app "who-creates-what" table: [porting-to-your-own-layout.md](porting-to-your-own-layout.md#logins--secrets--whats-generated-vs-what-you-create).)*
+Order matters because some apps need the earlier ones to be running first.
+
+> 🩺 Want to check everything is healthy? Back in the Terminal, type `hs doctor`
+> and press Enter. It checks everything and tells you, in plain English, if
+> anything needs fixing.
 
 ---
 
-## Step 7 — Light up the dashboard's live data
+## Part 6 — Your home page + first logins
 
-The dashboard can show live stats (download speeds, library counts, etc.) once it
-has each app's API key. This command grabs most of them automatically:
+Open your **dashboard** (home page) in a browser (use YOUR_IP):
+
+```
+http://YOUR_IP:3000
+```
+
+This page has a button for every app. To start using an app, click it and **make
+an account** (pick a username and password).
+
+A few important tips:
+- **Do Vaultwarden first** (the password app). Turn on 2FA. Then save every other
+  password you make inside it.
+- For most apps, the **first account you make becomes the boss/admin account.**
+- **qBittorrent** (downloads) starts with username `admin` and password
+  `adminadmin` — log in and change it right away.
+- **Paperless** (documents) already made your login for you — you don't need to
+  sign up. (Ask later and we'll show you where to find it.)
+
+> 🎬 For movies/TV apps (Sonarr, Radarr): after logging in, go to
+> **Settings → Media Management → Root Folders** and pick the folder where your
+> movies/shows live. That tells them where to put things.
+
+---
+
+## Part 7 — Make the home page show live info
+
+Your dashboard can show live numbers (download speeds, how many movies, etc.).
+One command sets most of this up. In the Terminal, type:
 
 ```bash
 hs keys
 ```
-It auto-detects what it can and prints exactly where to copy the few that must be
-generated inside an app's web page. Paste those into `.env`, then refresh the
-dashboard with `hs up dashboard`.
+
+It does the easy parts automatically and tells you the few things to copy by hand.
+When you're done, type `hs up dashboard` to refresh the home page.
+
+🎉 **That's it — you have a working home server!**
 
 ---
 
-## You're done. Day-to-day commands
+## The 5 commands you'll ever need
 
-Run these from anywhere:
+Type these in the Terminal anytime, from anywhere:
+
+| Type this | What it does |
+|---|---|
+| `hs doctor` | Checks everything and tells you what's wrong (if anything) |
+| `hs update` | Gets the newest version and restarts things (run now and then) |
+| `hs status` | Shows what's running |
+| `hs logs sonarr` | Shows messages from an app (swap `sonarr` for any app) |
+| `hs help` | Lists everything you can do |
+
+---
+
+## "Help, something's wrong!"
+
+Try these in order — most problems are tiny:
+
+1. **Type `hs doctor`.** It usually names the exact problem and the fix.
+2. **An app won't open?** Wait 1–2 minutes (apps take a moment to wake up), then
+   try again.
+3. **It says "Bad Gateway"?** The app is still starting. Wait a minute, or type
+   `hs restart` and the stack name (e.g. `hs restart fitness`).
+4. **A movie/TV app says a folder is missing?** Your storage drive might not be
+   plugged in/turned on, or you picked the wrong folder in the app's
+   *Settings → Media Management*.
+5. **Still stuck?** Don't panic — nothing is broken permanently. Ask for help and
+   include what `hs doctor` said.
+
+---
+
+## The whole thing, super short
 
 ```bash
-hs update      # get the latest version + apply settings + restart (run occasionally)
-hs doctor      # health check — tells you what to fix
-hs status      # what's running
-hs logs <app>  # see an app's logs (e.g. hs logs sonarr)
-hs help        # the full list
-```
-
----
-
-## If something looks wrong
-
-1. **Run `hs doctor`** first — it names the problem and the fix.
-2. **An app won't load?** Give it 1–2 minutes after starting (databases warm up).
-   Then `hs logs <app>` to see why.
-3. **"Bad Gateway"** usually means the app behind it is still starting — wait, or
-   `hs restart <stack>`.
-4. **Wrong media path / "folder doesn't exist"?** Your storage drive may not be
-   mounted, or the *arr root folder points somewhere that doesn't exist — check
-   *Settings → Media Management* in the app.
-5. Still stuck? The deep-dive walkthrough is [INSTALL.md](INSTALL.md), and remote
-   access is [network-and-remote-access.md](network-and-remote-access.md).
-
----
-
-## Quick reference — the whole thing in 6 lines
-
-```bash
-ssh youruser@YOUR_IP
+ssh youruser@YOUR_IP                  # connect (or just sit at the server)
 sudo apt update && sudo apt install -y git
 git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
-cd /opt/docker/stacks && ./scripts/setup-fresh.sh   # answer prompts, Enter = default
-# open http://YOUR_IP:3552  → start the stacks in order
-hs keys                                              # then fill the dashboard
+cd /opt/docker/stacks && ./scripts/setup-fresh.sh   # answer questions, Enter = default
+# open http://YOUR_IP:3552 → turn on the stacks in order
+hs keys                               # fill in the home page
 ```
+
+Press Enter through the questions, turn things on in order, and you're done.
