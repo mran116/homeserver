@@ -67,7 +67,7 @@ make it integrate cleanly:
   http:
     use_x_forwarded_for: true
     trusted_proxies:
-      - <NPM container/LAN IP>   # the Nginx Proxy Manager host
+      - <server LAN IP>          # the server's LAN IP where Caddy listens
   ```
 - **Service integrations use hostnames, not `IP:port`.** Point HACS
   integrations (Jellyfin, Navidrome, Mealie, KitchenOwl, Donetick, Immich,
@@ -88,9 +88,9 @@ make it integrate cleanly:
 - **AdGuard Home on the Flint 3 is primary DNS** (resilient — the router is
   always up; AdGuard is near-zero CPU). The repo's Docker `adguard` stack can
   stay as an optional secondary resolver for failover.
-- **Split-horizon:** AdGuard rewrites `*.mranlab.com` → the **NPM LAN IP**, so at
-  home every request goes straight to the reverse proxy (no hairpin out to the
-  internet and back).
+- **Split-horizon:** AdGuard rewrites `*.mranlab.com` → the **server's LAN IP**
+  (where Caddy listens), so at home every request goes straight to the reverse
+  proxy (no hairpin out to the internet and back).
 - **Public DNS** lives in Cloudflare and only has records for the exposed subset
   (Tunnel CNAMEs + the Jellyfin DNS-only A record). Admin tools resolve
   **internally only**, so they're invisible from outside.
@@ -98,13 +98,14 @@ make it integrate cleanly:
 ## TLS (one wildcard cert)
 
 - Domain registered/managed at **Cloudflare** (`mranlab.com`).
-- **NPM issues a wildcard cert `*.mranlab.com` via the Let's Encrypt DNS-01
-  challenge** using a scoped Cloudflare API token (Zone → DNS → Edit, for
-  `mranlab.com` only). DNS-01 means **nothing is exposed publicly to validate**,
-  and one cert covers every service — public and internal alike.
-- Every NPM proxy host uses that wildcard, so both the split-horizon internal
-  path and the public path are valid HTTPS. This is what removes the
-  mixed-content/embedding pain (e.g. Homepage inside HA).
+- **Caddy issues a wildcard cert `*.mranlab.com` via the Let's Encrypt DNS-01
+  challenge** using a scoped Cloudflare API token (Zone → DNS → Edit + Zone →
+  Read, for `mranlab.com` only). DNS-01 means **nothing is exposed publicly to
+  validate**, the cert **auto-renews**, and one cert covers every service —
+  public and internal alike.
+- Every route Caddy generates from container labels uses that wildcard, so both
+  the split-horizon internal path and the public path are valid HTTPS. This is
+  what removes the mixed-content/embedding pain (e.g. Homepage inside HA).
 
 ## Remote access
 
@@ -123,7 +124,7 @@ Three coordinated paths:
    Cloudflare's proxy (violates the free-plan ToS on non-HTML/streaming content
    and risks account action). Instead: a **DNS-only (grey-cloud) A record** for
    `jellyfin.mranlab.com` → your home IP, **port 443 forwarded** on the Flint 3
-   to NPM, kept current by **DDNS** (dynamic WAN IP). Hardened (below).
+   to Caddy, kept current by **DDNS** (dynamic WAN IP). Hardened (below).
 
 ## Exposure matrix
 
@@ -140,14 +141,14 @@ stack's compose), **not** the host `${*_PORT}`.
 | Vaultwarden | yes* | Cloudflare Tunnel (+Access on `/admin`) | `vault.mranlab.com` | `http://vaultwarden:80` |
 | Home Assistant | no | Tailscale only | `home.mranlab.com` | `http://<ha-vm-ip>:8123` |
 | Homepage | no | Tailscale only | `dash.mranlab.com` | `http://homepage:3000` |
-| Arcane / NPM-admin / Paperless / Actual | no | Tailscale only | `*.mranlab.com` (internal DNS only) | respective containers |
+| Arcane / Paperless / Actual | no | Tailscale only | `*.mranlab.com` (internal DNS only) | respective containers |
 
 \* Vaultwarden is public but **Cloudflare Access wraps `/admin` only** — see the
 hardening note; wrapping the whole domain breaks the Bitwarden clients.
 
 ## Hardening (anything public)
 
-- **Jellyfin:** Crowdsec bouncer (NPM plugin) or fail2ban, strong passwords,
+- **Jellyfin:** Crowdsec host firewall bouncer or fail2ban, strong passwords,
   keep the image updated (Diun alerts), optional **geo-block** to your country on
   the Flint 3 firewall or a Cloudflare WAF rule.
 - **Vaultwarden:** Cloudflare Access policy scoped to **`/admin` only** (email
@@ -156,7 +157,7 @@ hardening note; wrapping the whole domain breaks the Bitwarden clients.
   `VAULTWARDEN_ADMIN_TOKEN`. (Full-domain Access can't complete the Bitwarden
   apps' non-interactive login, so sync would break.)
 - **Enforce 2FA** on Immich, Seerr, Jellyfin and Vaultwarden.
-- **Never expose** Arcane, the NPM admin UI, Paperless, Actual Budget, or HA's
+- **Never expose** Arcane, Paperless, Actual Budget, or HA's
   admin — Tailscale only.
 
 ## Rollout checklist
@@ -171,9 +172,11 @@ hardening note; wrapping the whole domain breaks the Bitwarden clients.
 - [ ] Create a Tunnel; copy its token
 - [ ] `.env`: set `DOMAIN`, `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_DNS_API_TOKEN`,
       `DDNS_DOMAINS=jellyfin.mranlab.com`
-- [ ] NPM: issue the `*.mranlab.com` wildcard cert (DNS-01 / Cloudflare token)
-- [ ] NPM: create the proxy hosts from the matrix, all on the wildcard cert
-- [ ] AdGuard (Flint 3): rewrite `*.mranlab.com` → NPM LAN IP
+- [ ] Caddy: enable the profile; it issues the `*.mranlab.com` wildcard cert
+      (DNS-01 / Cloudflare token) automatically
+- [ ] Caddy: add the two `caddy:` labels to each service in the matrix — routes
+      generate themselves on the wildcard cert
+- [ ] AdGuard (Flint 3): rewrite `*.mranlab.com` → the server's LAN IP (Caddy)
 - [ ] Uncomment `cloudflared` + `ddns-updater`; deploy `infrastructure`
 - [ ] Cloudflare Tunnel: add public hostnames (requests/photos/audiobooks/music/
       vault → the upstreams above)

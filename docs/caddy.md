@@ -1,11 +1,11 @@
 # Caddy reverse proxy — routes that generate themselves
 
-An **opt-in** alternative to Nginx Proxy Manager that does what you actually want:
-**config-as-code, automatic HTTPS, and routes that generate themselves** from
-container labels. No GUI, no per-cert clicking, no manual proxy hosts.
+The reverse proxy for the whole stack: **config-as-code, automatic HTTPS, and
+routes that generate themselves** from container labels. No GUI, no per-cert
+clicking, no manual proxy hosts.
 
-`COMPOSE_PROFILES=caddy` turns it on. **Caddy and NPM both bind :80/:443 — run
-only one** (see the cutover below).
+`COMPOSE_PROFILES=caddy` (or `hs enable caddy`) turns it on. Caddy binds host
+:80/:443 to serve HTTP/HTTPS.
 
 ## How it works
 
@@ -34,23 +34,19 @@ labels on the `caddy` service itself (`caddy.email`, `caddy.acme_dns`).
 
 Requirements (all already vars you have):
 - `DOMAIN` — your domain
-- `CLOUDFLARE_DNS_API_TOKEN` — scoped token (Zone → DNS → Edit)
+- `CLOUDFLARE_DNS_API_TOKEN` — scoped token (Zone → DNS → Edit + Zone → Read)
 - `ACME_EMAIL` — for Let's Encrypt expiry notices
 
 For **internal** names, point AdGuard's DNS rewrites (`*.${DOMAIN}` → server IP)
 at the box, and the same wildcard cert serves them over HTTPS.
 
-## Turn it on / cut over from NPM
+## Turn it on
 
 1. Set `DOMAIN`, `CLOUDFLARE_DNS_API_TOKEN`, `ACME_EMAIL` in `.env`.
-2. Add `caddy` to `COMPOSE_PROFILES`.
-3. **Stop NPM first** (they clash on :80/:443):
-   `docker stop nginx-proxy-manager`
-4. `hs up infrastructure` — Caddy builds (first time) and starts.
-5. Add the two `caddy:` labels to each service you want proxied, redeploy that
+2. Add `caddy` to `COMPOSE_PROFILES` (or `hs enable caddy`).
+3. `hs up infrastructure` — Caddy builds (first time) and starts.
+4. Add the two `caddy:` labels to each service you want proxied, redeploy that
    stack. Routes + certs appear as you go.
-
-Happy with NPM? Don't enable the profile — nothing changes.
 
 ## Security note
 

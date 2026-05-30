@@ -8,7 +8,7 @@ port). Off by default.
 
 ## Two parts (and why)
 
-1. **Engine** — a container (`COMPOSE_PROFILES=crowdsec`). Reads NPM access logs +
+1. **Engine** — a container (`COMPOSE_PROFILES=crowdsec`). Reads Caddy's JSON access logs (mounted at `/var/log/caddy`) +
    host SSH auth, runs detection scenarios + the community blocklist, and exposes
    a **local API** on `127.0.0.1:8080`. This is detection + decisions + console
    visibility. Safe — it touches nothing on the host.

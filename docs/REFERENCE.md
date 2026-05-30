@@ -171,7 +171,7 @@ Local Network (192.168.1.0/24)
   │     └── Docker home network
   │           ├── arcane
   │           ├── vaultwarden
-  │           ├── infrastructure (NPM, Tailscale, Cloudflare, Borgmatic)
+  │           ├── infrastructure (Caddy, Tailscale, Cloudflare, Borgmatic)
   │           ├── monitoring (Uptime Kuma, Dozzle, Diun)
   │           ├── dashboard (Homepage)
   │           ├── mediastack (Jellyfin, Sonarr, Radarr...)

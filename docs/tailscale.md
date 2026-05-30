@@ -32,7 +32,7 @@ port-forwarding.
 
 - **Remote VS Code / SSH from outside the house** — connect to the host's LAN IP
   over Tailscale (no public exposure).
-- **Every admin UI privately** (NPM `:81`, Arcane, Dozzle, Uptime Kuma).
+- **Every admin UI privately** (Arcane, Dozzle, Uptime Kuma).
 - **HA + Proxmox reachable remotely** by their LAN IPs.
 
 ## Optional: private HTTPS via `tailscale serve`
@@ -49,7 +49,7 @@ when you only need private access. Enable HTTPS certs in the console, then
 |---|---|
 | **Tailscale** | All **private/admin** access — you, remote dev, the whole LAN. No public exposure. |
 | **Cloudflare Tunnel** | Only **genuinely public** services (sharing with non-Tailscale family). |
-| **Caddy / NPM** | LAN HTTPS + the directly-exposed Jellyfin. |
+| **Caddy** | LAN HTTPS + the directly-exposed Jellyfin. |
 
 ## Overhead & risk
 

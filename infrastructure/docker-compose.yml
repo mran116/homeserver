@@ -1,60 +1,12 @@
 services:
 
   # ===========================================================================
-  # NGINX PROXY MANAGER - Reverse proxy with SSL
-  # http://${SERVER_IP}:${NPM_PORT}
-  # Default login: admin@example.com / changeme
-  # Change immediately after first login!
-  # Provides:
-  #   - SSL certificates for all services
-  #   - Clean local URLs like jellyfin.home
-  #   - Works alongside Cloudflare Tunnel
-  # ===========================================================================
-  npm-db:
-    image: mariadb:lts
-    container_name: npm-db
-    restart: unless-stopped
-    environment:
-      - MYSQL_ROOT_PASSWORD=${NPM_DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=npm
-      - MYSQL_USER=npm
-      - MYSQL_PASSWORD=${NPM_DB_PASSWORD}
-    volumes:
-      - ${CONFIG_PATH}/npm/db:/var/lib/mysql
-    networks:
-      - home
-
-  nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: nginx-proxy-manager
-    restart: unless-stopped
-    depends_on:
-      - npm-db
-    ports:
-      - "${NPM_PORT}:81"        # Admin UI
-      - "80:80"                 # HTTP
-      - "443:443"               # HTTPS
-    volumes:
-      - ${CONFIG_PATH}/npm/data:/data
-      - ${CONFIG_PATH}/npm/letsencrypt:/etc/letsencrypt
-    environment:
-      - DB_MYSQL_HOST=npm-db
-      - DB_MYSQL_PORT=3306
-      - DB_MYSQL_USER=npm
-      - DB_MYSQL_PASSWORD=${NPM_DB_PASSWORD}
-      - DB_MYSQL_NAME=npm
-      - TZ=${TZ}
-    networks:
-      - home
-
-  # ===========================================================================
   # CADDY (caddy-docker-proxy) — config-as-code reverse proxy + automatic HTTPS.
-  # OPT-IN alternative to Nginx Proxy Manager: only runs with COMPOSE_PROFILES=caddy.
-  # NPM and Caddy both bind :80/:443 — run ONE. Routes GENERATE THEMSELVES from
-  # container labels; a single wildcard cert (*.${DOMAIN}) via Cloudflare DNS-01
-  # covers every service, internal + external, auto-renewing, zero per-host setup.
-  # Add two labels to a service and its HTTPS route appears. Full guide + the
-  # NPM→Caddy cutover: docs/caddy.md
+  # The reverse proxy for this stack. Enable with COMPOSE_PROFILES=caddy (or
+  # `hs enable caddy`). Routes GENERATE THEMSELVES from container labels; a single
+  # wildcard cert (*.${DOMAIN}) via Cloudflare DNS-01 covers every service,
+  # internal + external, auto-renewing, zero per-host setup. Add two labels to a
+  # service and its HTTPS route appears. Full guide: docs/caddy.md
   # ===========================================================================
   caddy:
     build: ./caddy
@@ -74,10 +26,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${CONFIG_PATH}/caddy/data:/data
       - ${CONFIG_PATH}/caddy/config:/config
+      - ${CONFIG_PATH}/caddy/logs:/var/log/caddy        # access logs for CrowdSec to scan
     labels:
       # Global options (labels with no site address). One wildcard cert for all.
       caddy.email: ${ACME_EMAIL}
       caddy.acme_dns: "cloudflare {env.CLOUDFLARE_DNS_API_TOKEN}"
+      # JSON access log to a file so the CrowdSec engine can parse it.
+      caddy.log.output: "file /var/log/caddy/access.log"
+      caddy.log.format: json
     networks:
       - home
 
@@ -116,7 +72,7 @@ services:
 
   # ===========================================================================
   # CROWDSEC - intrusion detection/prevention (engine). OPT-IN: COMPOSE_PROFILES=crowdsec.
-  # Reads NPM access logs + host SSH auth, runs detection scenarios + a community
+  # Reads Caddy access logs + host SSH auth, runs detection scenarios + a community
   # IP blocklist, and exposes a local API on 127.0.0.1:8080 for a bouncer to act on.
   # The ENFORCER (firewall bouncer) is a HOST package, not a container — after this
   # is up, run scripts/install-crowdsec-bouncer.sh to install + wire it (blocks in
@@ -131,7 +87,7 @@ services:
     environment:
       - GID=${PGID:-1000}
       - TZ=${TZ}
-      - COLLECTIONS=crowdsecurity/nginx crowdsecurity/sshd crowdsecurity/linux crowdsecurity/http-cve crowdsecurity/base-http-scenarios
+      - COLLECTIONS=crowdsecurity/caddy crowdsecurity/sshd crowdsecurity/linux crowdsecurity/http-cve crowdsecurity/base-http-scenarios
       # Pre-register the host firewall bouncer with a known key (gen-secrets fills it).
       - BOUNCER_KEY_firewall=${CROWDSEC_BOUNCER_KEY}
       # Optional: enroll into app.crowdsec.net for a web dashboard + alerts.
@@ -141,7 +97,7 @@ services:
       - "127.0.0.1:8080:8080"        # Local API — loopback only, for the host bouncer
     volumes:
       - ${CONFIG_PATH}/crowdsec/data:/var/lib/crowdsec/data        # decisions, bouncers, machines (SQLite)
-      - ${CONFIG_PATH}/npm/data/logs:/var/log/npm:ro               # NPM access logs to scan
+      - ${CONFIG_PATH}/caddy/logs:/var/log/caddy:ro                # Caddy access logs to scan
       - /var/log/auth.log:/var/log/auth.log:ro                     # host SSH auth (journald-only hosts: see docs)
       - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.d/homestack.yaml:ro
     networks:
@@ -221,7 +177,7 @@ services:
   #      music.${DOMAIN}      → http://navidrome:4533
   #      vault.${DOMAIN}      → http://vaultwarden:80   (Access on /admin ONLY —
   #                             full-domain Access breaks the Bitwarden clients)
-  #   NOTE: Jellyfin is served DIRECT (DNS-only A record + 443 → NPM), never
+  #   NOTE: Jellyfin is served DIRECT (DNS-only A record + 443 → Caddy), never
   #   through the tunnel — streaming video over Cloudflare violates their ToS.
   #   See the ddns-updater below for the dynamic-IP A record.
   # ===========================================================================
@@ -243,7 +199,7 @@ services:
   # INACTIVE — enable with COMPOSE_PROFILES=ddns in .env
   # Uses a scoped Cloudflare token (Zone → DNS → Edit). Sets PROXIED=false so the
   # record stays DNS-only (grey-cloud) — video must not traverse Cloudflare.
-  # Then forward host 443 (+80 for the cert/redirect) on the Flint 3 → NPM.
+  # Then forward host 443 (+80 for the cert/redirect) on the Flint 3 → Caddy.
   # ===========================================================================
   ddns-updater:
     image: favonia/cloudflare-ddns:latest

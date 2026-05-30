@@ -32,7 +32,7 @@ list_features() {
   cat <<'EOF'
 Optional features (hs enable <name> / hs disable <name>):
 
-  caddy      Caddy reverse proxy + automatic HTTPS (alternative to NPM)
+  caddy      Caddy reverse proxy + automatic HTTPS
   crowdsec   CrowdSec intrusion detection/prevention (+ host firewall bouncer)
   metrics    Beszel host/container metrics dashboard
   karakeep   Bookmarks / read-later with full-text search
@@ -73,7 +73,6 @@ case "$feature" in
   caddy)
     PROFILE=caddy; STACK=infrastructure
     prompt_vars() { need DOMAIN "Your domain (services at *.DOMAIN)" "example.com"; need CLOUDFLARE_DNS_API_TOKEN "Cloudflare DNS API token (Zone→DNS→Edit)"; need ACME_EMAIL "Email for Let's Encrypt notices"; }
-    post_step()   { warn "Caddy and NPM both bind :80/:443 — stop NPM so Caddy can take over:"; warn "  docker stop nginx-proxy-manager"; }
     verify()      { say "Add the two caddy: labels to a service, then check https://<service>.\$DOMAIN. Guide: docs/caddy.md"; }
     ;;
   crowdsec)

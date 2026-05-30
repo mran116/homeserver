@@ -203,7 +203,7 @@ cd /opt/docker/stacks
 - **install the `hs` command** onto your PATH (+ tab-completion) so everything afterward is just `hs <command>`
 - optionally start Arcane
 
-After the apps are up, run `hs keys`. It **auto-detects** the *arr API keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) straight from each app's generated `config.xml` and writes them to `.env`, then prompts you for the keys that can only come from a UI (Jellyfin, Immich, Mealie, SABnzbd, NPM login, etc.). External tokens (VPN, Tailscale, Cloudflare) are pasted in by hand. Then **redeploy** the consumers (Recyclarr, Unpackerr, Homepage) so they pick up the new keys.
+After the apps are up, run `hs keys`. It **auto-detects** the *arr API keys (Sonarr/Radarr/Lidarr/Whisparr/Prowlarr) straight from each app's generated `config.xml` and writes them to `.env`, then prompts you for the keys that can only come from a UI (Jellyfin, Immich, Mealie, SABnzbd login, etc.). External tokens (VPN, Tailscale, Cloudflare) are pasted in by hand. Then **redeploy** the consumers (Recyclarr, Unpackerr, Homepage) so they pick up the new keys.
 
 <details>
 <summary>Prefer to do it manually?</summary>
@@ -436,7 +436,7 @@ library at `/data/audiobooks`. Confirm the merged result with
 6. Push, `git pull` on host, redeploy in Arcane
 
 NOTE: Jellyfin is NOT tunneled — streaming video over Cloudflare breaks their
-ToS. Serve it direct (DNS-only A record + 443 → NPM, with the ddns-updater for a
+ToS. Serve it direct (DNS-only A record + 443 → Caddy, with the ddns-updater for a
 dynamic IP) or over Tailscale. Full design: network-and-remote-access.md
 ```
 
@@ -500,8 +500,8 @@ Immich requires a specific PostgreSQL image (`tensorchord/pgvecto-rs`) not the s
 **Recyclarr needs API keys before it can run**
 Recyclarr requires Sonarr and Radarr API keys in its config. It will fail on first deploy until you add API keys from both apps. This is expected — configure it after Sonarr and Radarr are running.
 
-**Nginx Proxy Manager owns host ports 80 and 443**
-Unlike every other service (whose host ports come from `.env`), NPM binds host `80` and `443` directly — it has to, to serve HTTP/HTTPS. If anything else on the host already uses those ports (another web server, a second reverse proxy), NPM won't start. Free them first.
+**Caddy owns host ports 80 and 443**
+Unlike every other service (whose host ports come from `.env`), Caddy binds host `80` and `443` directly — it has to, to serve HTTP/HTTPS. If anything else on the host already uses those ports (another web server, a second reverse proxy), Caddy won't start. Free them first.
 
 **SABnzbd scratch belongs on a fast local disk**
 par2 verify/repair and unpack are very IO-intensive (heavy random reads/writes), so performance suffers badly — slow, freezing, even corrupt repairs — on a network mount. Keep SAB's scratch off the NAS: point its **Temporary (incomplete) folder** at a local SSD/NVMe (`SAB_INCOMPLETE_PATH`, mounted as `/data/incomplete`), and leave the **Completed folder on `/data/usenet`** (the NAS) so the *arr still hardlink-import.
