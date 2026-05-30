@@ -18,6 +18,66 @@ services:
       - home
     restart: unless-stopped
 
+  # ===========================================================================
+  # KARAKEEP - bookmarks / read-later / "hoard everything" with full-text search
+  # and OPTIONAL AI auto-tagging. OPT-IN: COMPOSE_PROFILES=karakeep.
+  #   karakeep        = the web app (open this)
+  #   karakeep-chrome = headless Chrome that fetches + screenshots saved pages
+  #   karakeep-meili  = Meilisearch full-text index
+  # Secrets (NEXTAUTH + Meili key) are filled by gen-secrets. AI tagging stays off
+  # until you point it at an LLM (your future AI stack, or OpenAI) — it works
+  # fully without AI. NEXTAUTH_URL must match how you open it (LAN IP by default).
+  # ===========================================================================
+  karakeep:
+    image: ghcr.io/karakeep-app/karakeep:release
+    container_name: karakeep
+    restart: unless-stopped
+    profiles: ["karakeep"]
+    depends_on:
+      - karakeep-chrome
+      - karakeep-meili
+    environment:
+      - DATA_DIR=/data
+      - NEXTAUTH_SECRET=${KARAKEEP_NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=http://${SERVER_IP}:${KARAKEEP_PORT}
+      - MEILI_ADDR=http://karakeep-meili:7700
+      - MEILI_MASTER_KEY=${KARAKEEP_MEILI_KEY}
+      - BROWSER_WEB_URL=http://karakeep-chrome:9222
+    volumes:
+      - ${CONFIG_PATH}/karakeep/data:/data
+    ports:
+      - "${KARAKEEP_PORT}:3000"
+    networks:
+      - home
+
+  karakeep-chrome:
+    image: gcr.io/zenika/alpine-chrome:124
+    container_name: karakeep-chrome
+    restart: unless-stopped
+    profiles: ["karakeep"]
+    command:
+      - --no-sandbox
+      - --disable-gpu
+      - --disable-dev-shm-usage
+      - --remote-debugging-address=0.0.0.0
+      - --remote-debugging-port=9222
+      - --hide-scrollbars
+    networks:
+      - home
+
+  karakeep-meili:
+    image: getmeili/meilisearch:v1.13
+    container_name: karakeep-meili
+    restart: unless-stopped
+    profiles: ["karakeep"]
+    environment:
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_MASTER_KEY=${KARAKEEP_MEILI_KEY}
+    volumes:
+      - ${CONFIG_PATH}/karakeep/meili:/meili_data
+    networks:
+      - home
+
 networks:
   home:
     external: true
