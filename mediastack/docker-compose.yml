@@ -28,6 +28,13 @@ services:
       - QB_PASSWORD=${APP_PASSWORD}
       - QB_PORT=${BITTORRENT_PORT}
       - TZ=${TZ}
+      # Optional HTTP proxy through the VPN. Off by default. When on, point a
+      # browser at SERVER_IP:8888 and its traffic (incl. DNS) exits via the VPN —
+      # video still decodes locally, so no quality loss. Set a user/password so
+      # the LAN proxy isn't open. LAN-only: don't forward :8888 at your router.
+      - HTTPPROXY=${GLUETUN_HTTPPROXY:-off}
+      - HTTPPROXY_USER=${GLUETUN_HTTPPROXY_USER:-}
+      - HTTPPROXY_PASSWORD=${GLUETUN_HTTPPROXY_PASSWORD:-}
     volumes:
       - ${CONFIG_PATH}/gluetun:/gluetun
       # Pushes the forwarded VPN port into qBittorrent on each refresh (the
@@ -38,6 +45,9 @@ services:
       # qBittorrent WebUI is served via gluetun's network namespace.
       # Host port comes from .env; container-internal port matches WEBUI_PORT below.
       - ${BITTORRENT_PORT}:${BITTORRENT_PORT}
+      # HTTP proxy (only useful when GLUETUN_HTTPPROXY=on). Bound to the LAN IP so
+      # it's reachable on your network but never on other interfaces.
+      - ${SERVER_IP}:${GLUETUN_HTTPPROXY_PORT:-8888}:8888
     networks:
       - home
     restart: unless-stopped
