@@ -34,7 +34,7 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 | **mediastack** | Jellyfin\*/Plex\*, Sonarr/Radarr/Lidarr/Whisparr, Prowlarr, Bazarr, SABnzbd, qBittorrent+Gluetun, Navidrome, Audiobookshelf, Seerr, Recyclarr, Unpackerr, Decluttarr, Flaresolverr, Tdarr\* | Media server + fully automated acquisition, music & audiobooks, family requests |
 | **household** | Mealie, KitchenOwl, Donetick, Actual Budget | Recipes & meal planning, shopping lists, chores, budgeting |
 | **fitness** | wger | Workout & fitness tracker (routines, logging, progress charts) |
-| **records** | Paperless-ngx, Stirling PDF, Memos, DocuSeal\* | Document OCR/search, PDF tools, quick notes, e-signing |
+| **records** | Paperless-ngx, Stirling PDF, Memos, Karakeep\*, DocuSeal\* | Document OCR/search, PDF tools, quick notes, bookmarks/read-later, e-signing |
 | **cloud** | Immich | Photo/video backup (Google Photos replacement) |
 | **devops** | Gitea + Actions runner | Self-hosted git/CI — *Phase 3 (future)* |
 
@@ -150,6 +150,7 @@ COMPOSE_PROFILES=jellyfin,tunnel
 | `crowdsec` | CrowdSec IDS/IPS |
 | `caddy` | Caddy reverse proxy (alt to NPM) |
 | `metrics` | Beszel host/container metrics |
+| `karakeep` | Karakeep bookmarks/read-later |
 
 Read **natively by Docker Compose**, so **Arcane, `hs`, and plain `docker compose` all honor it** — set once and it persists. ⚠️ **Include a media server** (`jellyfin` or `plex`) or you'll have none.
 
