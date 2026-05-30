@@ -440,15 +440,6 @@ ToS. Serve it direct (DNS-only A record + 443 → NPM, with the ddns-updater for
 dynamic IP) or over Tailscale. Full design: network-and-remote-access.md
 ```
 
-### Matrix — private encrypted messaging
-```
-1. Requires a domain and Cloudflare Tunnel first
-2. Set MATRIX_SERVER_NAME=yourdomain.com in .env
-3. Uncomment synapse in cloud/docker-compose.yml
-4. Push, `git pull` on host, redeploy in Arcane
-5. Add matrix.yourdomain.com to Cloudflare tunnel routes
-6. Install the Element app on devices
-```
 
 ### DocuSeal — legally binding document signing
 ```
