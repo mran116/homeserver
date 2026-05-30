@@ -69,7 +69,7 @@ HA reaches the Docker services over the LAN (it's a separate VM, not on the
 they survive IP changes and get valid TLS. Full design:
 [`docs/network-and-remote-access.md`](../../docs/network-and-remote-access.md).
 
-Put HA itself behind Nginx Proxy Manager (`home.<domain>` → `http://<ha-vm-ip>:8123`)
+Put HA itself behind Caddy (`home.<domain>` → `http://<ha-vm-ip>:8123`)
 and tell HA to trust the proxy. In `/config/configuration.yaml`:
 
 ```yaml
@@ -79,7 +79,7 @@ homeassistant:
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - <NPM container/LAN IP>               # CHANGE ME — the Nginx Proxy Manager host
+    - <server LAN IP>                      # CHANGE ME — the server's LAN IP where Caddy listens
 ```
 
 Reach HA from outside over **Tailscale**, not the public internet — it's an

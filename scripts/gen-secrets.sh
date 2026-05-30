@@ -24,7 +24,7 @@ require_writable "$ENV_FILE"
 
 # User-facing / external credentials (VPN keys, third-party tokens, admin
 # passwords) are deliberately NOT here — they need a human or external account.
-SECRET_KEYS='NPM_DB_ROOT_PASSWORD NPM_DB_PASSWORD VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET WGER_DB_PASSWORD WGER_SECRET_KEY WGER_SIGNING_KEY CROWDSEC_BOUNCER_KEY KARAKEEP_NEXTAUTH_SECRET KARAKEEP_MEILI_KEY'
+SECRET_KEYS='VAULTWARDEN_ADMIN_TOKEN PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY PAPERLESS_ADMIN_PASSWORD IMMICH_DB_PASSWORD GITEA_DB_PASSWORD DONETICK_JWT_SECRET WGER_DB_PASSWORD WGER_SECRET_KEY WGER_SIGNING_KEY CROWDSEC_BOUNCER_KEY KARAKEEP_NEXTAUTH_SECRET KARAKEEP_MEILI_KEY'
 
 # secrets_pass MODE(plan|apply) — emits "FILL <key>" / "GUARD <key>" lines; only
 # writes the file when MODE=apply. Single source of truth for both passes.
@@ -34,8 +34,6 @@ import sys, os, re, pathlib, secrets, string
 mode, keys_str, path = sys.argv[1], sys.argv[2], sys.argv[3]
 keys = set(keys_str.split())
 DB_DIRS = {
-    "NPM_DB_ROOT_PASSWORD": "npm/db",
-    "NPM_DB_PASSWORD":      "npm/db",
     "IMMICH_DB_PASSWORD":   "immich/db",
     "PAPERLESS_DB_PASSWORD":"paperless/db",
     "GITEA_DB_PASSWORD":    "gitea/db",

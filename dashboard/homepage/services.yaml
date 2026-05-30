@@ -19,13 +19,13 @@
         server: my-docker
         container: arcane
 
-    - Nginx Proxy Manager:
-        icon: nginx-proxy-manager.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NPM_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NPM_PORT}}
-        description: Reverse Proxy & SSL
+    # Caddy is config-as-code (routes from container labels) — no admin UI to
+    # link, so this tile is just a live up/down dot from the container.
+    - Caddy:
+        icon: caddy.png
+        description: Reverse Proxy & HTTPS
         server: my-docker
-        container: nginx-proxy-manager
+        container: caddy
 
     - Tailscale:
         icon: tailscale.png

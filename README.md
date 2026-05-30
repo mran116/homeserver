@@ -57,7 +57,7 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 4. Open Arcane → create admin
 5. Start the stacks in order from Arcane   → vaultwarden first, cloud last
                                              (or pick which to run: hs stacks)
-6. Create your accounts in each app's UI   (Vaultwarden, Immich, Mealie, NPM…)
+6. Create your accounts in each app's UI   (Vaultwarden, Immich, Mealie…)
 7. Run hs keys                             → auto-detects *arr keys + collects
                                              UI-only keys, then redeploy consumers
 8. Verify on Homepage + Uptime Kuma        → everything green
@@ -148,7 +148,7 @@ COMPOSE_PROFILES=jellyfin,tunnel
 | `ddns` | cloudflare-ddns (direct Jellyfin A record) |
 | `tdarr` | Tdarr library transcoder |
 | `crowdsec` | CrowdSec IDS/IPS |
-| `caddy` | Caddy reverse proxy (alt to NPM) |
+| `caddy` | Caddy reverse proxy (the only proxy) |
 | `metrics` | Beszel host/container metrics |
 | `karakeep` | Karakeep bookmarks/read-later |
 
@@ -168,7 +168,7 @@ A stack is a folder — not deploying it means it's off. No tags needed:
 You already have the tools (Arcane, Homepage, Uptime Kuma, Dozzle, Diun→ntfy, `hs`). A few config-only wins make it lower-effort:
 
 - **Manage from anywhere (Tailscale).** Enable the `vpn` profile, set `TS_AUTHKEY` in `.env`, redeploy, approve the subnet route — Arcane / Homepage / SSH reachable from your phone, no ports opened. (FOSS alternative: Headscale.)
-- **Clean local URLs instead of `IP:port`.** AdGuard → DNS rewrites: `*.home` → server IP; then NPM proxy hosts, e.g. `jellyfin.home` → `http://jellyfin:8096`.
+- **Clean local URLs instead of `IP:port`.** AdGuard → DNS rewrites: `*.home` → server IP (where Caddy listens); Caddy then routes each name from container labels, e.g. `jellyfin.home` → `http://jellyfin:8096`.
 - **Family "is it up?" page.** Uptime Kuma → Status Pages → publish, and share the link.
 - **Bulk operations.** `hs up|down|restart|pull|status` runs across all stacks in the right order.
 
@@ -202,7 +202,7 @@ Low-effort maintenance (log caps, image cleanup, update/outage alerts, backups) 
 - [ ] Strong master password **+ 2FA** on Vaultwarden
 - [ ] 2FA on Arcane and Immich admin
 - [ ] `VAULTWARDEN_SIGNUPS_ALLOWED=false` after creating your account
-- [ ] NPM SSL certificates for local services
+- [ ] Caddy wildcard cert (`*.${DOMAIN}` via Cloudflare DNS-01) covering local services
 - [ ] Tailscale for remote admin; Cloudflare Tunnel for public services only (**never** stream Jellyfin through the tunnel — see below)
 - [ ] Arcane, Paperless, Actual Budget never exposed publicly
 - [ ] Diun + Uptime Kuma notifications wired up

@@ -113,7 +113,6 @@ it lives in the repo — it's stored in each app's own database.
 **`gen-secrets` (during bootstrap) auto-generates** every machine secret and
 writes it into `.env` — you never invent these:
 
-- NPM database passwords
 - Vaultwarden `/admin` panel token
 - **Paperless** DB password, secret key, **and the admin login** (`admin` +
   generated password — you log in with the value in `.env`, no manual creation)

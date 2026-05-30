@@ -88,10 +88,6 @@ PAPERLESS_ADMIN_PASSWORD | http://${SERVER_IP}:${PAPERLESS_PORT}  | Set in .env 
 # ---- Cloud ----
 IMMICH_API_KEY           | http://${SERVER_IP}:${IMMICH_PORT}     | Account Settings → API Keys → New API Key
 
-# ---- Infrastructure ----
-NPM_EMAIL                | http://${SERVER_IP}:${NPM_PORT}        | Your NPM login email
-NPM_PASSWORD             | http://${SERVER_IP}:${NPM_PORT}        | Your NPM login password
-
 # ---- Notifications / external ----
 DIUN_NOTIF_WEBHOOK_URL               | (Home Assistant)                          | HA → Settings → Automations → New → Webhook trigger
 TS_AUTHKEY                           | https://login.tailscale.com/admin/settings/keys | Generate a reusable auth key
