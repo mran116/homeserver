@@ -1,14 +1,14 @@
 # CrowdSec log acquisition — what the engine reads to detect attacks.
 # Mounted into the container at /etc/crowdsec/acquis.d/homestack.yaml.
 #
-# Nginx Proxy Manager access logs (brute-force, scans, CVE probes against
-# anything you reverse-proxy). NPM writes these under its data dir, mounted
-# read-only at /var/log/npm.
+# Caddy access logs (brute-force, scans, CVE probes against anything you
+# reverse-proxy). Caddy writes JSON access logs under its data dir, mounted
+# read-only at /var/log/caddy.
 ---
 filenames:
-  - /var/log/npm/*.log
+  - /var/log/caddy/*.log
 labels:
-  type: nginx
+  type: caddy
 ---
 # Host SSH auth (brute-force against the box itself). Mounted read-only.
 # On distros without /var/log/auth.log (pure journald), use the journalctl

@@ -76,7 +76,6 @@ dump_mysql(){
 dump_pg immich-db
 dump_pg paperless-db
 dump_pg wger-db
-dump_mysql npm-db
 
 # Vaultwarden (SQLite): take a consistent online .backup — this is the whole
 # password DB, so a torn live-file copy is not acceptable. Prefer the HOST's
@@ -106,7 +105,7 @@ if [ -d "$DATA_SRC" ] && [ -n "$(ls -A "$DATA_SRC" 2>/dev/null)" ]; then
   log "mirroring configs from $DATA_SRC"
   rsync -a --delete \
     --exclude 'immich/db/'         --exclude 'paperless/db/' \
-    --exclude 'wger/db/'           --exclude 'npm/db/' \
+    --exclude 'wger/db/' \
     --exclude 'immich/model-cache/' \
     --exclude 'jellyfin/transcodes/' --exclude 'jellyfin/cache/' \
     --exclude '*/redis/' \
@@ -189,13 +188,6 @@ DUMP=/mnt/media/backups/db/${C}-YYYYMMDD-HHMMSS.sql.gz
 # The dump was made with --clean --if-exists, so it drops & recreates objects.
 gunzip -c "$DUMP" | docker exec -i "$C" sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 docker restart "$C"
-```
-
-### MariaDB (npm-db)
-```bash
-DUMP=/mnt/media/backups/db/npm-db-YYYYMMDD-HHMMSS.sql.gz
-gunzip -c "$DUMP" | docker exec -i npm-db sh -c 'C=$(command -v mariadb || command -v mysql); "$C" -u root -p"$MYSQL_ROOT_PASSWORD"'
-docker restart npm-db
 ```
 
 ## Restore Vaultwarden (passwords)

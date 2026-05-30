@@ -240,7 +240,7 @@ env = {}
 for ln in pathlib.Path(sys.argv[1]).read_text().splitlines():
     m = re.match(r'^([A-Z0-9_]+)=(.*)$', ln)
     if m: env[m.group(1)] = re.split(r'\s+#', m.group(2), 1)[0].strip()
-REQUIRED = set("WIREGUARD_PRIVATE_KEY WIREGUARD_ADDRESSES NPM_DB_PASSWORD NPM_DB_ROOT_PASSWORD "
+REQUIRED = set("WIREGUARD_PRIVATE_KEY WIREGUARD_ADDRESSES "
                "IMMICH_DB_PASSWORD PAPERLESS_DB_PASSWORD PAPERLESS_SECRET_KEY DONETICK_JWT_SECRET "
                "VAULTWARDEN_ADMIN_TOKEN ARCANE_ENCRYPTION_KEY ARCANE_JWT_SECRET".split())
 refs = {}
