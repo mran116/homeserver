@@ -32,6 +32,9 @@ services:
       - PROJECTS_DIRECTORY=${STACKS_PATH}
       - ENCRYPTION_KEY=${ARCANE_ENCRYPTION_KEY}
       - JWT_SECRET=${ARCANE_JWT_SECRET}
+    labels:
+      caddy: arcane.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 3552}}"
     networks:
       - home
 

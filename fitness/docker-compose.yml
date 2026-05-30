@@ -121,6 +121,9 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ${CONFIG_PATH}/wger/static:/wger/static:ro
       - ${CONFIG_PATH}/wger/media:/wger/media:ro
+    labels:
+      caddy: fitness.${DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 80}}"
     networks:
       - home
 
