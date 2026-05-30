@@ -4,7 +4,7 @@ A complete self-hosted homeserver stack built with Docker Compose and managed vi
 
 Covers media streaming, household management, photo backup, document storage, password management, budget tracking, private messaging, monitoring, and automation — all self-hosted, all free (or nearly free).
 
-> 📖 **More docs:** [Install & Setup](docs/INSTALL.md) · [Reference (mobile apps · network · hardware)](docs/REFERENCE.md) · [Remote-access design](docs/network-and-remote-access.md) · [Home Assistant (future goal)](docs/HOME-ASSISTANT.md)
+> 📖 **More docs:** [Install & Setup](docs/INSTALL.md) · [Reference (mobile apps · network · hardware)](docs/REFERENCE.md) · [Remote-access design](docs/network-and-remote-access.md) · [Theming](docs/theming.md) · [Home Assistant (future goal)](docs/HOME-ASSISTANT.md)
 
 ---
 
