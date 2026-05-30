@@ -53,11 +53,11 @@ jobs:
         with:
           python-version: '3.x'
       - name: py_compile (gate)
-        run: python -m py_compile scripts/sonarr-bulk-import.py && echo "ok scripts/sonarr-bulk-import.py"
+        run: for p in scripts/*.py; do python -m py_compile "$p" && echo "ok $p"; done
       - name: ruff lint (advisory)
         run: |
           pip install --quiet ruff
-          ruff check scripts/sonarr-bulk-import.py || true
+          ruff check scripts/ || true
 
   secrets:
     runs-on: ubuntu-latest
