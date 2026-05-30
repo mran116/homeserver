@@ -77,6 +77,3 @@ $RECYCLE.BIN/
 # =============================================================================
 *.local.md
 ROADMAP.local.md
-
-# AI assistant guidance — kept on disk for Claude Code, not published
-CLAUDE.md
