@@ -9,6 +9,44 @@ apps (for movies, photos, documents, passwords, recipes, workouts, and more).
 > 💡 When you "copy-paste a command," you copy the grey box, paste it into the
 > black window (the terminal), and press the **Enter** key. That's it.
 
+You don't need to be an expert, but the next 2 minutes will make everything below
+make sense — so you're not just pasting blindly.
+
+---
+
+## The big picture (read this — 2 minutes)
+
+Here's the whole thing in everyday words:
+
+- **The server** is just a computer that stays on and runs your apps, instead of
+  paying companies to run them for you. Your data stays in your house.
+
+- **Each app runs in its own "container."** Think of a container as a sealed
+  lunchbox: the app and everything it needs are inside, and it can't make a mess
+  of the rest of the computer. If one app breaks, the others don't care. (The
+  software that runs these lunchboxes is called **Docker** — you won't deal with
+  it directly.)
+
+- **A "stack" is a group of related lunchboxes** that work together. For example
+  the *mediastack* contains the movie app, the TV app, the downloader, etc. — all
+  the boxes that make "media" work, bundled so you start them together.
+
+- **Two web pages run the show:**
+  - **Arcane** (the *control panel*, at port `3552`) = the **light switches**. You
+    turn stacks on and off here, and watch them run.
+  - **Homepage** (the *dashboard*, at port `3000`) = your **front door**. It's the
+    page you'll actually use every day, with a button for every app.
+
+- **One settings file, `.env`,** holds your choices (where files go, your
+  passwords, which apps to run). The setup fills most of it in for you.
+
+- **One command, `hs`,** is your **remote control** for everything. `hs update`,
+  `hs doctor`, `hs status` — you'll learn the five that matter at the end.
+
+**So the plan is simple:** set it up (Part 3) → pick what you want (Part 4) →
+flip the switches on (Part 6) → use your front door (Part 7). That's the shape of
+everything below.
+
 ---
 
 ## What you need first
@@ -81,14 +119,17 @@ passwords for you). This takes a few minutes. **Let it run.**
 Each question shows a suggested answer in `[brackets]`. **If you're not sure, just
 press Enter** to accept it. Here's what the questions mean:
 
-| It asks about… | In plain English | Just press Enter unless… |
-|---|---|---|
-| **Timezone** | Your local time, so logs/schedules are right | …it guessed the wrong region |
-| **Config folder** | Where the apps keep their settings | …always press Enter (keep it on this computer) |
-| **Media folder** | Where your movies/TV/music go | …your movies are on a different drive (type that drive's path) |
-| **Photos folder** | Where your photos go | …you want them somewhere specific |
-| **Documents folder** | Where scanned documents go | …you want them somewhere specific |
-| **Downloads scratch** | Temporary space while downloading | …press Enter (keep it on this computer) |
+| It asks about… | Setting name | Suggested answer | What it means / when to change it |
+|---|---|---|---|
+| **Timezone** | `TZ` | your region | Sets your local time. Change only if it guesses wrong. |
+| **Config folder** | `CONFIG_PATH` | `/opt/docker/data` | Where apps keep their settings + databases. **Always press Enter** — this must stay on this computer's own disk (databases break on a network drive). |
+| **Media folder** | `MEDIA_PATH` | `/mnt/media` | Where your movies/TV/music live. Change it if your media is on a different drive — type that drive's path. |
+| **Photos folder** | `PHOTOS_PATH` | `/mnt/photos` | Where your photos go (the Immich app). |
+| **Documents folder** | `DOCS_PATH` | `/mnt/documents` | Where scanned documents go (the Paperless app). |
+| **Sync folder** | `SYNC_PATH` | `/mnt/sync` | Folders shared between your devices (Syncthing). |
+| **Downloads scratch** | `SAB_INCOMPLETE_PATH` | `/opt/docker/incomplete` | Temporary space used *while* downloading. **Press Enter** — keep it on this computer's fast disk. |
+
+You can change any of these later by editing the file `/opt/docker/stacks/.env`.
 
 > 🧠 **The only rule that matters:** your **movies/TV folder** and your
 > **downloads** should be on the **same drive**. If everything is on one disk,
@@ -100,7 +141,55 @@ When it's done it may ask **"Start the control panel now?"** → type **y** and 
 
 ---
 
-## Part 4 — Open the control panel
+## Part 4 — Choose which apps you want (optional)
+
+You don't have to run everything. There are **two** ways to pick — and it's fine
+to skip this whole part and just run the defaults.
+
+### Way 1 — Pick whole groups of apps
+
+In the Terminal, type:
+
+```bash
+hs stacks
+```
+
+It asks you, one group at a time (movies, recipes, documents, photos, etc.),
+whether to **keep it** or **skip it**. Skipped groups never turn on and use
+nothing. You can run this again anytime to add or remove groups.
+
+### Way 2 — Pick options + which media player
+
+These live in the settings file. Open it with:
+
+```bash
+nano /opt/docker/stacks/.env
+```
+
+Find the line that starts with `COMPOSE_PROFILES=` and add any of these words
+(separated by commas):
+
+| Word | Turns on |
+|---|---|
+| `jellyfin` *(already on)* or `plex` | Your media player — pick **one** |
+| `backup` | Automatic backups |
+| `vpn` | Private remote access (Tailscale) |
+| `tunnel` | Secure remote access (Cloudflare) |
+| `ddns` | Keeps your home address up to date for a web domain |
+| `tdarr` | Automatically shrinks video files |
+| `matrix` | A private chat server |
+
+Example: `COMPOSE_PROFILES=jellyfin,backup,vpn`
+
+To save in the `nano` editor: press **Ctrl+O**, then **Enter**, then **Ctrl+X** to
+exit.
+
+> 😌 **Not sure? Don't touch this.** The default (`jellyfin`) is a great starting
+> point, and you can change it later, then run `hs update`.
+
+---
+
+## Part 5 — Open the control panel
 
 On any computer, open a web browser (Chrome, Firefox, etc.) and go to this address
 (use YOUR_IP):
@@ -123,7 +212,7 @@ button, usually top-right). Pick a new password and save it somewhere safe.
 
 ---
 
-## Part 5 — Turn the apps on (in this order!)
+## Part 6 — Turn the apps on (in this order!)
 
 In the control panel you'll see a list of "stacks" (groups of apps). Click each
 one and press the **Start** button, **in this exact order**. Wait about a minute
@@ -144,7 +233,7 @@ Order matters because some apps need the earlier ones to be running first.
 
 ---
 
-## Part 6 — Your home page + first logins
+## Part 7 — Your home page + first logins
 
 Open your **dashboard** (home page) in a browser (use YOUR_IP):
 
@@ -170,7 +259,7 @@ A few important tips:
 
 ---
 
-## Part 7 — Make the home page show live info
+## Part 8 — Make the home page show live info
 
 Your dashboard can show live numbers (download speeds, how many movies, etc.).
 One command sets most of this up. In the Terminal, type:
