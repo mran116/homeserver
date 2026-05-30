@@ -216,7 +216,7 @@ services:
   #   4. Add public-hostname routes in the Cloudflare dashboard (cloudflared is
   #      on the `home` network, so it reaches services by container name):
   #      requests.${DOMAIN}   → http://seerr:5055
-  #      photos.${DOMAIN}     → http://immich-server:3001
+  #      photos.${DOMAIN}     → http://immich-server:2283
   #      audiobooks.${DOMAIN} → http://audiobookshelf:80
   #      music.${DOMAIN}      → http://navidrome:4533
   #      vault.${DOMAIN}      → http://vaultwarden:80   (Access on /admin ONLY —
