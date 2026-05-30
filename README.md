@@ -122,6 +122,8 @@ hs keys                          # pull app API keys for the dashboard widgets
 ```
 
 > Full manual walkthrough, per-app post-deploy setup, optional services, and troubleshooting → [docs/INSTALL.md](docs/INSTALL.md).
+>
+> Deploying on a different box / a media layout that isn't the default (different paths, folder names, or disks)? → [docs/porting-to-your-own-layout.md](docs/porting-to-your-own-layout.md).
 
 ---
 

@@ -19,7 +19,11 @@ set -uo pipefail
 
 # Paths are configurable via .env; the defaults preserve the original hardcoded
 # layout, so an unset var (or absent .env) keeps the previous behavior exactly.
-ENV_SRC="/opt/docker/stacks/.env"
+# Find .env relative to this script (repo/scripts/backup.sh -> repo/.env) so a
+# relocated repo's paths are honored instead of silently falling back to defaults.
+# ENV_SRC can still be overridden in the environment for an unusual layout.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_SRC="${ENV_SRC:-$SCRIPT_DIR/../.env}"
 if [ -f "$ENV_SRC" ]; then
   set -a                       # export each KEY=value while sourcing
   # shellcheck source=/dev/null
