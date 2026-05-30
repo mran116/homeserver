@@ -180,7 +180,8 @@ services:
   # TAILSCALE - Private VPN access to entire network
   # INACTIVE — enable with COMPOSE_PROFILES=vpn in .env
   # Get auth key: https://login.tailscale.com/admin/settings/keys
-  # After deploy: approve subnet route in Tailscale admin panel
+  # After deploy: approve the subnet route in the Tailscale admin panel.
+  # Set TAILSCALE_SUBNET to your REAL LAN subnet. Full guide: docs/tailscale.md
   # ===========================================================================
   tailscale:
     image: tailscale/tailscale:latest
