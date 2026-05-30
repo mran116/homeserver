@@ -430,6 +430,8 @@ services:
   #     (it writes the re-encoded file there before swapping in the original).
   #   - HW (GPU) encode: add a `tdarr` block to docker-compose.override.yml
   #     (see the .example). No GPU in the base, so it never fails without one.
+  #   - Full setup, the safe HandBrake flow, and the "it replaces originals"
+  #     warning: docs/tdarr.md
   # ===========================================================================
   tdarr:
     image: ghcr.io/haveagitgat/tdarr:latest
