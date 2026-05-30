@@ -40,8 +40,10 @@ services:
       immich-redis:
         condition: service_healthy
     labels:
-      caddy: photos.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 2283}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@photos: "host photos.${DOMAIN}"
+      caddy.handle: "@photos"
+      caddy.handle.reverse_proxy: "{{upstreams 2283}}"
     networks:
       - home
 

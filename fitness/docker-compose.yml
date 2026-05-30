@@ -122,8 +122,10 @@ services:
       - ${CONFIG_PATH}/wger/static:/wger/static:ro
       - ${CONFIG_PATH}/wger/media:/wger/media:ro
     labels:
-      caddy: fitness.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 80}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@fitness: "host fitness.${DOMAIN}"
+      caddy.handle: "@fitness"
+      caddy.handle.reverse_proxy: "{{upstreams 80}}"
     networks:
       - home
 

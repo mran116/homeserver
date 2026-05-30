@@ -29,8 +29,10 @@ services:
       - "22000:22000/udp"             # sync protocol (QUIC)
       - "21027:21027/udp"             # local discovery
     labels:
-      caddy: syncthing.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8384}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@syncthing: "host syncthing.${DOMAIN}"
+      caddy.handle: "@syncthing"
+      caddy.handle.reverse_proxy: "{{upstreams 8384}}"
     networks:
       - home
     restart: unless-stopped
