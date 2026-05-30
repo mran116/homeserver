@@ -16,8 +16,9 @@
 #   2. Docker engine + compose plugin
 #   3. Docker log rotation (so container logs can't fill the disk)
 #   4. qemu-guest-agent (only if running in a VM — helps Proxmox manage it)
-#   5. adds your user to the docker group
-#   6. runs ./bootstrap.sh
+#   5. unattended-upgrades (automatic OS security patches)
+#   6. adds your user to the docker group
+#   7. runs ./bootstrap.sh
 #
 # It does NOT (you handle these):
 #   - mount your media/data disks — do that first if they're separate drives/NAS
@@ -83,6 +84,27 @@ if command -v systemctl >/dev/null && systemctl is-active --quiet systemd-resolv
   else
     warn "Left systemd-resolved running — AdGuard won't start until you free :53 (see infrastructure/docker-compose.yml)."
   fi
+fi
+
+# ---- 4c. automatic OS security patches --------------------------------------
+# Keep the host patched without anyone remembering to. Installs + enables
+# unattended-upgrades (security-origin updates apply daily). Auto-reboot for
+# kernel updates is OFF by default (a server reboot = brief downtime); offer it
+# opt-in with a 04:00 window. `hs doctor` flags when a reboot is pending.
+say "Enabling automatic security updates (unattended-upgrades)"
+sudo apt-get install -y unattended-upgrades
+sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+if ask_yn "Auto-reboot at 04:00 when a security update needs it (e.g. a kernel update)? (brief downtime; default no)" N; then
+  sudo tee /etc/apt/apt.conf.d/51homestack-reboot >/dev/null <<'EOF'
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+EOF
+  say "Auto-reboot enabled (04:00 when required)."
+else
+  say "Auto-reboot left off — reboot yourself when 'hs doctor' reports one pending."
 fi
 
 # ---- 5. docker group for this user ------------------------------------------

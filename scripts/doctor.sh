@@ -191,6 +191,14 @@ if [[ -n "$inc" ]]; then
   fi
 fi
 
+say "OS updates"
+if command -v systemctl >/dev/null && systemctl is-enabled --quiet unattended-upgrades 2>/dev/null; then
+  ok "unattended-upgrades enabled — OS security patches auto-apply"
+else
+  note "unattended-upgrades not enabled — OS won't auto-patch (run scripts/setup-fresh.sh, or: sudo apt-get install -y unattended-upgrades)"
+fi
+[[ -f /var/run/reboot-required ]] && bad "reboot pending — a security update (often the kernel) needs a reboot to take effect: sudo reboot"
+
 say "Stack wiring"
 if [[ "$(current_value STACKS_PATH)" == "$REPO_DIR" ]]; then ok "STACKS_PATH = $REPO_DIR"
 else note "STACKS_PATH != repo path — run 'hs update' (re-links it)"; fi
