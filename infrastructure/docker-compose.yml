@@ -3,10 +3,11 @@ services:
   # ===========================================================================
   # CADDY (caddy-docker-proxy) — config-as-code reverse proxy + automatic HTTPS.
   # The reverse proxy for this stack. Enable with COMPOSE_PROFILES=caddy (or
-  # `hs enable caddy`). Routes GENERATE THEMSELVES from container labels; a
-  # browser-trusted cert per hostname via Cloudflare DNS-01 (works for internal-
-  # only names too), auto-renewing and persisted in the data volume. Add two
-  # labels to a service and its HTTPS route appears. Full guide: docs/caddy.md
+  # `hs enable caddy`). Routes GENERATE THEMSELVES from container labels; one
+  # wildcard cert (*.${DOMAIN}) via Cloudflare DNS-01 covers every service (so
+  # service names stay out of public CT logs), auto-renewing + persisted in the
+  # data volume. Services share one *.${DOMAIN} site via host matchers — add the
+  # four caddy labels and the route appears. Full guide: docs/caddy.md
   # ===========================================================================
   caddy:
     build: ./caddy
@@ -68,8 +69,10 @@ services:
     environment:
       - TZ=${TZ}
     labels:
-      caddy: dns.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 3000}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@dns: "host dns.${DOMAIN}"
+      caddy.handle: "@dns"
+      caddy.handle.reverse_proxy: "{{upstreams 3000}}"
     networks:
       - home
 

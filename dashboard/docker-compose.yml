@@ -116,8 +116,10 @@ services:
       # where everything else is plain http that's a fine trade-off.
       # - NODE_TLS_REJECT_UNAUTHORIZED=0
     labels:
-      caddy: dash.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 3000}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@dash: "host dash.${DOMAIN}"
+      caddy.handle: "@dash"
+      caddy.handle.reverse_proxy: "{{upstreams 3000}}"
     networks:
       - home
 

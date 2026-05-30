@@ -19,8 +19,10 @@ services:
     environment:
       - TZ=${TZ}
     labels:
-      caddy: uptime.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 3001}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@uptime: "host uptime.${DOMAIN}"
+      caddy.handle: "@uptime"
+      caddy.handle.reverse_proxy: "{{upstreams 3001}}"
     networks:
       - home
 
@@ -41,8 +43,10 @@ services:
     environment:
       - TZ=${TZ}
     labels:
-      caddy: logs.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8080}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@logs: "host logs.${DOMAIN}"
+      caddy.handle: "@logs"
+      caddy.handle.reverse_proxy: "{{upstreams 8080}}"
     networks:
       - home
 
@@ -115,8 +119,10 @@ services:
     ports:
       - "${NTFY_PORT}:80"
     labels:
-      caddy: ntfy.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 80}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@ntfy: "host ntfy.${DOMAIN}"
+      caddy.handle: "@ntfy"
+      caddy.handle.reverse_proxy: "{{upstreams 80}}"
     networks:
       - home
     restart: unless-stopped
@@ -142,8 +148,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"   # so the hub can reach the host-networked agent
     labels:
-      caddy: beszel.${DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 8090}}"
+      caddy: "*.${DOMAIN}"
+      caddy.@beszel: "host beszel.${DOMAIN}"
+      caddy.handle: "@beszel"
+      caddy.handle.reverse_proxy: "{{upstreams 8090}}"
     networks:
       - home
 
