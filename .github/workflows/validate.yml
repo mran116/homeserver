@@ -59,6 +59,24 @@ jobs:
           pip install --quiet ruff
           ruff check scripts/ || true
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: hadolint — Dockerfile lint (advisory)
+        run: |
+          curl -sSL https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /tmp/hadolint
+          chmod +x /tmp/hadolint
+          find . -name Dockerfile -print0 | xargs -0 -r -n1 /tmp/hadolint || true
+      - name: actionlint — GitHub Actions lint (advisory)
+        run: |
+          bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color || true
+      - name: yamllint — compose/config YAML (advisory)
+        run: |
+          pip install --quiet yamllint
+          yamllint -d relaxed . || true
+
   secrets:
     runs-on: ubuntu-latest
     steps:
