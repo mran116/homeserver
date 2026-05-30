@@ -112,6 +112,43 @@ services:
       - home
     restart: unless-stopped
 
+  # ===========================================================================
+  # BESZEL - lightweight host + container metrics (CPU/RAM/disk/network/temps,
+  # with history). OPT-IN: COMPOSE_PROFILES=metrics. The low-overhead answer to
+  # "how's the box doing?" without a full Prometheus/Grafana stack.
+  #   hub   = web UI (this is what you open)
+  #   agent = collects metrics from THIS host (host network + docker socket)
+  # First run: open the hub, "Add System", copy the shown public key into
+  # BESZEL_KEY in .env, redeploy. Point the system at host.docker.internal:45876.
+  # ===========================================================================
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    profiles: ["metrics"]
+    ports:
+      - "${BESZEL_PORT:-8090}:8090"
+    volumes:
+      - ${CONFIG_PATH}/beszel/data:/beszel_data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # so the hub can reach the host-networked agent
+    networks:
+      - home
+
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    container_name: beszel-agent
+    restart: unless-stopped
+    profiles: ["metrics"]
+    # host network so it sees real host CPU/net/disk; docker.sock for container stats.
+    network_mode: host
+    environment:
+      - PORT=45876
+      - KEY=${BESZEL_KEY}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${CONFIG_PATH}/beszel/agent:/var/lib/beszel-agent
+
 networks:
   home:
     external: true
