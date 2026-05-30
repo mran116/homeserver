@@ -51,6 +51,7 @@ SETUP (first time)
 
 MAINTENANCE
   hs cron                      (re)install the maintenance cron jobs
+  hs seed-monitors             seed Uptime Kuma from monitoring/uptime-kuma/seed.json (+ntfy alerts)
   hs hooks                     (re)install the git pre-push validation hook
   hs network                   (re)create the shared `home` docker network
 
@@ -110,6 +111,7 @@ case "$cmd" in
   stacks)                run stacks.sh "$@" ;;
   network)               run create-network.sh "$@" ;;
   cron)                  run schedule-maintenance.sh "$@" ;;
+  seed-monitors)         run seed-uptime-kuma.sh "$@" ;;
   hooks)                 run install-hooks.sh "$@" ;;
   setup)
     if [[ "${1:-}" == "--fresh" ]]; then shift; exec "$S/setup-fresh.sh" "$@"; fi
