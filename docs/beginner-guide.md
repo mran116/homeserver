@@ -60,6 +60,90 @@ If you have those three things, you're ready. 👍
 
 ---
 
+## Part 0 — Blank computer? Start here (otherwise skip to Part 1)
+
+**Already have Ubuntu/Debian installed?** Skip this whole part — go to Part 1.
+
+This part is only for a computer with **nothing** on it (or with Windows you want
+to replace).
+
+### 0a. Put Ubuntu on the machine
+
+1. On any working computer, go to **ubuntu.com/download/server** and download
+   **Ubuntu Server LTS** (LTS = the stable long-term version). You'll get one big
+   file ending in `.iso`.
+2. Download a free tool called **balenaEtcher** (balena.io/etcher) — it copies that
+   file onto a USB stick correctly.
+3. Plug in a USB stick (**it will be wiped — use an empty one**). Open Etcher,
+   pick the `.iso` file, pick the USB stick, click **Flash**. Wait until it says
+   done.
+4. Plug that USB stick into the server computer and turn it on. As it starts,
+   tap the boot-menu key repeatedly — usually **F12**, sometimes **F2**, **Esc**,
+   or **Del** (the screen often shows which for a second). Choose the **USB stick**
+   from the list.
+5. The Ubuntu installer starts. **Accept the defaults** by pressing Enter through
+   the screens. When it asks:
+   - **Your name / server name / username / password** — fill these in and
+     **remember them** (this is your login).
+   - **"Install OpenSSH server"** — turn this **ON** (lets you connect from another
+     computer, like in Part 2).
+6. When it finishes, it says to **remove the USB stick and reboot**. Do that.
+
+✅ The machine now has Ubuntu. Log in with the username/password you just set, and
+continue below.
+
+### 0b. Got a second drive for media? Mount it
+
+"Mounting" just means: make a drive show up at a folder like `/mnt/media` so the
+apps can use it.
+
+> 🟢 **Only have ONE drive** (everything on the same disk)? **Skip this** — there's
+> nothing to do. Go to Part 1.
+
+> 🛑 **STOP AND READ.** The format command below **erases a drive completely**.
+> Pick the wrong one and you wipe your system or your existing files. If you're
+> not 100% sure which drive is which, **ask someone** before running the format
+> step. When unsure, it's safer to stop here and get help — this is the only
+> dangerous step in the whole guide.
+
+1. **See your drives:**
+   ```bash
+   lsblk -o NAME,SIZE,MODEL,MOUNTPOINT
+   ```
+   Your main system drive is the one with `/` under MOUNTPOINT — **leave it alone.**
+   Your media drive is usually the big one with a blank MOUNTPOINT (e.g. `sdb`).
+
+2. **Does that media drive already have your files on it?**
+   - **YES, it has files I want to keep** → **do NOT format.** Skip to step 4 and
+     just mount it.
+   - **NO, it's a brand-new empty drive** → format it (step 3 erases it).
+
+3. *(New empty drive only)* Format it as `ext4`. Replace `sdX1` with your drive's
+   partition (e.g. `sdb1`):
+   ```bash
+   sudo mkfs.ext4 /dev/sdX1
+   ```
+
+4. **Create the folder and mount the drive** (replace `sdX1` with your drive):
+   ```bash
+   sudo mkdir -p /mnt/media
+   echo "UUID=$(sudo blkid -s UUID -o value /dev/sdX1) /mnt/media ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+   sudo mount -a
+   ```
+   That last block also makes the drive mount itself automatically every time the
+   server restarts.
+
+5. **Check it worked:**
+   ```bash
+   df -h /mnt/media
+   ```
+   If it shows your drive's size, you're done. Remember the path `/mnt/media` —
+   you'll type it (or just press Enter for it) during setup in Part 3.
+
+✅ Your media drive is ready.
+
+---
+
 ## Part 1 — Find your server's address
 
 Every device on your network has an address that looks like `192.168.1.100`.
