@@ -198,8 +198,11 @@ services:
       - loki
       - prometheus
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      # Reuse your shared app login (same as qBittorrent/SABnzbd) so it's ONE
+      # credential. Falls back to admin/admin only if APP_* are unset. Applied
+      # on first init only — change later in the Grafana UI.
+      - GF_SECURITY_ADMIN_USER=${APP_USERNAME:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${APP_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
