@@ -61,6 +61,14 @@ they sit — is flexible. Only "same filesystem" is non-negotiable.
 
 > `setup-fresh.sh` is the friend-friendly path: `git clone`, `cd`, `./scripts/setup-fresh.sh`. It installs Docker then hands off to `bootstrap.sh`. It explicitly does **not** mount disks or deploy stacks.
 
+> **⚠️ Manga / anime (or any non-Latin filenames) on an SMB/CIFS NAS?** Add
+> **`iocharset=utf8`** to the CIFS mount options in `/etc/fstab` — e.g.
+> `//nas/media /mnt/media cifs credentials=/etc/smb-cred,uid=1000,gid=1000,iocharset=utf8,nofail 0 0`.
+> Without it, Japanese (CJK) filenames arrive mangled (`?????`) and Sonarr/Jellyfin
+> can't see or import them. Local ext4/mergerfs and NFS aren't affected at the
+> filesystem level; if an app still mis-displays CJK, set `LANG=C.UTF-8` on that
+> container.
+
 ### Step 2 — Bootstrap · **automatic** (`./bootstrap.sh`, re-runnable)
 
 Each step previews, then asks to apply (Enter = sensible default). In order:
