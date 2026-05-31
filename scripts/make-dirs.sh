@@ -65,11 +65,24 @@ new_app_dirs=(); for d in "${app_dirs[@]}"; do [[ -d "$d" ]] || new_app_dirs+=("
 # into CONFIG_PATH/homepage whenever anything differs (Homepage hot-reloads — incl.
 # custom.css/custom.js). Its runtime logs/ live alongside and are never touched.
 shopt -s nullglob
-hp_files=(dashboard/homepage/*.yaml dashboard/homepage/*.css dashboard/homepage/*.js)
+hp_all=(dashboard/homepage/*.yaml dashboard/homepage/*.css dashboard/homepage/*.js)
 shopt -u nullglob
+# bookmarks.local.yaml is a PRIVATE, gitignored overlay (personal bookmarks you
+# don't want in the public repo). It is NOT mirrored verbatim; instead its lines
+# are appended onto live bookmarks.yaml after each sync, so personal bookmarks
+# survive every update yet never enter git. Drop it from the mirror list here.
+hp_overlay="dashboard/homepage/bookmarks.local.yaml"
+hp_files=()
+for f in "${hp_all[@]}"; do [[ "$f" == "$hp_overlay" ]] || hp_files+=("$f"); done
 sync_homepage=0
 for f in "${hp_files[@]}"; do
-  cmp -s "$f" "$CONFIG_PATH/homepage/$(basename "$f")" 2>/dev/null || sync_homepage=1
+  base="$(basename "$f")"
+  if [[ "$base" == bookmarks.yaml && -s "$hp_overlay" ]]; then
+    # live bookmarks should equal repo bookmarks + the private overlay
+    cmp -s <(cat "$f" "$hp_overlay") "$CONFIG_PATH/homepage/$base" 2>/dev/null || sync_homepage=1
+  else
+    cmp -s "$f" "$CONFIG_PATH/homepage/$base" 2>/dev/null || sync_homepage=1
+  fi
 done
 [[ $sync_homepage -eq 1 ]] && plan "sync Homepage config → $CONFIG_PATH/homepage (repo is source of truth)"
 
@@ -110,5 +123,10 @@ for d in "${missing_external[@]}"; do
     warn "  left uncreated."
   fi
 done
-[[ $sync_homepage -eq 1 ]] && cp "${hp_files[@]}" "$CONFIG_PATH/homepage/"
+if [[ $sync_homepage -eq 1 ]]; then
+  cp "${hp_files[@]}" "$CONFIG_PATH/homepage/"
+  # Append the PRIVATE overlay (gitignored) onto live bookmarks.yaml so personal
+  # bookmarks persist across every sync without ever entering the public repo.
+  [[ -s "$hp_overlay" ]] && cat "$hp_overlay" >> "$CONFIG_PATH/homepage/bookmarks.yaml"
+fi
 say "Directory layout ready."
