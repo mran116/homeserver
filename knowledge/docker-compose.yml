@@ -48,6 +48,9 @@ services:
       - MEILI_ADDR=http://karakeep-meili:7700
       - MEILI_MASTER_KEY=${KARAKEEP_MEILI_KEY}
       - BROWSER_WEB_URL=http://karakeep-chrome:9222
+      # Capture the WHOLE page, not just the visible viewport:
+      - CRAWLER_FULL_PAGE_SCREENSHOT=true   # full-length screenshot
+      - CRAWLER_FULL_PAGE_ARCHIVE=true      # save a complete offline HTML copy (link-rot proof)
     volumes:
       - ${CONFIG_PATH}/karakeep/data:/data
     ports:
