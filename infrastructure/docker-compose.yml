@@ -42,6 +42,11 @@ services:
   # ADGUARD HOME - Network-wide DNS ad/tracker blocking + local DNS
   # http://${SERVER_IP}:${ADGUARD_PORT}
   #
+  # OPT-IN: off by default (profile "adguard"). Most setups run DNS on the
+  # always-on router instead (more resilient — survives a Docker/Proxmox reboot),
+  # so this container is only for hosts WITHOUT a capable router. Turn on with
+  # `hs enable adguard` (or add "adguard" to COMPOSE_PROFILES).
+  #
   # First run:
   #   1. Open the admin UI on ${ADGUARD_PORT} and run the setup wizard.
   #   2. Set the *admin interface* to port 3000 (matches the mapping below) and
@@ -59,6 +64,7 @@ services:
     image: adguard/adguardhome:latest
     container_name: adguard
     restart: unless-stopped
+    profiles: ["adguard"]
     ports:
       - "53:53/tcp"
       - "53:53/udp"
