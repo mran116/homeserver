@@ -35,7 +35,7 @@ Optional features (hs enable <name> / hs disable <name>):
   adguard    AdGuard Home DNS server (only if your router can't run DNS)
   caddy      Caddy reverse proxy + automatic HTTPS
   crowdsec   CrowdSec intrusion detection/prevention (+ host firewall bouncer)
-  metrics    Beszel host/container metrics dashboard
+  metrics    Netdata host/container metrics + 350 built-in alerts -> ntfy
   logging    Centralized logs — Loki + Grafana + Alloy (search all logs)
   karakeep   Bookmarks / read-later with full-text search
   vpn        Tailscale private mesh VPN (remote access, subnet router)
@@ -90,7 +90,7 @@ case "$feature" in
     ;;
   metrics)
     PROFILE=metrics; STACK=monitoring
-    verify()      { say "Open the Beszel hub on :\${BESZEL_PORT:-8090} → Add System (host.docker.internal:45876) → paste its key into BESZEL_KEY (hs config BESZEL_KEY <key>) → re-run 'hs up monitoring'."; }
+    verify()      { say "Open Netdata at netdata.\${DOMAIN} (or :\${NETDATA_PORT:-19999}). Zero config — 350+ alerts auto-fire to ntfy. No pairing needed."; }
     ;;
   logging)
     PROFILE=logging; STACK=monitoring
