@@ -65,6 +65,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
       - WEBUI_PORT=${BITTORRENT_PORT}
       - QB_USERNAME=${APP_USERNAME}
       - QB_PASSWORD=${APP_PASSWORD}
@@ -80,6 +81,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/sabnzbd:/config
       # Completed downloads land on the media pool so the *arr hardlink them into the
@@ -115,6 +117,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/jellyfin:/config
       # Whole media root mounted once — works with ANY folder layout. Add
@@ -148,6 +151,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
       - VERSION=docker
       - PLEX_CLAIM=${PLEX_CLAIM:-}
     volumes:
@@ -198,6 +202,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/radarr:/config
       - ${MEDIA_PATH}:/data
@@ -219,6 +224,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/sonarr:/config
       - ${MEDIA_PATH}:/data
@@ -240,6 +246,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/lidarr:/config
       - ${MEDIA_PATH}:/data
@@ -261,7 +268,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      - UMASK=002
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/whisparr:/config
       - ${MEDIA_PATH}:/data
@@ -286,6 +293,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/prowlarr:/config
     ports:
@@ -324,6 +332,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - UMASK=${UMASK:-002}
     volumes:
       - ${CONFIG_PATH}/bazarr:/config
       - ${MEDIA_PATH}:/data        # whole media root (matches the *arr); layout-agnostic
