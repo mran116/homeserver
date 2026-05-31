@@ -61,7 +61,8 @@ services:
       - home
 
   karakeep-chrome:
-    image: gcr.io/zenika/alpine-chrome:124
+    # Docker Hub mirror — gcr.io/zenika/* dropped anonymous pulls (auth error).
+    image: zenika/alpine-chrome:124
     container_name: karakeep-chrome
     restart: unless-stopped
     profiles: ["karakeep"]
