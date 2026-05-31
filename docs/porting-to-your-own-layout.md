@@ -129,7 +129,7 @@ writes it into `.env` — you never invent these:
 | Jellyfin / Plex | setup wizard | create the admin user |
 | Immich | web UI | first account becomes admin |
 | Navidrome · Audiobookshelf | web UI | first account becomes admin |
-| Mealie · KitchenOwl · Actual Budget · Memos · Donetick · **wger** | self-signup | your personal account (DB/secrets already set for you) |
+| Mealie · Actual Budget · Memos · Donetick · **wger** | self-signup | your personal account (DB/secrets already set for you) |
 | AdGuard Home | setup wizard | create admin (and it must own port 53) |
 | SABnzbd · Prowlarr | setup wizard | SAB: set incomplete folder + grab API key; Prowlarr: add indexers |
 | Paperless | **none — auto-created** | log in with `PAPERLESS_ADMIN_*` from `.env` |

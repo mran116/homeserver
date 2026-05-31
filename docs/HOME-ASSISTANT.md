@@ -17,8 +17,7 @@ connects to many services in this stack to display everything in one place.
 |---|---|---|
 | Jellyfin | HACS — Jellyfin integration | Media player card, now playing, playback control |
 | Navidrome | HACS — Navidrome integration | Music player card, currently playing |
-| Mealie | HACS — Mealie integration | Meal plan card, recipe count |
-| KitchenOwl | HACS — KitchenOwl integration | Shopping list on dashboard |
+| Mealie | HACS — Mealie integration | Meal plan card, recipe count, shopping list on dashboard |
 | Donetick | HACS — Donetick integration | Chore list, tasks due today |
 | Google Calendar | Built-in | Family and shared calendars on dashboard |
 
@@ -37,7 +36,7 @@ For a wall-mounted family dashboard running Home Assistant:
 1. Install HACS — see [hacs.xyz](https://hacs.xyz) for instructions
 2. Install Atomic Calendar Revive, Mushroom Cards, and Kiosk Mode via HACS
 3. Connect Google Calendar integration — Settings → Devices & Services → Add Integration → Google Calendar
-4. Connect Mealie, KitchenOwl, and Donetick via HACS integrations
+4. Connect Mealie and Donetick via HACS integrations
 5. Build your dashboard — Settings → Dashboards
 6. Enable Kiosk Mode for full-screen display
 7. Use **Fully Kiosk Browser** (Android) or **Guided Access** (iOS) to lock the tablet to the dashboard
@@ -53,7 +52,7 @@ For a wall-mounted family dashboard running Home Assistant:
 ## Household automations (proactive nudges + alerts)
 
 Ready-made HA packages live in [`reference/home-assistant/`](../reference/home-assistant/) — copy them
-to your HA VM's `/config/packages/` to turn Donetick / Mealie / KitchenOwl /
+to your HA VM's `/config/packages/` to turn Donetick / Mealie /
 Calendar into morning briefings, chore digests, bin/meal/shopping reminders, and
 to route Diun + Uptime Kuma into a single alert stream. See
 [`reference/home-assistant/README.md`](../reference/home-assistant/README.md) for setup.

@@ -28,30 +28,6 @@ services:
     networks:
       - home
 
-  # ================================
-  # KITCHENOWL - Shopping Lists
-  # http://${SERVER_IP}:${KITCHENOWL_PORT}
-  # Mobile app: KitchenOwl (iOS/Android)
-  # ================================
-  kitchenowl:
-    image: tombursch/kitchenowl:latest
-    container_name: kitchenowl
-    restart: unless-stopped
-    ports:
-      - "${KITCHENOWL_PORT}:8080"
-    volumes:
-      - ${CONFIG_PATH}/kitchenowl:/data
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    labels:
-      caddy: "*.${DOMAIN}"
-      caddy.@kitchenowl: "host kitchenowl.${DOMAIN}"
-      caddy.handle: "@kitchenowl"
-      caddy.handle.reverse_proxy: "{{upstreams 8080}}"
-    networks:
-      - home
 
   # ================================
   # DONETICK - Chores & Tasks

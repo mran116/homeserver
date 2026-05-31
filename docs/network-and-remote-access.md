@@ -70,7 +70,7 @@ make it integrate cleanly:
       - <server LAN IP>          # the server's LAN IP where Caddy listens
   ```
 - **Service integrations use hostnames, not `IP:port`.** Point HACS
-  integrations (Jellyfin, Navidrome, Mealie, KitchenOwl, Donetick, Immich,
+  integrations (Jellyfin, Navidrome, Mealie, Donetick, Immich,
   Uptime Kuma) at `*.example.com` names so they survive IP changes and get valid
   TLS. The reference packages in `reference/home-assistant/` drive notifications
   off entity IDs and don't hard-code URLs, so only the integration setup (HA UI)

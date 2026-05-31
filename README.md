@@ -32,7 +32,7 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 | **monitoring** | Uptime Kuma, Dozzle, Diun, Beszel\* | Know the moment something breaks — uptime checks, live logs, image-update alerts, host/container metrics |
 | **dashboard** | Homepage | One launcher with live status widgets |
 | **mediastack** | Jellyfin\*/Plex\*, Sonarr/Radarr/Lidarr/Whisparr, Prowlarr, Bazarr, SABnzbd, qBittorrent+Gluetun, Navidrome, Audiobookshelf, Seerr, Recyclarr, Unpackerr, Decluttarr, Flaresolverr, Tdarr\* | Media server + fully automated acquisition, music & audiobooks, family requests |
-| **household** | Mealie, KitchenOwl, Donetick, Actual Budget | Recipes & meal planning, shopping lists, chores, budgeting |
+| **household** | Mealie, Donetick, Actual Budget | Recipes, meal planning & shopping lists, chores, budgeting |
 | **fitness** | wger | Workout & fitness tracker (routines, logging, progress charts) |
 | **records** | Paperless-ngx, Stirling PDF, Memos, Karakeep\*, DocuSeal\* | Document OCR/search, PDF tools, quick notes, bookmarks/read-later, e-signing |
 | **cloud** | Immich | Photo/video backup (Google Photos replacement) |
