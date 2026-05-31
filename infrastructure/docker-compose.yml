@@ -85,7 +85,7 @@ services:
   # ===========================================================================
   # CROWDSEC - intrusion detection/prevention (engine). OPT-IN: COMPOSE_PROFILES=crowdsec.
   # Reads Caddy access logs + host SSH auth, runs detection scenarios + a community
-  # IP blocklist, and exposes a local API on 127.0.0.1:8080 for a bouncer to act on.
+  # IP blocklist, and exposes a local API on 127.0.0.1:${CROWDSEC_LAPI_PORT:-8086} for a bouncer.
   # The ENFORCER (firewall bouncer) is a HOST package, not a container — after this
   # is up, run scripts/install-crowdsec-bouncer.sh to install + wire it (blocks in
   # the INPUT + DOCKER-USER chains). Engine alone = detection + console visibility;
@@ -106,7 +106,7 @@ services:
       - ENROLL_KEY=${CROWDSEC_ENROLL_KEY:-}
       - ENROLL_INSTANCE_NAME=homestack
     ports:
-      - "127.0.0.1:8080:8080"        # Local API — loopback only, for the host bouncer
+      - "127.0.0.1:${CROWDSEC_LAPI_PORT:-8086}:8080"   # Local API — loopback only, for the host bouncer (8086: 8080 collides with qBittorrent)
     volumes:
       - ${CONFIG_PATH}/crowdsec/data:/var/lib/crowdsec/data        # decisions, bouncers, machines (SQLite)
       - ${CONFIG_PATH}/caddy/logs:/var/log/caddy:ro                # Caddy access logs to scan

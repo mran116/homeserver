@@ -7,7 +7,7 @@
 # firewall bouncer is an OS package (CrowdSec ships no official container for it),
 # so it lives on the host. This script: adds the CrowdSec apt repo, installs
 # crowdsec-firewall-bouncer-iptables, and points it at the local engine
-# (127.0.0.1:8080) with the shared key, blocking in the INPUT + DOCKER-USER
+# (127.0.0.1:${CROWDSEC_LAPI_PORT:-8086}) with the shared key, blocking in the INPUT + DOCKER-USER
 # chains (DOCKER-USER is what actually filters traffic to your containers).
 #
 # Run as root / with sudo, AFTER the crowdsec engine container is up.
@@ -22,6 +22,7 @@ cd "$REPO_DIR" || exit 1
 parse_common_flags "$@"
 require_env || exit 0
 load_env
+LAPI_PORT="${CROWDSEC_LAPI_PORT:-8086}"   # host loopback port the engine's LAPI maps to (8080 collides with qBittorrent)
 
 command -v apt-get >/dev/null || die "Debian/Ubuntu (apt) only. On other distros install crowdsec-firewall-bouncer-iptables from CrowdSec's repo, then set api_url/api_key/iptables_chains yourself (see docs/crowdsec.md)."
 KEY="${CROWDSEC_BOUNCER_KEY:-}"
@@ -31,15 +32,15 @@ KEY="${CROWDSEC_BOUNCER_KEY:-}"
 # the LAPI may answer /health with 401/404 depending on version, so `curl -f`
 # (fail on non-2xx) would wrongly report a healthy engine as down. Without -f,
 # curl exits 0 if it got ANY response (i.e. the port is listening).
-if ! curl -s -m 5 -o /dev/null "http://127.0.0.1:8080/" 2>/dev/null; then
-  warn "CrowdSec engine not answering on 127.0.0.1:8080 — start it first:"
+if ! curl -s -m 5 -o /dev/null "http://127.0.0.1:${LAPI_PORT}/" 2>/dev/null; then
+  warn "CrowdSec engine not answering on 127.0.0.1:${LAPI_PORT} — start it first:"
   warn "  add 'crowdsec' to COMPOSE_PROFILES, then: hs up infrastructure"
   die "engine not reachable"
 fi
 
 CONF=/etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
 plan "add CrowdSec apt repo + install crowdsec-firewall-bouncer-iptables"
-plan "write $CONF (api_url=127.0.0.1:8080, mode=iptables, chains: INPUT + DOCKER-USER)"
+plan "write $CONF (api_url=127.0.0.1:${LAPI_PORT}, mode=iptables, chains: INPUT + DOCKER-USER)"
 plan "restart + enable the crowdsec-firewall-bouncer service"
 show_plan || exit 0
 gate || exit 0
@@ -62,7 +63,7 @@ update_frequency: 10s
 log_mode: file
 log_dir: /var/log/
 log_level: info
-api_url: http://127.0.0.1:8080
+api_url: http://127.0.0.1:${LAPI_PORT}
 api_key: ${KEY}
 # DOCKER-USER is the chain Docker filters container traffic through — without it,
 # bans wouldn't apply to your published container ports.
