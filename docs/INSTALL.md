@@ -35,7 +35,7 @@ services are grouped into a single stack rather than scattered across folders.
 ├── stacks/                  ← this repo — all compose files
 │   ├── arcane/                  Docker management UI (deploy first)
 │   ├── vaultwarden/             password manager
-│   ├── infrastructure/          Nginx Proxy Manager + AdGuard Home DNS (+ borgmatic/tailscale/cloudflare, commented)
+│   ├── infrastructure/          Caddy reverse proxy + AdGuard Home DNS (+ crowdsec/borgmatic/tailscale/cloudflare, opt-in)
 │   ├── monitoring/              Uptime Kuma + Dozzle + Diun + ntfy
 │   ├── dashboard/               Homepage (compose + homepage/ configs)
 │   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Decluttarr
@@ -278,9 +278,13 @@ Then in the browser:
 - Point server URL to your Vaultwarden instance
 - Store all secrets here going forward
 
-### Nginx Proxy Manager
-- Default login: `admin@example.com` / `changeme` — change immediately
-- Set up SSL proxy hosts for all your services
+### Caddy reverse proxy (optional — only if you want HTTPS + hostnames)
+- Needs a domain. Enable with `hs enable caddy`; routes generate themselves from
+  container labels and **one wildcard cert** (`*.yourdomain`) covers every
+  service. No proxy hosts to configure by hand.
+- **No domain?** Skip it — services are reachable at `IP:port`, and Tailscale
+  covers remote access. See "Two ways to run" in the README.
+- Full guide: [docs/caddy.md](caddy.md)
 
 ### Immich
 - Create admin account then accounts for each family member
