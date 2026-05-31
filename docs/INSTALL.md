@@ -39,7 +39,7 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── monitoring/              Uptime Kuma + Dozzle + Diun + ntfy
 │   ├── dashboard/               Homepage (compose + homepage/ configs)
 │   ├── mediastack/              Jellyfin + *arr + downloaders + Navidrome + Audiobookshelf + Decluttarr
-│   ├── household/               Mealie, KitchenOwl, Donetick, Actual Budget
+│   ├── household/               Mealie, Donetick, Actual Budget
 │   ├── fitness/                 wger — workout & fitness tracker
 │   ├── records/                 Paperless-ngx + Stirling PDF
 │   ├── knowledge/               Memos (quick notes)

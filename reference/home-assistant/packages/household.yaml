@@ -1,8 +1,8 @@
 # =============================================================================
 # HOUSEHOLD COORDINATION PACKAGE
 # -----------------------------------------------------------------------------
-# Turns the apps you already run (Donetick chores, Mealie meals, KitchenOwl
-# shopping) and your calendars into *proactive nudges*, so the house reminds
+# Turns the apps you already run (Donetick chores, Mealie meals + shopping)
+# and your calendars into *proactive nudges*, so the house reminds
 # you instead of you having to remember. No physical devices required.
 #
 # INSTALL
@@ -128,8 +128,8 @@ automation:
       - action: script.notify_household
         data:
           title: "🛒 Shopping"
-          # CHANGE ME: KitchenOwl integration usually exposes an item count.
-          message: "Shopping list has {{ states('sensor.kitchenowl_shopping_items') }} item(s) on it."
+          # CHANGE ME: Mealie's shopping list integration usually exposes an item count.
+          message: "Shopping list has {{ states('sensor.mealie_shopping_items') }} item(s) on it."
     mode: single
 
   # ---------------------------------------------------------------------------

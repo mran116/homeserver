@@ -267,13 +267,6 @@
         server: my-docker
         container: mealie
 
-    - KitchenOwl:
-        icon: kitchenowl.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_KITCHENOWL_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_KITCHENOWL_PORT}}
-        description: Shopping Lists
-        server: my-docker
-        container: kitchenowl
 
     - Donetick:
         icon: donetick.png

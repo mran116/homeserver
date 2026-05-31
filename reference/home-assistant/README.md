@@ -12,7 +12,7 @@ you plug in your own entity IDs and notify target.
 
 | File | What it does |
 |---|---|
-| `packages/household.yaml` | Morning briefing, bins reminder, "thaw tomorrow's dinner", weekly chore digest, shopping nudge — built on your Donetick / Mealie / KitchenOwl / Calendar integrations. |
+| `packages/household.yaml` | Morning briefing, bins reminder, "thaw tomorrow's dinner", weekly chore digest, shopping nudge — built on your Donetick / Mealie / Calendar integrations. |
 | `packages/alerts.yaml` | Turns your existing Diun webhook and Uptime Kuma integration into a calm notification stream (update available, service down/recovered), plus a daily low-battery roundup. |
 
 ## Install
@@ -30,7 +30,7 @@ you plug in your own entity IDs and notify target.
    `notify.mobile_app_pixel_8`. Every automation routes through this one script,
    so you set it once.
 4. **Fix the entity IDs.** Open *Developer Tools → States*, search for your
-   Donetick / Mealie / KitchenOwl / calendar entities, and replace each
+   Donetick / Mealie / calendar entities, and replace each
    `CHANGE ME` placeholder with the real `entity_id`.
 5. **(Optional) Diun alerts in HA.** Diun already pushes update alerts to **ntfy**
    (the `diun-updates` topic) from the monitoring stack, so you get them on your
@@ -87,7 +87,7 @@ admin surface, so it stays off the Cloudflare Tunnel.
 
 ## Prerequisites (already in the main README's HA section)
 
-- HACS installed, with the **Donetick, Mealie, KitchenOwl** integrations.
+- HACS installed, with the **Donetick, Mealie** integrations.
 - The **Uptime Kuma** integration (gives you `binary_sensor.uptime_kuma_*`).
 - A **Google Calendar** integration for the family calendar.
 - The HA **companion app** on at least one phone (provides `notify.mobile_app_*`).
