@@ -1,0 +1,100 @@
+# Starter alert rules — host + container health off Prometheus. Add more in the
+# Grafana UI (Alerting -> Alert rules); UI-made rules persist in grafana-data.
+# Each rule: query A (Prometheus, instant) -> threshold C -> fires to ntfy.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: homestack
+    folder: Homestack
+    interval: 1m
+    rules:
+      - uid: hs-target-down
+        title: Monitoring target down
+        condition: C
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: '{{ $labels.job }} target {{ $labels.instance }} is down'
+        noDataState: OK
+        execErrState: Alerting
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              datasource: { type: prometheus, uid: prometheus }
+              expr: up
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              refId: C
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+
+      - uid: hs-disk-full
+        title: Disk almost full
+        condition: C
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.mountpoint }} is {{ printf "%.0f" $values.A.Value }}% full'
+        noDataState: OK
+        execErrState: Alerting
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              datasource: { type: prometheus, uid: prometheus }
+              expr: '(1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes)) * 100'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              refId: C
+              conditions:
+                - evaluator: { type: gt, params: [90] }
+
+      - uid: hs-mem-high
+        title: Memory usage high
+        condition: C
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Host memory at {{ printf "%.0f" $values.A.Value }}%'
+        noDataState: OK
+        execErrState: Alerting
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              datasource: { type: prometheus, uid: prometheus }
+              expr: '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              refId: C
+              conditions:
+                - evaluator: { type: gt, params: [90] }

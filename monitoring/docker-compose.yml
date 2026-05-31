@@ -196,8 +196,13 @@ services:
     profiles: ["logging"]
     depends_on:
       - loki
+      - prometheus
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      # Reuse your shared app login (same as qBittorrent/SABnzbd) so it's ONE
+      # credential. Falls back to admin/admin only if APP_* are unset. Applied
+      # on first init only — change later in the Grafana UI.
+      - GF_SECURITY_ADMIN_USER=${APP_USERNAME:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${APP_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
@@ -238,6 +243,58 @@ services:
     networks:
       - home
 
+  # --- metrics: host + container telemetry into Prometheus, viewed in Grafana ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    profiles: ["logging"]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - home
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    profiles: ["logging"]
+    pid: host
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|rootfs|etc)($$|/)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - home
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    restart: unless-stopped
+    profiles: ["logging"]
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - home
+
 networks:
   home:
     external: true
@@ -245,3 +302,4 @@ networks:
 volumes:
   loki-data:
   grafana-data:
+  prometheus-data:

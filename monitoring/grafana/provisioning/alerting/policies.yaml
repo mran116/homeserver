@@ -1,0 +1,11 @@
+# Route everything to ntfy by default. group_by keeps one notification per alert
+# rule; repeat every 4h while still firing.
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: ntfy
+    group_by: ['grafana_folder', 'alertname']
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
