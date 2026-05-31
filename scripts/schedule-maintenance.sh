@@ -66,6 +66,15 @@ plan_line "$ks_marker" "$ks_line" "nightly *arr key-sync cron (04:00) → key-sy
 plan_line "$pr_marker" "$pr_line" "weekly image-prune cron (Sun 05:00) → image-prune.log"
 plan_line "$sw_marker" "$sw_line" "SABnzbd stall watchdog cron (every 5 min) → sab-watchdog.log"
 plan_line "$mw_marker" "$mw_line" "storage mount watchdog cron (every 5 min) → mount-watchdog.log"
+# Auto-heal sudoers: let the (user-owned) mount-watchdog cron run ONLY the
+# privileged recovery helper (rescan + mount) without a password, so a dropped
+# disk self-recovers instead of just alerting.
+heal_user="$(id -un)"
+sudoers_file="/etc/sudoers.d/homestack-mount-heal"
+sudoers_line="$heal_user ALL=(root) NOPASSWD: $REPO_DIR/scripts/mount-heal-root.sh"
+sudoers_ok=0
+grep -qxF "$sudoers_line" "$sudoers_file" 2>/dev/null && sudoers_ok=1
+[[ $sudoers_ok -eq 0 ]] && plan "install mount auto-heal sudoers rule ($sudoers_file) — needs sudo once"
 if [[ $GITOPS_ON -eq 1 ]]; then
   plan_line "$up_marker" "$up_line" "GitOps auto-deploy cron (daily 03:30, hs update) → update.log"
 elif grep -qF "$up_marker" <<<"$cron_now"; then
@@ -76,6 +85,19 @@ show_plan || exit 0
 gate || exit 0
 
 new_cron="$( { printf '%s\n' "$cron_now" | grep -vF "$ks_marker" | grep -vF "$pr_marker" | grep -vF "$sw_marker" | grep -vF "$mw_marker" | grep -vF "$up_marker"; echo "$ks_line"; echo "$pr_line"; echo "$sw_line"; echo "$mw_line"; [[ $GITOPS_ON -eq 1 ]] && echo "$up_line"; } )"
+if [[ $sudoers_ok -eq 0 ]]; then
+  if printf '%s\n' "$sudoers_line" | sudo -n tee "$sudoers_file" >/dev/null 2>&1 \
+     && sudo -n chmod 0440 "$sudoers_file" 2>/dev/null \
+     && sudo -n visudo -cf "$sudoers_file" >/dev/null 2>&1; then
+    say "Installed mount auto-heal sudoers rule ($sudoers_file)."
+  else
+    sudo -n rm -f "$sudoers_file" 2>/dev/null || true   # don't leave a half/invalid file
+    warn "Couldn't install the auto-heal sudoers rule without a password. Run once:"
+    warn "  echo '$sudoers_line' | sudo tee $sudoers_file && sudo chmod 0440 $sudoers_file"
+    warn "(Until then, mount-watchdog ALERTS on a disk drop but won't auto-recover.)"
+  fi
+fi
+
 if printf '%s\n' "$new_cron" | crontab -; then
   say "Cron installed. Remove later with 'crontab -e' (delete the homestack-* lines)."
 else
