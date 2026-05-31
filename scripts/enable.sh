@@ -36,6 +36,7 @@ Optional features (hs enable <name> / hs disable <name>):
   caddy      Caddy reverse proxy + automatic HTTPS
   crowdsec   CrowdSec intrusion detection/prevention (+ host firewall bouncer)
   metrics    Beszel host/container metrics dashboard
+  logging    Centralized logs — Loki + Grafana + Alloy (search all logs)
   karakeep   Bookmarks / read-later with full-text search
   vpn        Tailscale private mesh VPN (remote access, subnet router)
   tunnel     Cloudflare Tunnel (public access, no open ports)
@@ -90,6 +91,10 @@ case "$feature" in
   metrics)
     PROFILE=metrics; STACK=monitoring
     verify()      { say "Open the Beszel hub on :\${BESZEL_PORT:-8090} → Add System (host.docker.internal:45876) → paste its key into BESZEL_KEY (hs config BESZEL_KEY <key>) → re-run 'hs up monitoring'."; }
+    ;;
+  logging)
+    PROFILE=logging; STACK=monitoring
+    verify()      { say "Open Grafana on :\${GRAFANA_PORT:-3006} (admin / \$GRAFANA_ADMIN_PASSWORD) → Explore → Loki, or the 'Logs' dashboard. Collects all container + host logs."; }
     ;;
   karakeep)
     PROFILE=karakeep; STACK=knowledge
