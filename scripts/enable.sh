@@ -97,7 +97,7 @@ case "$feature" in
     ;;
   vpn)
     PROFILE=vpn; STACK=infrastructure
-    prompt_vars() { need TS_AUTHKEY "Tailscale auth key (reusable, login.tailscale.com)"; need TAILSCALE_SUBNET "Your LAN subnet to advertise (e.g. 172.25.1.0/24)"; }
+    prompt_vars() { need TS_AUTHKEY "Tailscale auth key (reusable, login.tailscale.com)"; need TAILSCALE_SUBNET "Your LAN subnet to advertise (e.g. 192.168.1.0/24)"; }
     post_step()   { warn "In the Tailscale admin console: APPROVE the subnet route + disable key expiry + enable MagicDNS."; }
     verify()      { say "From an off-LAN device, reach the server's LAN IP over Tailscale. Guide: docs/tailscale.md"; }
     ;;

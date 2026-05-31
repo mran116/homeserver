@@ -129,6 +129,29 @@ hs keys                          # pull app API keys for the dashboard widgets
 
 ---
 
+## 🌐 Two ways to run: with or without a domain
+
+The networking layer (HTTPS, pretty hostnames, public sharing) is **fully optional** — the stack runs great without a domain. Pick your path; you can start with A and add B anytime.
+
+### Path A — No domain (simplest; ideal for a first server)
+Nothing to buy or register. Leave `COMPOSE_PROFILES` at its default (no `caddy`).
+- **At home:** reach everything at `http://<server-ip>:<port>` — your dashboard (Homepage, `:3000`) links to every app.
+- **Away from home:** install **Tailscale** (on your router or any box) for secure remote access to everything by IP — **no domain needed**. Tailscale can even issue valid HTTPS for its own `*.ts.net` names.
+- **Worth doing regardless:** `hs enable backup` (offsite backups of irreplaceable data) + Tailscale.
+- Want pretty HTTPS URLs later without buying a domain? A **free DuckDNS subdomain** works with Path B's Caddy setup.
+
+### Path B — With a domain (clean HTTPS URLs + public sharing)
+Own a domain on **Cloudflare** (~$10/yr), then:
+1. Create a scoped **DNS API token** (Zone → DNS → Edit + Zone → Read).
+2. Set `DOMAIN`, `CLOUDFLARE_DNS_API_TOKEN`, `ACME_EMAIL` in `.env`.
+3. `hs enable caddy` → **one wildcard cert** (`*.yourdomain`) via DNS-01; every service gets `service.yourdomain` over HTTPS automatically.
+4. Point internal DNS at the box — a router DNS rewrite/hosts entry, or a public wildcard A record. Full guide: [docs/network-and-remote-access.md](docs/network-and-remote-access.md).
+5. Optional: `hs enable tunnel` (public access, zero open ports) · `hs enable ddns` (track a dynamic WAN IP).
+
+**Both paths share the same core stack** — the only difference is the HTTPS/hostname polish.
+
+---
+
 ## 🎚️ Choosing what runs
 
 All choices live in your **gitignored** files (`.env`, `.stacks.local`), so they **survive every `git pull`** — you never edit the tracked compose files.
