@@ -22,7 +22,7 @@ port-forwarding.
    at login.tailscale.com → set `TS_AUTHKEY` in `.env`.
 2. **Subnet** — set `TAILSCALE_SUBNET` to your **real** LAN subnet (not the
    template's `192.168.1.0/24`). Find it:
-   `ip -o -f inet route show scope link | awk '{print $1}'` (e.g. `172.25.1.0/24`).
+   `ip -o -f inet route show scope link | awk '{print $1}'` (e.g. `192.168.1.0/24`).
 3. Add `vpn` to `COMPOSE_PROFILES`; `hs up infrastructure`.
 4. **One-time in the admin console:** **approve** the advertised subnet route
    (Machines → the node → Subnets), **disable key expiry** for the node, and turn
