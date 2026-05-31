@@ -169,6 +169,79 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${CONFIG_PATH}/beszel/agent:/var/lib/beszel-agent
 
+  # ===========================================================================
+  # CENTRALIZED LOGGING (opt-in: COMPOSE_PROFILES=logging)
+  # Loki stores logs, Grafana searches + dashboards them, Alloy collects them.
+  # One searchable home for ALL logs — every container + the host's OS journal
+  # (kernel/OOM/failed-units/SATA drops). Dozzle stays for quick live-tail; this
+  # adds retention + full-text search across everything.
+  # Grafana login: admin / ${GRAFANA_ADMIN_PASSWORD} (gen-secrets fills it).
+  # ===========================================================================
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    profiles: ["logging"]
+    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    networks:
+      - home
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    profiles: ["logging"]
+    depends_on:
+      - loki
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_NEWS_NEWS_FEED_ENABLED=false
+      - TZ=${TZ}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - ${GRAFANA_PORT:-3006}:3000
+    labels:
+      caddy: "*.${DOMAIN}"
+      caddy.@grafana: "host grafana.${DOMAIN}"
+      caddy.handle: "@grafana"
+      caddy.handle.reverse_proxy: "{{upstreams 3000}}"
+    networks:
+      - home
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    restart: unless-stopped
+    profiles: ["logging"]
+    depends_on:
+      - loki
+    # root + docker.sock + journal so it reads BOTH container logs and host journal.
+    user: root
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log/journal:/var/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
+    networks:
+      - home
+
 networks:
   home:
     external: true
+
+volumes:
+  loki-data:
+  grafana-data:
