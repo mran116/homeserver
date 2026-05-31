@@ -89,8 +89,7 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 
 | Service | Purpose |
 |---|---|
-| Mealie | Recipe manager and meal planner — paste any URL to import recipes, plan weekly meals, auto-generate shopping lists. |
-| KitchenOwl | Shopping list manager with real-time family sync and a great mobile app. Receives shopping lists from Mealie. |
+| Mealie | Recipe manager and meal planner — paste any URL to import recipes, plan weekly meals, and manage shopping lists with real-time family sync. |
 | Donetick | Chore and task manager with recurring schedules, family member assignment, and points/rewards for kids. |
 | Actual Budget | Local-first budget and finance tracker. Connect your bank via SimpleFIN ($15/yr) for automatic transaction sync. |
 
@@ -133,7 +132,7 @@ One app per service — install these on family devices:
 |---|---|---|---|
 | Bitwarden | Vaultwarden | ✅ | ✅ |
 | Immich | Immich | ✅ | ✅ |
-| KitchenOwl | KitchenOwl | ✅ | ✅ |
+| Mealie | Mealie | ✅ | ✅ |
 | Jellyseerr | Seerr | ✅ | ✅ |
 | Jellyfin | Jellyfin | ✅ | ✅ |
 | Element | Matrix | ✅ | ✅ |
@@ -175,7 +174,7 @@ Local Network (192.168.1.0/24)
   │           ├── monitoring (Uptime Kuma, Dozzle, Diun)
   │           ├── dashboard (Homepage)
   │           ├── mediastack (Jellyfin, Sonarr, Radarr...)
-  │           ├── household (Mealie, KitchenOwl, Donetick...)
+  │           ├── household (Mealie, Donetick...)
   │           ├── records (Paperless, Stirling PDF...)
   │           ├── cloud (Immich, Matrix...)
   │           └── devops (Gitea + Actions — Phase 3)
