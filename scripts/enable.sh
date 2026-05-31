@@ -32,6 +32,7 @@ list_features() {
   cat <<'EOF'
 Optional features (hs enable <name> / hs disable <name>):
 
+  adguard    AdGuard Home DNS server (only if your router can't run DNS)
   caddy      Caddy reverse proxy + automatic HTTPS
   crowdsec   CrowdSec intrusion detection/prevention (+ host firewall bouncer)
   metrics    Beszel host/container metrics dashboard
@@ -70,6 +71,11 @@ need() {  # need KEY "Prompt" ["default"]
 }
 
 case "$feature" in
+  adguard)
+    PROFILE=adguard; STACK=infrastructure
+    post_step()   { warn "If systemd-resolved holds :53, free it: sudo systemctl disable --now systemd-resolved (then set /etc/resolv.conf to a static nameserver)."; }
+    verify()      { say "Open AdGuard on :\${ADGUARD_PORT} → run the wizard (admin UI :3000, DNS on 0.0.0.0:53) → point your router/devices' DNS at \$SERVER_IP."; }
+    ;;
   caddy)
     PROFILE=caddy; STACK=infrastructure
     prompt_vars() { need DOMAIN "Your domain (services at *.DOMAIN)" "example.com"; need CLOUDFLARE_DNS_API_TOKEN "Cloudflare DNS API token (Zone→DNS→Edit)"; need ACME_EMAIL "Email for Let's Encrypt notices"; }
