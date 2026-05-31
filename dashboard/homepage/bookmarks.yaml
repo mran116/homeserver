@@ -13,6 +13,14 @@
         - abbr: GH
           href: https://github.com
 
+- Indexers:
+    - Drunkenslug:
+        - abbr: DS
+          href: https://drunkenslug.com
+    - NZBgeek:
+        - abbr: NG
+          href: https://nzbgeek.info
+
 - Media:
     - Cloudflare Jellyfin:
         - abbr: JF

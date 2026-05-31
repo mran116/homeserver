@@ -107,7 +107,12 @@ services:
     command: serve
     environment:
       - TZ=${TZ}
-      - NTFY_BASE_URL=http://${SERVER_IP}:${NTFY_PORT}
+      - NTFY_BASE_URL=https://ntfy.${DOMAIN}
+      # iOS background push: Apple forbids long-lived connections, so a self-hosted
+      # server forwards a wake-up "poke" through ntfy.sh's APNs. Only a HASHED topic
+      # goes upstream — the actual message + content stay on your server (the phone
+      # fetches them from NTFY_BASE_URL, reachable over Tailscale when away).
+      - NTFY_UPSTREAM_BASE_URL=https://ntfy.sh
       - NTFY_CACHE_FILE=/var/cache/ntfy/cache.db
       - NTFY_AUTH_FILE=/var/lib/ntfy/auth.db
       - NTFY_ATTACHMENT_CACHE_DIR=/var/cache/ntfy/attachments

@@ -97,6 +97,17 @@
           url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
           slug: all
 
+    - Netdata:
+        icon: netdata.png
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NETDATA_PORT}}
+        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NETDATA_PORT}}
+        description: Metrics & 350+ alerts
+        server: my-docker
+        container: netdata
+        widget:
+          type: netdata
+          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NETDATA_PORT}}
+
     - Vaultwarden:
         icon: vaultwarden.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
