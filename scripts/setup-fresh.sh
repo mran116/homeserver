@@ -39,7 +39,9 @@ command -v apt-get >/dev/null || die "This script is for Debian/Ubuntu (apt). On
 say "Updating apt and installing base utilities"
 sudo apt-get update -y
 sudo apt-get upgrade -y
-sudo apt-get install -y curl git ca-certificates gnupg htop vim unzip jq
+# cifs-utils provides mount.cifs — needed if media lives on an SMB/CIFS NAS
+# (harmless otherwise; no daemon). Avoids "unknown filesystem type 'cifs'".
+sudo apt-get install -y curl git ca-certificates gnupg htop vim unzip jq cifs-utils
 
 # ---- 2. Docker engine + compose plugin --------------------------------------
 if ! command -v docker >/dev/null; then
