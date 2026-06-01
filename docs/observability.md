@@ -22,6 +22,10 @@ files), and **heavy log analytics** (the optional Loki profile).
 
 ## Metrics & alerts — Pulse (`hs enable metrics`)
 
+> **Setting it up?** See the step-by-step **[Pulse install guide](pulse.md)** (LXC vs
+> container, the Proxmox token, the Docker agent, ntfy, and the memory-gauge fix). This
+> section is the overview + design rationale.
+
 [Pulse](https://github.com/rcourtman/Pulse) monitors **two layers**, with no cloud
 account and no node cap:
 
