@@ -107,7 +107,12 @@ services:
     command: serve
     environment:
       - TZ=${TZ}
-      - NTFY_BASE_URL=http://${SERVER_IP}:${NTFY_PORT}
+      - NTFY_BASE_URL=https://ntfy.${DOMAIN}
+      # iOS background push: Apple forbids long-lived connections, so a self-hosted
+      # server forwards a wake-up "poke" through ntfy.sh's APNs. Only a HASHED topic
+      # goes upstream — the actual message + content stay on your server (the phone
+      # fetches them from NTFY_BASE_URL, reachable over Tailscale when away).
+      - NTFY_UPSTREAM_BASE_URL=https://ntfy.sh
       - NTFY_CACHE_FILE=/var/cache/ntfy/cache.db
       - NTFY_AUTH_FILE=/var/lib/ntfy/auth.db
       - NTFY_ATTACHMENT_CACHE_DIR=/var/cache/ntfy/attachments
@@ -123,51 +128,77 @@ services:
       caddy.@ntfy: "host ntfy.${DOMAIN}"
       caddy.handle: "@ntfy"
       caddy.handle.reverse_proxy: "{{upstreams 80}}"
+      # ntfy uses long-lived streaming connections; without immediate flushing
+      # Caddy buffers them and app subscriptions time out. -1 = flush instantly.
+      caddy.handle.reverse_proxy.flush_interval: "-1"
     networks:
       - home
     restart: unless-stopped
 
   # ===========================================================================
-  # BESZEL - lightweight host + container metrics (CPU/RAM/disk/network/temps,
-  # with history). OPT-IN: COMPOSE_PROFILES=metrics. The low-overhead answer to
-  # "how's the box doing?" without a full Prometheus/Grafana stack.
-  #   hub   = web UI (this is what you open)
-  #   agent = collects metrics from THIS host (host network + docker socket)
-  # First run: open the hub, "Add System", copy the shown public key into
-  # BESZEL_KEY in .env, redeploy. Point the system at host.docker.internal:45876.
+  # PULSE - unified metrics + alerts for Proxmox AND Docker.
+  # OPT-IN: COMPOSE_PROFILES=metrics. One light container. It monitors TWO layers,
+  # no cloud account and no node cap:
+  #   - Proxmox/PBS (nodes, VMs, LXCs, storage, backups) — agentless, polls the
+  #     Proxmox API. Add hosts in the UI (Settings -> Nodes) with a read-only token.
+  #   - Docker (per-container CPU/RAM/net + temps, with history) — via a lightweight
+  #     "unified agent" you install ON each Docker HOST (not a container). Grab the
+  #     one-line install command from the UI (Settings -> Agents); it bakes in an
+  #     API token. The SERVER does NOT need the docker socket — the agent pushes in.
+  # Alerts (node down, container OOM/misbehaving, backup failed, storage full) route
+  # out via a webhook channel -> ntfy (Settings -> Alerts/Notifications: webhook to
+  # http://ntfy/<topic>). Open pulse.${DOMAIN}. Login reuses APP_USERNAME/APP_PASSWORD.
+  # Live + historical container LOGS are Dozzle + lnav (Pulse does metrics, not logs).
   # ===========================================================================
-  beszel:
-    image: henrygd/beszel:latest
-    container_name: beszel
+  pulse:
+    image: rcourtman/pulse:latest
+    container_name: pulse
     restart: unless-stopped
     profiles: ["metrics"]
+    environment:
+      - TZ=${TZ}
+      # Reuse your shared app login (same as qBittorrent/Grafana). Auto-hashed on
+      # first start. Falls back to admin/admin only if APP_* are unset.
+      - PULSE_AUTH_USER=${APP_USERNAME:-admin}
+      - PULSE_AUTH_PASS=${APP_PASSWORD:-admin}
     ports:
-      - "${BESZEL_PORT:-8090}:8090"
+      - "${PULSE_PORT:-7655}:7655"
     volumes:
-      - ${CONFIG_PATH}/beszel/data:/beszel_data
-    extra_hosts:
-      - "host.docker.internal:host-gateway"   # so the hub can reach the host-networked agent
+      - pulse-data:/data            # config, node/agent tokens, metric history
     labels:
       caddy: "*.${DOMAIN}"
-      caddy.@beszel: "host beszel.${DOMAIN}"
-      caddy.handle: "@beszel"
-      caddy.handle.reverse_proxy: "{{upstreams 8090}}"
+      caddy.@pulse: "host pulse.${DOMAIN}"
+      caddy.handle: "@pulse"
+      caddy.handle.reverse_proxy: "{{upstreams 7655}}"
     networks:
       - home
 
-  beszel-agent:
-    image: henrygd/beszel-agent:latest
-    container_name: beszel-agent
+  # ===========================================================================
+  # VECTOR - light central log retention (opt-in: COMPOSE_PROFILES=logs).
+  # One tiny Rust shipper. Tails EVERY container via the Docker API and writes one
+  # ndjson file per container per day to ${CONFIG_PATH}/logs (a host bind mount),
+  # which `lnav` reads on the host: `sudo lnav ${CONFIG_PATH}/logs` — merged,
+  # time-ordered, searchable, with container_name as a column (install the format
+  # once: `lnav -i monitoring/vector/lnav-docker.json`). No transforms = no VRL to
+  # maintain; the config is ~10 lines (monitoring/vector/vector.toml). This is the
+  # FEATHERWEIGHT central-log option. For indexed full-text search + dashboards,
+  # the heavier `logging` profile (Loki + Grafana + Alloy) is the upgrade instead.
+  # Vector has no UI — Dozzle is your live-tail, lnav is your history browser.
+  # ===========================================================================
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: vector
     restart: unless-stopped
-    profiles: ["metrics"]
-    # host network so it sees real host CPU/net/disk; docker.sock for container stats.
-    network_mode: host
+    profiles: ["logs"]
     environment:
-      - PORT=45876
-      - KEY=${BESZEL_KEY}
+      - TZ=${TZ}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${CONFIG_PATH}/beszel/agent:/var/lib/beszel-agent
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro   # read-only: discover + tail
+      - ${CONFIG_PATH}/logs:/logs                       # host dir lnav reads
+      - vector-data:/vector-data                        # vector's own state/buffers
+    networks:
+      - home
 
   # ===========================================================================
   # CENTRALIZED LOGGING (opt-in: COMPOSE_PROFILES=logging)
@@ -175,7 +206,10 @@ services:
   # One searchable home for ALL logs — every container + the host's OS journal
   # (kernel/OOM/failed-units/SATA drops). Dozzle stays for quick live-tail; this
   # adds retention + full-text search across everything.
-  # Grafana login: admin / ${GRAFANA_ADMIN_PASSWORD} (gen-secrets fills it).
+  # Grafana login: reuses your shared APP_USERNAME / APP_PASSWORD (first init only).
+  #
+  # NOTE: this is the HEAVY central-log option (~3 containers). For a featherweight
+  # alternative, the `logs` profile (Vector -> ndjson files + lnav) is above.
   # ===========================================================================
   loki:
     image: grafana/loki:latest
@@ -196,7 +230,6 @@ services:
     profiles: ["logging"]
     depends_on:
       - loki
-      - prometheus
     environment:
       # Reuse your shared app login (same as qBittorrent/SABnzbd) so it's ONE
       # credential. Falls back to admin/admin only if APP_* are unset. Applied
@@ -243,58 +276,6 @@ services:
     networks:
       - home
 
-  # --- metrics: host + container telemetry into Prometheus, viewed in Grafana ---
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    profiles: ["logging"]
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=30d
-      - --web.enable-lifecycle
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    networks:
-      - home
-
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    restart: unless-stopped
-    profiles: ["logging"]
-    pid: host
-    command:
-      - --path.procfs=/host/proc
-      - --path.sysfs=/host/sys
-      - --path.rootfs=/rootfs
-      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|rootfs|etc)($$|/)
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    networks:
-      - home
-
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
-    container_name: cadvisor
-    restart: unless-stopped
-    profiles: ["logging"]
-    privileged: true
-    devices:
-      - /dev/kmsg
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    networks:
-      - home
-
 networks:
   home:
     external: true
@@ -302,4 +283,5 @@ networks:
 volumes:
   loki-data:
   grafana-data:
-  prometheus-data:
+  pulse-data:
+  vector-data:

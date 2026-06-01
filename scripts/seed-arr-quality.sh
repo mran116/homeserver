@@ -54,8 +54,14 @@ if [[ -f "$REPO_DIR/.env" ]]; then
   set -a; source "$REPO_DIR/.env"; set +a
 fi
 
-: "${SONARR_API_KEY:?SONARR_API_KEY missing — run 'hs keys' first}"
-: "${RADARR_API_KEY:?RADARR_API_KEY missing — run 'hs keys' first}"
+# *arr API keys are harvested only AFTER the apps boot once (`hs keys`), so on a
+# fresh install they're still blank. This is a post-first-boot seed — skip
+# cleanly rather than abort bootstrap. It's idempotent and does its real work on
+# the next run once the keys exist.
+if [[ -z "${SONARR_API_KEY:-}" || -z "${RADARR_API_KEY:-}" ]]; then
+  warn "seed-arr-quality: *arr API keys not set yet — skipping (run 'hs keys' after first boot, then re-run; harmless on first setup)."
+  exit 0
+fi
 : "${SERVER_IP:?SERVER_IP missing from .env}"
 : "${SONARR_PORT:?SONARR_PORT missing from .env}"
 : "${RADARR_PORT:?RADARR_PORT missing from .env}"

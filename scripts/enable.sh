@@ -35,8 +35,9 @@ Optional features (hs enable <name> / hs disable <name>):
   adguard    AdGuard Home DNS server (only if your router can't run DNS)
   caddy      Caddy reverse proxy + automatic HTTPS
   crowdsec   CrowdSec intrusion detection/prevention (+ host firewall bouncer)
-  metrics    Beszel host/container metrics dashboard
-  logging    Centralized logs — Loki + Grafana + Alloy (search all logs)
+  metrics    Pulse — Proxmox + Docker metrics & alerts -> ntfy (no cloud/cap)
+  logs       Central log retention — Vector -> ndjson files, read with lnav
+  logging    Heavy log search — Loki + Grafana + Alloy (indexed full-text)
   karakeep   Bookmarks / read-later with full-text search
   vpn        Tailscale private mesh VPN (remote access, subnet router)
   tunnel     Cloudflare Tunnel (public access, no open ports)
@@ -90,11 +91,17 @@ case "$feature" in
     ;;
   metrics)
     PROFILE=metrics; STACK=monitoring
-    verify()      { say "Open the Beszel hub on :\${BESZEL_PORT:-8090} → Add System (host.docker.internal:45876) → paste its key into BESZEL_KEY (hs config BESZEL_KEY <key>) → re-run 'hs up monitoring'."; }
+    post_step()   { warn "Docker metrics need the Pulse AGENT on this host: open Pulse → Settings → Agents, copy the install command, run it (it bakes in a token). Proxmox metrics: Settings → Nodes, add your node with a read-only API token. Alerts → ntfy: Settings → Alerts, add a webhook to http://ntfy/<topic>. Proxmox users may prefer Pulse as an LXC instead — see docs/observability.md (the agent is identical either way)."; }
+    verify()      { say "Open Pulse at pulse.\${DOMAIN} (or :\${PULSE_PORT:-7655}), log in with APP_USERNAME/APP_PASSWORD, finish the security wizard, then add the Docker agent + Proxmox node (see the note above)."; }
+    ;;
+  logs)
+    PROFILE=logs; STACK=monitoring
+    post_step()   { warn "Install the lnav format once so timestamps/fields parse cleanly: lnav -i monitoring/vector/lnav-docker.json (lnav is installed by setup-fresh.sh, or: sudo apt install lnav)."; }
+    verify()      { say "Vector writes ndjson under \${CONFIG_PATH}/logs. Browse history: sudo lnav \${CONFIG_PATH}/logs — merged, time-ordered, searchable. Live tail stays on Dozzle (:\${DOZZLE_PORT})."; }
     ;;
   logging)
     PROFILE=logging; STACK=monitoring
-    verify()      { say "Open Grafana on :\${GRAFANA_PORT:-3006} (admin / \$GRAFANA_ADMIN_PASSWORD) → Explore → Loki, or the 'Logs' dashboard. Collects all container + host logs."; }
+    verify()      { say "Open Grafana on :\${GRAFANA_PORT:-3006} (log in with APP_USERNAME/APP_PASSWORD) → Explore → Loki, or the 'Logs' dashboard. Collects all container + host logs."; }
     ;;
   karakeep)
     PROFILE=karakeep; STACK=knowledge

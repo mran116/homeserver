@@ -77,3 +77,6 @@ $RECYCLE.BIN/
 # =============================================================================
 *.local.md
 ROADMAP.local.md
+# Private Homepage overlays (personal bookmarks etc.) — appended onto live config
+# by make-dirs.sh, never committed
+*.local.yaml
