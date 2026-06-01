@@ -28,13 +28,15 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 |---|---|---|
 | **arcane** | Arcane | Web UI to manage every stack — **deploy first** |
 | **vaultwarden** | Vaultwarden | Bitwarden-compatible password manager — **deploy second** |
-| **infrastructure** | Nginx Proxy Manager, AdGuard Home, Syncthing, ntfy, Tailscale\*, Cloudflare Tunnel\*, Borgmatic\* | The plumbing: clean HTTPS URLs, network-wide ad-blocking, your own Dropbox, phone alerts, secure remote access, offsite backups |
-| **monitoring** | Uptime Kuma, Dozzle, Diun, Pulse\*, Vector\* | Know the moment something breaks — uptime checks, live logs (Dozzle), image-update alerts, Proxmox+Docker metrics & alerts to ntfy (Pulse), optional central log retention for lnav (Vector) |
+| **infrastructure** | Caddy\*, AdGuard Home\*, CrowdSec\*, Tailscale\*, Cloudflare Tunnel\*, DDNS\*, Borgmatic\* | The plumbing (all opt-in): clean HTTPS URLs, network-wide ad-blocking, intrusion prevention, secure remote access, dynamic DNS, offsite backups |
+| **monitoring** | Uptime Kuma, Dozzle, Diun, ntfy, Pulse\*, Vector\*, Loki/Grafana/Alloy\* | Know the moment something breaks — uptime checks, live logs (Dozzle), image-update alerts (Diun), phone-push hub (ntfy), Proxmox+Docker metrics & alerts (Pulse), optional log retention for lnav (Vector) or full-text search (Loki+Grafana) |
 | **dashboard** | Homepage | One launcher with live status widgets |
 | **mediastack** | Jellyfin\*/Plex\*, Sonarr/Radarr/Lidarr/Whisparr, Prowlarr, Bazarr, SABnzbd, qBittorrent+Gluetun, Navidrome, Audiobookshelf, Seerr, Recyclarr, Unpackerr, Decluttarr, Flaresolverr, Tdarr\* | Media server + fully automated acquisition, music & audiobooks, family requests |
 | **household** | Mealie, Donetick, Actual Budget | Recipes, meal planning & shopping lists, chores, budgeting |
 | **fitness** | wger | Workout & fitness tracker (routines, logging, progress charts) |
-| **records** | Paperless-ngx, Stirling PDF, Memos, Karakeep\*, DocuSeal\* | Document OCR/search, PDF tools, quick notes, bookmarks/read-later, e-signing |
+| **records** | Paperless-ngx, Stirling PDF, DocuSeal\* | Document OCR/search, PDF tools, e-signing |
+| **knowledge** | Memos, Karakeep\* | Quick-capture notes; bookmarks/read-later with full-text search |
+| **syncthing** | Syncthing | Private peer-to-peer file sync across your devices — your Dropbox replacement |
 | **cloud** | Immich | Photo/video backup (Google Photos replacement) |
 | **devops** | Gitea + Actions runner | Self-hosted git/CI — *Phase 3 (future)* |
 
@@ -172,6 +174,7 @@ COMPOSE_PROFILES=jellyfin,tunnel
 | `tdarr` | Tdarr library transcoder |
 | `crowdsec` | CrowdSec IDS/IPS |
 | `caddy` | Caddy reverse proxy (the only proxy) |
+| `adguard` | AdGuard Home DNS (network-wide ad-blocking; only if your router can't run DNS) |
 | `metrics` | Pulse — Proxmox + Docker metrics & alerts → ntfy (no cloud/cap) |
 | `logs` | Vector → ndjson log files for lnav (featherweight central retention) |
 | `logging` | Loki + Grafana + Alloy — heavy indexed full-text log search |

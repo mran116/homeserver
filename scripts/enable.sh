@@ -13,8 +13,9 @@
 # gen-secrets, redeploys the affected stack, runs any post-step, and prints the
 # verify command. Flags: --dry-run, --yes.
 #
-# Features: caddy, crowdsec, metrics, karakeep, vpn, tunnel, ddns, tdarr,
-#           backup, proxy   (run `hs enable` with no arg for descriptions)
+# Features: adguard, caddy, crowdsec, metrics, logs, logging, karakeep, vpn,
+#           tunnel, ddns, tdarr, backup, proxy
+#           (run `hs enable` with no arg for descriptions)
 # =============================================================================
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

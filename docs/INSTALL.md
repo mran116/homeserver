@@ -42,9 +42,9 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── household/               Mealie, Donetick, Actual Budget
 │   ├── fitness/                 wger — workout & fitness tracker
 │   ├── records/                 Paperless-ngx + Stirling PDF
-│   ├── knowledge/               Memos (quick notes)
+│   ├── knowledge/               Memos (quick notes) + Karakeep (bookmarks, opt-in)
 │   ├── syncthing/               private file sync
-│   ├── cloud/                   Immich (+ Matrix, commented)
+│   ├── cloud/                   Immich (photo/video backup)
 │   └── devops/                  Gitea + CI (commented, Phase 3)
 ├── hs                       ← single entrypoint for all tooling (run: hs help)
 ├── reference/               ← NOT stacks — config you copy elsewhere
@@ -247,10 +247,11 @@ In the Arcane UI, start each stack in this order (click → Start). The order ma
 4. `dashboard` — Homepage; depends on the rest existing, so it comes after
 5. `mediastack`
 6. `household`
-7. `records`
-8. `knowledge` — Memos (quick notes)
-9. `syncthing`
-10. `cloud`
+7. `fitness`
+8. `records`
+9. `knowledge` — Memos (quick notes), Karakeep (bookmarks)
+10. `syncthing`
+11. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 

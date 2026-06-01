@@ -84,7 +84,7 @@ attempt_remount() {
   elif command -v sudo >/dev/null 2>&1 && sudo -n "$SCRIPT_DIR/mount-heal-root.sh" 2>/dev/null; then
     : # recovered via passwordless sudo rule
   else
-    warn "auto-heal needs root: install the sudoers rule (run 'sudo hs schedule' or 'sudo hs mounts' once). Falling back to alert-only."
+    warn "auto-heal needs root: install the sudoers rule (run 'sudo hs cron' or 'sudo hs mounts' once). Falling back to alert-only."
   fi
 }
 
