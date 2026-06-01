@@ -312,9 +312,8 @@ Then in the browser:
 - To switch to 4K later: edit the `include:` templates and `until_quality` in the yaml
 
 ### Diun
-- Set `DIUN_NOTIF_WEBHOOK_URL` in `.env` to a Home Assistant webhook
-- Create webhook in HA: Settings → Automations → New → Webhook trigger
-- HA then fans out the update notification to phone/email/Discord as you prefer
+- Notifications go to **ntfy** out of the box, on the `diun-updates` topic (wired in `monitoring/docker-compose.yml` — nothing to set)
+- Subscribe to `diun-updates` in the ntfy app to get image-update alerts on your phone
 - Diun runs daily at 06:00; opt a container out by labeling it `diun.enable=false`
 
 ### Homepage widget API keys (the harvest script)

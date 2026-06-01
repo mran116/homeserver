@@ -89,7 +89,6 @@ PAPERLESS_ADMIN_PASSWORD | http://${SERVER_IP}:${PAPERLESS_PORT}  | Set in .env 
 IMMICH_API_KEY           | http://${SERVER_IP}:${IMMICH_PORT}     | Account Settings → API Keys → New API Key
 
 # ---- Notifications / external ----
-DIUN_NOTIF_WEBHOOK_URL               | (Home Assistant)                          | HA → Settings → Automations → New → Webhook trigger
 TS_AUTHKEY                           | https://login.tailscale.com/admin/settings/keys | Generate a reusable auth key
 CLOUDFLARE_TUNNEL_TOKEN              | https://one.dash.cloudflare.com           | Zero Trust → Networks → Tunnels → your tunnel → token
 EOF
