@@ -14,7 +14,6 @@
     - Arcane:
         icon: arcane.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ARCANE_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ARCANE_PORT}}
         description: Docker Management
         server: my-docker
         container: arcane
@@ -40,7 +39,6 @@
     - AdGuard Home:
         icon: adguard-home.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ADGUARD_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ADGUARD_PORT}}
         description: DNS Ad-Blocking
         server: my-docker
         container: adguard
@@ -88,7 +86,6 @@
     - Uptime Kuma:
         icon: uptime-kuma.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
         description: Service Monitoring
         server: my-docker
         container: uptime-kuma
@@ -97,21 +94,16 @@
           url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_UPTIME_KUMA_PORT}}
           slug: all
 
-    - Netdata:
-        icon: netdata.png
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NETDATA_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NETDATA_PORT}}
-        description: Metrics & 350+ alerts
+    - Pulse:
+        icon: mdi-heart-pulse
+        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PULSE_PORT}}
+        description: Proxmox & Docker metrics + alerts
         server: my-docker
-        container: netdata
-        widget:
-          type: netdata
-          url: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NETDATA_PORT}}
+        container: pulse
 
     - Vaultwarden:
         icon: vaultwarden.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_VAULTWARDEN_PORT}}
         description: Password Manager
         server: my-docker
         container: vaultwarden
@@ -119,7 +111,6 @@
     - Dozzle:
         icon: dozzle.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DOZZLE_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DOZZLE_PORT}}
         description: Container Logs
         server: my-docker
         container: dozzle
@@ -127,7 +118,6 @@
     - Diun:
         icon: diun.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DIUN_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DIUN_PORT}}
         description: Image Update Notifier
         server: my-docker
         container: diun
@@ -135,7 +125,6 @@
     - ntfy:
         icon: ntfy.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NTFY_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NTFY_PORT}}
         description: Push Notifications
         server: my-docker
         container: ntfy
@@ -144,7 +133,6 @@
     - Jellyfin:
         icon: jellyfin.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_JELLYFIN_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_JELLYFIN_PORT}}
         description: Media Server
         server: my-docker
         container: jellyfin
@@ -158,7 +146,6 @@
     - Seerr:
         icon: jellyseerr.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SEERR_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SEERR_PORT}}
         description: Media Requests
         server: my-docker
         container: seerr
@@ -170,7 +157,6 @@
     - Navidrome:
         icon: navidrome.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NAVIDROME_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_NAVIDROME_PORT}}
         description: Music Server
         server: my-docker
         container: navidrome
@@ -178,7 +164,6 @@
     - Audiobookshelf:
         icon: audiobookshelf.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_AUDIOBOOKSHELF_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_AUDIOBOOKSHELF_PORT}}
         description: Audiobooks, Podcasts & Ebooks
         server: my-docker
         container: audiobookshelf
@@ -187,7 +172,6 @@
     - qBittorrent:
         icon: qbittorrent.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BITTORRENT_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BITTORRENT_PORT}}
         description: Torrent Client
         server: my-docker
         container: qbittorrent
@@ -200,7 +184,6 @@
     - SABnzbd:
         icon: sabnzbd.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SABNZBD_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SABNZBD_PORT}}
         description: Usenet Client
         server: my-docker
         container: sabnzbd
@@ -212,7 +195,6 @@
     - Sonarr:
         icon: sonarr.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SONARR_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SONARR_PORT}}
         description: TV Shows
         server: my-docker
         container: sonarr
@@ -224,7 +206,6 @@
     - Radarr:
         icon: radarr.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_RADARR_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_RADARR_PORT}}
         description: Movies
         server: my-docker
         container: radarr
@@ -236,7 +217,6 @@
     - Lidarr:
         icon: lidarr.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_LIDARR_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_LIDARR_PORT}}
         description: Music
         server: my-docker
         container: lidarr
@@ -248,7 +228,6 @@
     - Prowlarr:
         icon: prowlarr.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PROWLARR_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PROWLARR_PORT}}
         description: Indexers
         server: my-docker
         container: prowlarr
@@ -260,7 +239,6 @@
     - Bazarr:
         icon: bazarr.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BAZARR_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_BAZARR_PORT}}
         description: Subtitles
         server: my-docker
         container: bazarr
@@ -273,7 +251,6 @@
     - Mealie:
         icon: mealie.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_MEALIE_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_MEALIE_PORT}}
         description: Recipes & Meal Planning
         server: my-docker
         container: mealie
@@ -282,7 +259,6 @@
     - Donetick:
         icon: donetick.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DONETICK_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_DONETICK_PORT}}
         description: Chores & Tasks
         server: my-docker
         container: donetick
@@ -290,7 +266,6 @@
     - Actual Budget:
         icon: actual-budget.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ACTUAL_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_ACTUAL_PORT}}
         description: Budget & Banking
         server: my-docker
         container: actual-budget
@@ -298,7 +273,6 @@
     - wger:
         icon: wger.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_WGER_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_WGER_PORT}}
         description: Workout & Fitness Tracker
         server: my-docker
         container: wger
@@ -307,7 +281,6 @@
     - Paperless:
         icon: paperless-ngx.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PAPERLESS_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PAPERLESS_PORT}}
         description: Document Management
         server: my-docker
         container: paperless
@@ -320,7 +293,6 @@
     - Stirling PDF:
         icon: stirling-pdf.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_STIRLING_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_STIRLING_PORT}}
         description: PDF Tools
         server: my-docker
         container: stirling-pdf
@@ -328,7 +300,6 @@
     - Memos:
         icon: memos.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_MEMOS_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_MEMOS_PORT}}
         description: Quick Notes
         server: my-docker
         container: memos
@@ -337,7 +308,6 @@
     - Immich:
         icon: immich.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_IMMICH_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_IMMICH_PORT}}
         description: Photo & Video Backup
         server: my-docker
         container: immich-server
@@ -345,7 +315,6 @@
     - Syncthing:
         icon: syncthing.png
         href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SYNCTHING_PORT}}
-        siteMonitor: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_SYNCTHING_PORT}}
         description: File Sync
         server: my-docker
         container: syncthing

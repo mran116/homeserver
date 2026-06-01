@@ -29,7 +29,7 @@ Each top-level folder with a `docker-compose.yml` is **one Arcane stack** (disco
 | **arcane** | Arcane | Web UI to manage every stack — **deploy first** |
 | **vaultwarden** | Vaultwarden | Bitwarden-compatible password manager — **deploy second** |
 | **infrastructure** | Nginx Proxy Manager, AdGuard Home, Syncthing, ntfy, Tailscale\*, Cloudflare Tunnel\*, Borgmatic\* | The plumbing: clean HTTPS URLs, network-wide ad-blocking, your own Dropbox, phone alerts, secure remote access, offsite backups |
-| **monitoring** | Uptime Kuma, Dozzle, Diun, Netdata\* | Know the moment something breaks — uptime checks, live logs, image-update alerts, host/container metrics + 350 built-in alerts to ntfy |
+| **monitoring** | Uptime Kuma, Dozzle, Diun, Pulse\*, Vector\* | Know the moment something breaks — uptime checks, live logs (Dozzle), image-update alerts, Proxmox+Docker metrics & alerts to ntfy (Pulse), optional central log retention for lnav (Vector) |
 | **dashboard** | Homepage | One launcher with live status widgets |
 | **mediastack** | Jellyfin\*/Plex\*, Sonarr/Radarr/Lidarr/Whisparr, Prowlarr, Bazarr, SABnzbd, qBittorrent+Gluetun, Navidrome, Audiobookshelf, Seerr, Recyclarr, Unpackerr, Decluttarr, Flaresolverr, Tdarr\* | Media server + fully automated acquisition, music & audiobooks, family requests |
 | **household** | Mealie, Donetick, Actual Budget | Recipes, meal planning & shopping lists, chores, budgeting |
@@ -172,7 +172,9 @@ COMPOSE_PROFILES=jellyfin,tunnel
 | `tdarr` | Tdarr library transcoder |
 | `crowdsec` | CrowdSec IDS/IPS |
 | `caddy` | Caddy reverse proxy (the only proxy) |
-| `metrics` | Netdata host/container metrics + 350 built-in alerts → ntfy |
+| `metrics` | Pulse — Proxmox + Docker metrics & alerts → ntfy (no cloud/cap) |
+| `logs` | Vector → ndjson log files for lnav (featherweight central retention) |
+| `logging` | Loki + Grafana + Alloy — heavy indexed full-text log search |
 | `karakeep` | Karakeep bookmarks/read-later |
 
 Read **natively by Docker Compose**, so **Arcane, `hs`, and plain `docker compose` all honor it** — set once and it persists. ⚠️ **Include a media server** (`jellyfin` or `plex`) or you'll have none.

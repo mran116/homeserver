@@ -41,7 +41,10 @@ sudo apt-get update -y
 sudo apt-get upgrade -y
 # cifs-utils provides mount.cifs — needed if media lives on an SMB/CIFS NAS
 # (harmless otherwise; no daemon). Avoids "unknown filesystem type 'cifs'".
-sudo apt-get install -y curl git ca-certificates gnupg htop vim unzip jq cifs-utils
+# lnav: terminal log navigator — merges/searches container logs (Docker's own
+# files, or Vector's ndjson tree under CONFIG_PATH/logs when the `logs` profile
+# is on). It's a host CLI, not a container. cifs-utils: SMB/CIFS NAS mounts.
+sudo apt-get install -y curl git ca-certificates gnupg htop vim unzip jq cifs-utils lnav
 
 # ---- 2. Docker engine + compose plugin --------------------------------------
 if ! command -v docker >/dev/null; then
@@ -55,9 +58,11 @@ docker compose version >/dev/null 2>&1 || die "Docker installed but compose plug
 
 # ---- 3. Docker log rotation (containers can't fill the disk) -----------------
 if [[ ! -f /etc/docker/daemon.json ]]; then
-  say "Configuring Docker log rotation (10m x 3 files per container)"
+  # 20m x 5 = up to ~100MB of recent history per container — enough for lnav to
+  # dig through after a crash, while still capped so logs can't fill the disk.
+  say "Configuring Docker log rotation (20m x 5 files per container)"
   sudo mkdir -p /etc/docker
-  printf '{\n  "log-driver": "json-file",\n  "log-opts": { "max-size": "10m", "max-file": "3" }\n}\n' \
+  printf '{\n  "log-driver": "json-file",\n  "log-opts": { "max-size": "20m", "max-file": "5" }\n}\n' \
     | sudo tee /etc/docker/daemon.json >/dev/null
   sudo systemctl restart docker
 else

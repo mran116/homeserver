@@ -1,0 +1,35 @@
+# =============================================================================
+# Vector — light central log retention for lnav  (COMPOSE_PROFILES=logs)
+#
+# Tails every running container via the Docker API and writes one ndjson file
+# per container per day under /logs (bind-mounted to ${CONFIG_PATH}/logs on the
+# host). lnav reads that tree directly:  sudo lnav ${CONFIG_PATH}/logs
+#
+# No transforms = no VRL to learn. The raw docker_logs event is written as-is;
+# it already carries timestamp + container_name + message + stream, which is all
+# lnav needs (see lnav-docker.json for the matching lnav format).
+#
+# Multi-host: run this same Vector on another Docker box and point its sink at a
+# shared location (or swap the `file` sink for a `loki` sink) to centralise.
+# =============================================================================
+
+# Vector's own state/buffers (named volume vector-data). Not your logs.
+data_dir = "/vector-data"
+
+# Don't phone home.
+[api]
+enabled = false
+
+# ---- source: every container, auto-discovered via the Docker socket ----------
+[sources.docker]
+type = "docker_logs"
+# Reads all running containers by default. To skip noisy ones, add e.g.
+#   exclude_containers = ["vector", "uptime-kuma"]
+
+# ---- sink: one ndjson file per container per day, for lnav --------------------
+[sinks.lnav_files]
+type = "file"
+inputs = ["docker"]
+path = "/logs/%Y-%m-%d/{{ container_name }}.log"
+encoding.codec = "json"   # ndjson: one JSON object per line (timestamp, message,
+                          # container_name, stream, image, …) — lnav-friendly.

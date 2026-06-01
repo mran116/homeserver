@@ -15,16 +15,21 @@
     label: System
     cpu: true
     memory: true
-    uptime: true
-    expanded: false      # compact card — less wasted space than the big expanded one
+    expanded: false      # compact CPU + RAM. (uptime dropped — a fill-bar for a
+                         # duration looked odd; Pulse shows uptime properly.)
 
+# disk: the bar fills with USED space, but Homepage labels the *free* remainder,
+# which reads as "free fills the bar" on a big disk. expanded: true shows the
+# used/total numbers so it's unambiguous (e.g. media at 92% is obvious).
 - resources:
     label: Local
     disk: /mnt/host/local   # the SSD/NVMe where CONFIG_PATH lives
+    expanded: true
 
 - resources:
     label: Media
     disk: /mnt/host/media   # the media library (NAS)
+    expanded: true
 
 - datetime:
     text_size: xl

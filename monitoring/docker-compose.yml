@@ -136,48 +136,67 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # NETDATA - all-in-one host + container metrics with 350+ alerts BUILT IN.
-  # OPT-IN: COMPOSE_PROFILES=metrics. One container, zero config: auto-detects
-  # every container BY NAME (via the Docker API, so it's immune to the cAdvisor/
-  # containerd-snapshotter naming problem), keeps recent history to dig through
-  # after a crash, and alerts out of the box on disk-fill / RAM / OOM-kills /
-  # container health -> ntfy. Collects every 5s (netdata/netdata.conf) to stay
-  # light. Open netdata.${DOMAIN}. Alerts route via netdata/health_alarm_notify.conf.
+  # PULSE - unified metrics + alerts for Proxmox AND Docker.
+  # OPT-IN: COMPOSE_PROFILES=metrics. One light container. It monitors TWO layers,
+  # no cloud account and no node cap:
+  #   - Proxmox/PBS (nodes, VMs, LXCs, storage, backups) — agentless, polls the
+  #     Proxmox API. Add hosts in the UI (Settings -> Nodes) with a read-only token.
+  #   - Docker (per-container CPU/RAM/net + temps, with history) — via a lightweight
+  #     "unified agent" you install ON each Docker HOST (not a container). Grab the
+  #     one-line install command from the UI (Settings -> Agents); it bakes in an
+  #     API token. The SERVER does NOT need the docker socket — the agent pushes in.
+  # Alerts (node down, container OOM/misbehaving, backup failed, storage full) route
+  # out via a webhook channel -> ntfy (Settings -> Alerts/Notifications: webhook to
+  # http://ntfy/<topic>). Open pulse.${DOMAIN}. Login reuses APP_USERNAME/APP_PASSWORD.
+  # Live + historical container LOGS are Dozzle + lnav (Pulse does metrics, not logs).
   # ===========================================================================
-  netdata:
-    image: netdata/netdata:stable
-    container_name: netdata
-    hostname: ${NETDATA_HOSTNAME:-homeserver}
+  pulse:
+    image: rcourtman/pulse:latest
+    container_name: pulse
     restart: unless-stopped
     profiles: ["metrics"]
-    pid: host                          # see real host processes
-    cap_add:
-      - SYS_PTRACE                     # per-process metrics (apps.plugin)
-      - SYS_ADMIN
-    security_opt:
-      - apparmor=unconfined
     environment:
-      - DO_NOT_TRACK=1                 # no anonymous telemetry; runs fully local
+      - TZ=${TZ}
+      # Reuse your shared app login (same as qBittorrent/Grafana). Auto-hashed on
+      # first start. Falls back to admin/admin only if APP_* are unset.
+      - PULSE_AUTH_USER=${APP_USERNAME:-admin}
+      - PULSE_AUTH_PASS=${APP_PASSWORD:-admin}
     ports:
-      - "${NETDATA_PORT:-19999}:19999"
+      - "${PULSE_PORT:-7655}:7655"
     volumes:
-      - netdata-lib:/var/lib/netdata           # history (dbengine) + state
-      - netdata-cache:/var/cache/netdata
-      - ./netdata/netdata.conf:/etc/netdata/netdata.conf:ro
-      - ./netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro
-      - /:/host/root:ro,rslave
-      - /etc/passwd:/host/etc/passwd:ro
-      - /etc/group:/host/etc/group:ro
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /etc/os-release:/host/etc/os-release:ro
-      - /var/log:/host/var/log:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro   # container names + stats
+      - pulse-data:/data            # config, node/agent tokens, metric history
     labels:
       caddy: "*.${DOMAIN}"
-      caddy.@netdata: "host netdata.${DOMAIN}"
-      caddy.handle: "@netdata"
-      caddy.handle.reverse_proxy: "{{upstreams 19999}}"
+      caddy.@pulse: "host pulse.${DOMAIN}"
+      caddy.handle: "@pulse"
+      caddy.handle.reverse_proxy: "{{upstreams 7655}}"
+    networks:
+      - home
+
+  # ===========================================================================
+  # VECTOR - light central log retention (opt-in: COMPOSE_PROFILES=logs).
+  # One tiny Rust shipper. Tails EVERY container via the Docker API and writes one
+  # ndjson file per container per day to ${CONFIG_PATH}/logs (a host bind mount),
+  # which `lnav` reads on the host: `sudo lnav ${CONFIG_PATH}/logs` — merged,
+  # time-ordered, searchable, with container_name as a column (install the format
+  # once: `lnav -i monitoring/vector/lnav-docker.json`). No transforms = no VRL to
+  # maintain; the config is ~10 lines (monitoring/vector/vector.toml). This is the
+  # FEATHERWEIGHT central-log option. For indexed full-text search + dashboards,
+  # the heavier `logging` profile (Loki + Grafana + Alloy) is the upgrade instead.
+  # Vector has no UI — Dozzle is your live-tail, lnav is your history browser.
+  # ===========================================================================
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: vector
+    restart: unless-stopped
+    profiles: ["logs"]
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro   # read-only: discover + tail
+      - ${CONFIG_PATH}/logs:/logs                       # host dir lnav reads
+      - vector-data:/vector-data                        # vector's own state/buffers
     networks:
       - home
 
@@ -187,7 +206,10 @@ services:
   # One searchable home for ALL logs — every container + the host's OS journal
   # (kernel/OOM/failed-units/SATA drops). Dozzle stays for quick live-tail; this
   # adds retention + full-text search across everything.
-  # Grafana login: admin / ${GRAFANA_ADMIN_PASSWORD} (gen-secrets fills it).
+  # Grafana login: reuses your shared APP_USERNAME / APP_PASSWORD (first init only).
+  #
+  # NOTE: this is the HEAVY central-log option (~3 containers). For a featherweight
+  # alternative, the `logs` profile (Vector -> ndjson files + lnav) is above.
   # ===========================================================================
   loki:
     image: grafana/loki:latest
@@ -261,5 +283,5 @@ networks:
 volumes:
   loki-data:
   grafana-data:
-  netdata-lib:
-  netdata-cache:
+  pulse-data:
+  vector-data:
