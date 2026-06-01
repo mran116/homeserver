@@ -96,10 +96,14 @@
 
     - Pulse:
         icon: mdi-heart-pulse
-        href: http://{{HOMEPAGE_VAR_SERVER_IP}}:{{HOMEPAGE_VAR_PULSE_PORT}}
+        # Pulse may run as the metrics Docker container here OR as its own LXC
+        # (recommended on Proxmox). PULSE_HOST defaults to SERVER_IP; set it in
+        # .env to the LXC IP for the remote case. siteMonitor (HTTP ping) is the
+        # single status dot — it works for both, unlike a container: line which
+        # would only resolve when Pulse runs locally as a container.
+        href: http://{{HOMEPAGE_VAR_PULSE_HOST}}:{{HOMEPAGE_VAR_PULSE_PORT}}
         description: Proxmox & Docker metrics + alerts
-        server: my-docker
-        container: pulse
+        siteMonitor: http://{{HOMEPAGE_VAR_PULSE_HOST}}:{{HOMEPAGE_VAR_PULSE_PORT}}
 
     - Vaultwarden:
         icon: vaultwarden.png
