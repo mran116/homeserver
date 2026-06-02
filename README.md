@@ -4,7 +4,12 @@ A complete self-hosted homeserver stack built with Docker Compose and managed vi
 
 Covers media streaming, household management, photo backup, document storage, password management, budget tracking, private messaging, monitoring, and automation — all self-hosted, all free (or nearly free).
 
-> 📖 **More docs:** [Install & Setup](docs/INSTALL.md) · [Reference (mobile apps · network · hardware)](docs/REFERENCE.md) · [Remote-access design](docs/network-and-remote-access.md) · [Tailscale](docs/tailscale.md) · [Theming](docs/theming.md) · [Home Assistant (future goal)](docs/HOME-ASSISTANT.md)
+> 🧭 **New to this? Which guide should I read?**
+> - **Never run a server before?** → [**The Super Simple Setup Guide**](docs/beginner-guide.md) — plain English, mostly copy-paste, no Linux/Docker knowledge needed.
+> - **Comfortable in a terminal, want the fast path?** → the [Quick Start](#-quick-start) below.
+> - **Want the manual flow, per-app setup, or troubleshooting?** → [Install & Setup](docs/INSTALL.md).
+
+> 📖 **More docs:** [Beginner guide](docs/beginner-guide.md) · [Install & Setup](docs/INSTALL.md) · [Reference (mobile apps · network · hardware)](docs/REFERENCE.md) · [Remote-access design](docs/network-and-remote-access.md) · [Tailscale](docs/tailscale.md) · [Theming](docs/theming.md) · [Home Assistant (future goal)](docs/HOME-ASSISTANT.md)
 
 ---
 
