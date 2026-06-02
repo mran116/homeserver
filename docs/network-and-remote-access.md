@@ -127,6 +127,58 @@ Three coordinated paths:
    `jellyfin.example.com` → your home IP, **port 443 forwarded** on the Flint 3
    to Caddy, kept current by **DDNS** (dynamic WAN IP). Hardened (below).
 
+## Cloudflare, click by click
+
+> ⚠️ Cloudflare relabels and relocates these menus often — the paths below were
+> current as of **mid-2026**. If a label has moved, the **bold keywords** still
+> find it via the dashboard search box. The two things you set up live in two
+> different places: the **DNS API token** (for Caddy's cert) is under your
+> **profile**; the **Tunnel** is under **Zero Trust**. They are unrelated.
+
+### A. DNS API token — for Caddy's wildcard cert → `CLOUDFLARE_DNS_API_TOKEN`
+Caddy proves it owns `*.example.com` via the DNS-01 challenge, so it needs a
+token that can touch your zone's DNS.
+1. Dashboard, top-right → **My Profile → API Tokens → Create Token**.
+2. Use the **"Edit zone DNS"** template (pre-fills **Zone → DNS → Edit**).
+3. **Add a second permission row: Zone → Zone → Read.** DNS-01 needs **both** —
+   with only DNS:Edit, Caddy can write the record but can't look the zone up, and
+   issuance fails silently. *(This is the #1 reason the cert never appears.)*
+4. **Zone Resources → Include → Specific zone → `example.com`** (scope it to just
+   your domain).
+5. **Continue to summary → Create Token**, then **copy the secret — shown once.**
+   Put it in `.env` as `CLOUDFLARE_DNS_API_TOKEN`.
+6. `hs up infrastructure`, then `hs logs caddy -f` and watch for
+   *"certificate obtained"*.
+
+### B. The Tunnel — for the public subset → `CLOUDFLARE_TUNNEL_TOKEN`
+1. Open the **Zero Trust** dashboard → **Networks → Connectors → Cloudflare
+   Tunnels → Create a tunnel**.
+   - *(This menu has moved repeatedly — once Access → Tunnels, then Networks →
+     Tunnels. "Connectors → Cloudflare Tunnels" is the mid-2026 spot.)*
+2. Connector type **Cloudflared** → name it (e.g. `home`) → **Save**.
+3. The install screen shows a command containing `--token eyJ...`. **You don't run
+   it** — the `cloudflared` container does. Just **copy the token value** into
+   `.env` as `CLOUDFLARE_TUNNEL_TOKEN`, add `tunnel` to `COMPOSE_PROFILES`, and
+   `hs up infrastructure`. The connector should flip to **Healthy / Connected**.
+4. Back on the tunnel → **Public Hostname** tab → **Add a public hostname**, once
+   per public service in the [matrix below](#exposure-matrix):
+   - **Subdomain** e.g. `requests`, **Domain** `example.com`
+   - **Service → Type `HTTP`**, **URL** = the **container name + internal port**,
+     e.g. `immich-server:2283` — **not** `localhost`, **not** the host `IP:port`.
+     cloudflared sits on the `home` Docker network and reaches services by
+     container name. *(Pointing at localhost is the classic "502 / origin
+     unreachable".)*
+5. **Jellyfin is NOT a tunnel hostname** — it uses the grey-cloud A record below.
+
+### C. Jellyfin's direct A record (DNS-only) → kept fresh by DDNS
+1. Dashboard → **your domain → DNS → Records → Add record**: Type **A**, Name
+   `jellyfin`, IPv4 = your home WAN IP, **Proxy status = DNS only (grey cloud)**.
+   The grey cloud is mandatory — an orange (proxied) cloud streams video through
+   Cloudflare and breaks the free-plan ToS.
+2. Forward **TCP 443** on the Flint 3 to the server's LAN IP (Caddy).
+3. Enable the `ddns` profile so `ddns-updater` keeps that record pointed at your
+   dynamic WAN IP (`DDNS_DOMAINS=jellyfin.example.com`).
+
 ## Exposure matrix
 
 Internal ports are the container's own port on the `home` network (from each

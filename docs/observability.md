@@ -37,6 +37,38 @@ account and no node cap:
 Login reuses your shared `APP_USERNAME` / `APP_PASSWORD`. Open it at
 `pulse.<your-domain>` (or `:7655`).
 
+### The Proxmox API token (the fiddly part)
+
+Pulse only *reads* Proxmox, but Proxmox's token model trips everyone up once. Two
+settings decide whether it works:
+
+1. **Datacenter → Permissions → API Tokens → Add:**
+   - **User** `root@pam` (or create a dedicated `pulse@pam` user first under
+     **Datacenter → Permissions → Users → Add**).
+   - **Token ID** `pulse`.
+   - ⚠️ **Uncheck "Privilege Separation".** This is *the* gotcha. With privsep
+     **on** (the default) the token starts with **zero** permissions even when its
+     user has them — so Pulse connects but every panel reads empty. Unchecking it
+     lets the token inherit the user's role.
+   - **Add**, then **copy the secret now — it's shown once.**
+2. **Grant read-only on the whole datacenter: Datacenter → Permissions → Add →
+   API Token Permission** (use *User Permission* instead if you left privsep on):
+   - **Path `/`** ← must be root, **not** `/vms/100`. Scoping to a sub-path is the
+     other classic "authenticated, but permission denied".
+   - **Role `PVEAuditor`** (read-only; covers nodes, VMs, storage, backups).
+
+   Prefer the CLI? Same result:
+   ```bash
+   pveum user token add root@pam pulse --privsep=0
+   pveum acl modify / -user root@pam -role PVEAuditor
+   ```
+3. In Pulse → **Settings → Nodes → Add node**: host `https://<proxmox-ip>:8006`,
+   **Token ID** `root@pam!pulse`, **Token Secret** the value you copied. (A
+   self-signed Proxmox cert is fine — let Pulse skip verification.)
+
+For the **Docker** layer, run the **Settings → Agents** one-liner on the Docker
+host shell (see the bullet above) — that side needs no Proxmox token.
+
 ### Alerts → ntfy
 
 Pulse alerts on node-down, container OOM/misbehaving, failed backups, storage full,
