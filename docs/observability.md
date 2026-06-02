@@ -22,6 +22,10 @@ files), and **heavy log analytics** (the optional Loki profile).
 
 ## Metrics & alerts — Pulse (`hs enable metrics`)
 
+> **Setting it up?** See the step-by-step **[Pulse install guide](pulse.md)** (LXC vs
+> container, the Proxmox token, the Docker agent, ntfy, and the memory-gauge fix). This
+> section is the overview + design rationale.
+
 [Pulse](https://github.com/rcourtman/Pulse) monitors **two layers**, with no cloud
 account and no node cap:
 
@@ -77,6 +81,41 @@ etc. Route them to your phone in **Settings → Alerts/Notifications**: add a
 then subscribe to that topic in the ntfy app. (See
 [network-and-remote-access.md → ntfy push away from home](network-and-remote-access.md#ntfy--alerts-that-reach-your-phone-away-from-home)
 for getting mobile push working when you're away.)
+
+### Alert tuning — avoid false alarms
+
+Out of the box Pulse is chatty, and the **memory** rule is the worst offender. Proxmox
+(and therefore Pulse, which reads the Proxmox API) reports guest memory as
+`total − free`, which **counts reclaimable page cache as "used."** A healthy VM that's
+filled idle RAM with disk cache will read **85–90%** while its *real* usage
+(`total − available`, i.e. `MemAvailable`) is closer to **20%** — so a default memory
+threshold pages you for nothing. (On a ZFS host the **ARC** does the same thing: it
+grabs up to ~50% of RAM by default and shows as used though it's reclaimable.)
+
+Fix the **metric** first, then tune the **rules**:
+
+1. **Make the number honest (root cause).** Give each VM a **balloon device** so the
+   guest reports its real free/available up to Proxmox:
+   - Proxmox → VM → **Hardware → Memory → Advanced → tick "Ballooning Device"**
+     (CLI: `qm set <vmid> --balloon <MiB>`; `--balloon 0` *disables* it). Set
+     *Minimum memory = Memory* if you want stats-only with no reclaiming; a lower
+     minimum lets the host reclaim, but only ever under **host** memory pressure.
+   - Install the guest agent in the VM (`apt install qemu-guest-agent`, enable it,
+     and tick **VM → Options → QEMU Guest Agent**) for graceful shutdown, fstrim, IPs.
+   - Reboot the VM so the driver binds cleanly, then the tile drops to the real ~20%.
+   - **Verify the balloon on a kernel where it's built-in** (so `lsmod` shows nothing):
+     `for d in /sys/bus/virtio/devices/virtio*; do echo "$(basename $d): $(basename $(readlink $d/driver))"; done | grep balloon`
+     → `virtioN: virtio_balloon` means it's working.
+
+2. **Tune the rules (do regardless).** In Pulse **Settings → Alerts**:
+   - **Require a sustained duration** (fire only if the condition holds ~5–10 min, not
+     on a single poll) — this alone kills most transient-spike noise.
+   - **Per-guest overrides** — until a VM's balloon is enabled, raise or disable *its*
+     memory rule specifically instead of dumbing down the global threshold.
+   - **Keep the rules that mean "something is actually wrong"** — node/guest **down**,
+     **OOM kill**, **failed backup**, **storage >90%**, **SMART failing** — and turn
+     off the chatty ones (transient per-container CPU/network spikes).
+   - **Gate the webhook to warning/critical** so info-level noise never reaches ntfy.
 
 ### Docker vs. LXC — where to run Pulse
 
