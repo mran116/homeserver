@@ -74,8 +74,9 @@ host shell (see the bullet above) — that side needs no Proxmox token.
 Pulse alerts on node-down, container OOM/misbehaving, failed backups, storage full,
 etc. Route them to your phone in **Settings → Alerts/Notifications**: add a
 **webhook** pointing at the ntfy service in this stack — `http://ntfy/<topic>` —
-then subscribe to that topic in the ntfy app. (See `docs/network-and-remote-access.md`
-for getting ntfy push working when you're away from home.)
+then subscribe to that topic in the ntfy app. (See
+[network-and-remote-access.md → ntfy push away from home](network-and-remote-access.md#ntfy--alerts-that-reach-your-phone-away-from-home)
+for getting mobile push working when you're away.)
 
 ### Docker vs. LXC — where to run Pulse
 

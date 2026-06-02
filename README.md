@@ -9,7 +9,7 @@ Covers media streaming, household management, photo backup, document storage, pa
 > - **Comfortable in a terminal, want the fast path?** → the [Quick Start](#-quick-start) below.
 > - **Want the manual flow, per-app setup, or troubleshooting?** → [Install & Setup](docs/INSTALL.md).
 
-> 📖 **More docs:** [Beginner guide](docs/beginner-guide.md) · [Install & Setup](docs/INSTALL.md) · [Reference (mobile apps · network · hardware)](docs/REFERENCE.md) · [Remote-access design](docs/network-and-remote-access.md) · [Tailscale](docs/tailscale.md) · [Theming](docs/theming.md) · [Home Assistant (future goal)](docs/HOME-ASSISTANT.md)
+> 📖 **More docs:** [Beginner guide](docs/beginner-guide.md) · [Install & Setup](docs/INSTALL.md) · [Mediastack setup (*arr chain)](docs/mediastack-setup.md) · [Reference (mobile apps · network · hardware)](docs/REFERENCE.md) · [Remote-access design](docs/network-and-remote-access.md) · [Tailscale](docs/tailscale.md) · [Theming](docs/theming.md) · [Home Assistant (future goal)](docs/HOME-ASSISTANT.md)
 
 ---
 

@@ -271,6 +271,10 @@ Then in the browser:
 
 ## 📋 Post-Deploy Setup
 
+> 🎬 **Setting up the media automation chain (Prowlarr → Sonarr/Radarr →
+> downloaders → root folders)?** That's the fiddliest part — it has its own
+> step-by-step guide: **[docs/mediastack-setup.md](mediastack-setup.md)**.
+
 ### Vaultwarden
 - Create your account at `http://YOUR_SERVER_IP:9930`
 - Enable 2FA immediately
@@ -462,6 +466,30 @@ dynamic IP) or over Tailscale. Full design: network-and-remote-access.md
 4. Uncomment borgmatic in infrastructure/docker-compose.yml
 5. Push, `git pull` on host, redeploy in Arcane
 ```
+
+### Restoring from backup (disaster recovery)
+The `backup` profile (`scripts/backup.sh`) mirrors the **irreplaceable** data —
+app configs (`/opt/docker/data`), logical database dumps, Immich photos, Paperless
+docs, and a copy of `.env` — to the media array, **and writes a tailored
+`RECOVERY.md` into the backup folder on every run.** Read that file first; it
+matches your actual paths. The shape of a full restore:
+
+```
+1. Reinstall Docker + clone the repo to /opt/docker/stacks
+2. Restore secrets:  cp <backup>/stack.env /opt/docker/stacks/.env
+3. Restore configs/photos/docs with `rsync -a` from the backup tree
+4. Start the DATABASE containers first (they create empty DBs),
+   load the newest dumps from db/, then start the rest
+```
+
+- **Single-item restores** (one Postgres DB, Vaultwarden, a single *arr) and the
+  exact commands live in the generated `RECOVERY.md`.
+- **Not backed up (by design):** the re-downloadable media library and regenerable
+  caches (transcodes, model-cache, redis).
+- **Scope:** the local backup protects against OS-disk failure, deletion, and
+  DB corruption — **not** fire/theft or loss of the array. Pair it with the
+  **Borgmatic** offsite job above for that.
+- Verify occasionally: `gunzip -t <backup>/db/*.sql.gz` (dumps not truncated).
 
 ### Gitea + Actions runner — self-hosted devops (Phase 3)
 ```

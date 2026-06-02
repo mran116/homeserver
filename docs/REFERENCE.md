@@ -70,6 +70,9 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 
 ### Mediastack — Media Server
 
+> 🎬 Wiring it up (Prowlarr → *arr → downloaders → root folders) is the fiddliest
+> setup in the stack — see **[mediastack-setup.md](mediastack-setup.md)**.
+
 | Service | Purpose |
 |---|---|
 | Jellyfin / Plex | Media server — stream movies, TV, music, and books to any device. Pick one via `COMPOSE_PROFILES`. |

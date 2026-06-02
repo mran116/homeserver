@@ -95,6 +95,26 @@ make it integrate cleanly:
   (Tunnel CNAMEs + the Jellyfin DNS-only A record). Admin tools resolve
   **internally only**, so they're invisible from outside.
 
+### AdGuard Home, click by click
+AdGuard is the load-bearing piece of the split-horizon design — the **wildcard
+rewrite** below is what makes every internal `*.example.com` name resolve to Caddy
+at home. Whether AdGuard runs on the Flint 3 (recommended — always-on) or as the
+Docker `adguard` stack, the setup is the same:
+1. **Free port 53.** On the Docker host, `systemd-resolved` usually holds `:53`
+   and AdGuard won't start until it's freed — `setup-fresh.sh` handles this; on
+   the router it's a non-issue.
+2. **First-run wizard** at `http://<server-ip>:${ADGUARD_PORT}` (Docker) or the
+   router's AdGuard UI — set the admin user/password, accept the default listen
+   interfaces.
+3. **Point clients at AdGuard:** set it as the DNS server in your **router's
+   DHCP** so every device uses it (built-in on the Flint 3).
+4. ⭐ **The wildcard rewrite (the important bit): Filters → DNS rewrites → Add** —
+   Domain `*.example.com`, Answer = the **server's LAN IP** (where Caddy listens).
+   Now every current *and future* service name resolves straight to the reverse
+   proxy at home — no per-service DNS entries, ever.
+5. *(Optional)* add a blocklist under **Filters → DNS blocklists** for
+   network-wide ad/tracker blocking.
+
 ## TLS (one wildcard cert, via DNS-01)
 
 - Domain registered/managed at **Cloudflare** (`example.com`).
@@ -212,6 +232,31 @@ hardening note; wrapping the whole domain breaks the Bitwarden clients.
 - **Enforce 2FA** on Immich, Seerr, Jellyfin and Vaultwarden.
 - **Never expose** Arcane, Paperless, Actual Budget, or HA's
   admin — Tailscale only.
+
+## ntfy — alerts that reach your phone away from home
+
+Diun, Uptime Kuma, Pulse and the mount/SAB watchdogs all POST to the `ntfy`
+container, and the ntfy app turns those into push notifications. On the LAN that's
+instant. **Away from home, mobile push needs one extra hop** — and this stack is
+already configured for it (see `monitoring/docker-compose.yml`):
+
+- `NTFY_BASE_URL=https://ntfy.${DOMAIN}` — where your phone fetches the actual
+  message (reachable over **Tailscale** when you're out, or via the tunnel).
+- `NTFY_UPSTREAM_BASE_URL=https://ntfy.sh` — iOS only delivers background push
+  through Apple's **APNs**, which a self-hosted server can't reach directly. So
+  your server forwards a tiny wake-up **"poke"** through ntfy.sh's APNs. **Only a
+  *hashed* topic name goes upstream** — the message body and content never leave
+  your server; the phone then fetches the real thing from `NTFY_BASE_URL`.
+
+**Setup:**
+1. Install the **ntfy app** (iOS/Android) and add your server:
+   `https://ntfy.${DOMAIN}` (or `http://<server-ip>:${NTFY_PORT}` on LAN only).
+2. **Subscribe to the topics** things publish to — e.g. `diun-updates`, `uptime`,
+   and whatever you set for the watchdogs/Pulse.
+3. **iOS:** leave the default `ntfy.sh` as the **upstream** in the app settings so
+   the APNs poke works. Android (and self-hosted UnifiedPush) don't need it.
+4. **Test:** `curl -d "hello" https://ntfy.${DOMAIN}/diun-updates` — your phone
+   should buzz within seconds, even on cellular.
 
 ## Rollout checklist
 
