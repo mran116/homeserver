@@ -42,9 +42,9 @@ services are grouped into a single stack rather than scattered across folders.
 │   ├── household/               Mealie, Donetick, Actual Budget
 │   ├── fitness/                 wger — workout & fitness tracker
 │   ├── records/                 Paperless-ngx + Stirling PDF
-│   ├── knowledge/               Memos (quick notes)
+│   ├── knowledge/               Memos (quick notes) + Karakeep (bookmarks, opt-in)
 │   ├── syncthing/               private file sync
-│   ├── cloud/                   Immich (+ Matrix, commented)
+│   ├── cloud/                   Immich (photo/video backup)
 │   └── devops/                  Gitea + CI (commented, Phase 3)
 ├── hs                       ← single entrypoint for all tooling (run: hs help)
 ├── reference/               ← NOT stacks — config you copy elsewhere
@@ -247,10 +247,11 @@ In the Arcane UI, start each stack in this order (click → Start). The order ma
 4. `dashboard` — Homepage; depends on the rest existing, so it comes after
 5. `mediastack`
 6. `household`
-7. `records`
-8. `knowledge` — Memos (quick notes)
-9. `syncthing`
-10. `cloud`
+7. `fitness`
+8. `records`
+9. `knowledge` — Memos (quick notes), Karakeep (bookmarks)
+10. `syncthing`
+11. `cloud`
 
 After the first one or two, the rest can be started back-to-back — the order only strictly matters for the first four.
 
@@ -269,6 +270,10 @@ Then in the browser:
 ---
 
 ## 📋 Post-Deploy Setup
+
+> 🎬 **Setting up the media automation chain (Prowlarr → Sonarr/Radarr →
+> downloaders → root folders)?** That's the fiddliest part — it has its own
+> step-by-step guide: **[docs/mediastack-setup.md](mediastack-setup.md)**.
 
 ### Vaultwarden
 - Create your account at `http://YOUR_SERVER_IP:9930`
@@ -311,9 +316,8 @@ Then in the browser:
 - To switch to 4K later: edit the `include:` templates and `until_quality` in the yaml
 
 ### Diun
-- Set `DIUN_NOTIF_WEBHOOK_URL` in `.env` to a Home Assistant webhook
-- Create webhook in HA: Settings → Automations → New → Webhook trigger
-- HA then fans out the update notification to phone/email/Discord as you prefer
+- Notifications go to **ntfy** out of the box, on the `diun-updates` topic (wired in `monitoring/docker-compose.yml` — nothing to set)
+- Subscribe to `diun-updates` in the ntfy app to get image-update alerts on your phone
 - Diun runs daily at 06:00; opt a container out by labeling it `diun.enable=false`
 
 ### Homepage widget API keys (the harvest script)
@@ -462,6 +466,30 @@ dynamic IP) or over Tailscale. Full design: network-and-remote-access.md
 4. Uncomment borgmatic in infrastructure/docker-compose.yml
 5. Push, `git pull` on host, redeploy in Arcane
 ```
+
+### Restoring from backup (disaster recovery)
+The `backup` profile (`scripts/backup.sh`) mirrors the **irreplaceable** data —
+app configs (`/opt/docker/data`), logical database dumps, Immich photos, Paperless
+docs, and a copy of `.env` — to the media array, **and writes a tailored
+`RECOVERY.md` into the backup folder on every run.** Read that file first; it
+matches your actual paths. The shape of a full restore:
+
+```
+1. Reinstall Docker + clone the repo to /opt/docker/stacks
+2. Restore secrets:  cp <backup>/stack.env /opt/docker/stacks/.env
+3. Restore configs/photos/docs with `rsync -a` from the backup tree
+4. Start the DATABASE containers first (they create empty DBs),
+   load the newest dumps from db/, then start the rest
+```
+
+- **Single-item restores** (one Postgres DB, Vaultwarden, a single *arr) and the
+  exact commands live in the generated `RECOVERY.md`.
+- **Not backed up (by design):** the re-downloadable media library and regenerable
+  caches (transcodes, model-cache, redis).
+- **Scope:** the local backup protects against OS-disk failure, deletion, and
+  DB corruption — **not** fire/theft or loss of the array. Pair it with the
+  **Borgmatic** offsite job above for that.
+- Verify occasionally: `gunzip -t <backup>/db/*.sql.gz` (dumps not truncated).
 
 ### Gitea + Actions runner — self-hosted devops (Phase 3)
 ```

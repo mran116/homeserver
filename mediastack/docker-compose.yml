@@ -6,7 +6,10 @@ services:
 
   # ===========================================================================
   # GLUETUN - VPN tunnel (ProtonVPN)
-  # qBittorrent and SABnzbd route through this container
+  # qBittorrent routes through this container (network_mode: service:gluetun), so
+  # torrent traffic only ever exits via the VPN — if the tunnel drops, qBit loses
+  # connectivity (no IP leak). SABnzbd does NOT route through here: usenet is SSL
+  # with no peer swarm exposing your IP, so it connects directly on the `home` net.
   # ===========================================================================
   gluetun:
     image: qmcgaw/gluetun:latest
@@ -53,7 +56,9 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # DOWNLOADERS - routed through Gluetun VPN
+  # DOWNLOADERS
+  # qBittorrent (torrents) routes through Gluetun's VPN namespace; SABnzbd
+  # (usenet, SSL) connects directly on `home` — see the Gluetun note above.
   # ===========================================================================
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -74,6 +79,8 @@ services:
       - ${MEDIA_PATH}/torrents:/data/torrents
     restart: unless-stopped
 
+  # Connects directly (not via Gluetun): usenet runs over SSL with no peer swarm,
+  # so there's no IP-leak surface the way torrents have. It gets its own host port.
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd

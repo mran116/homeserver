@@ -28,6 +28,42 @@ port-forwarding.
    (Machines → the node → Subnets), **disable key expiry** for the node, and turn
    on **MagicDNS**. Without the route approval, nothing routes.
 
+## Internal DNS — the same hostnames at home *and* away (split DNS)
+
+At home, AdGuard rewrites `*.example.com` → the server's LAN IP, so
+`vault.example.com` and friends hit Caddy directly. Away from home you want the
+**exact same names** to resolve — without making them public. That's **split
+DNS**: tell Tailscale to send *only* `*.example.com` lookups to your AdGuard, and
+leave every other query untouched.
+
+> **Prerequisite:** the AdGuard resolver must be reachable over the tailnet — i.e.
+> it sits on the LAN subnet that `tailscale-infra` advertises (route approved,
+> above). On the Flint 3 design AdGuard runs on the router, which is on that
+> subnet.
+
+In the Tailscale admin console → **DNS** page:
+1. **Nameservers → Add nameserver → Custom.** Enter AdGuard's **LAN IP** (e.g.
+   `192.168.1.1` on the Flint 3, or the Docker `adguard` host's IP). Use the LAN
+   IP, **not** a `100.x` Tailscale address — devices reach it via the subnet route.
+2. Toggle **"Restrict to domain"** (a.k.a. *Restrict to search domain*) and enter
+   **`example.com`**. This is what makes it *split* DNS — only `*.example.com`
+   queries go to AdGuard; normal browsing keeps each device's own DNS.
+3. **Enable MagicDNS** (toggle near the top of the DNS page). The split-DNS rule is
+   pushed to devices *via* MagicDNS — **if MagicDNS is off, the restricted
+   nameserver is silently ignored.** This is the single most common reason for
+   "works at home, not over Tailscale."
+4. Leave **Override local DNS** off unless you deliberately want *all* tailnet DNS
+   forced through these nameservers.
+
+Now `vault.example.com` resolves to the server's LAN IP whether you're on the
+couch or on cellular, and Caddy serves the same valid wildcard cert either way.
+
+**Gotchas that cost the trial-and-error:**
+- **MagicDNS must be on** (step 3) — the #1 trap.
+- The nameserver IP must be **reachable through the advertised subnet**; if route
+  approval (Setup step 4) never happened, lookups just time out.
+- It's the **LAN IP**, not the Tailscale `100.x` IP, for the AdGuard nameserver.
+
 ## What it gives you
 
 - **Remote VS Code / SSH from outside the house** — connect to the host's LAN IP

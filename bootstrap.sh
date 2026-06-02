@@ -85,7 +85,7 @@ Next steps:
      and delete the old "adguard" / "ntfy" stacks in Arcane. (Fresh installs: skip.)
   3. Deploy stacks in this order from the Arcane UI:
        vaultwarden → infrastructure → monitoring → dashboard → mediastack
-       → household → records → knowledge → syncthing → cloud
+       → household → fitness → records → knowledge → syncthing → cloud
   4. After the apps are up, run the key harvester:
        hs keys
   5. Install the ntfy app and subscribe to "diun-updates" for image-update alerts.

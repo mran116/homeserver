@@ -310,6 +310,16 @@ between each of the first four:
 
 Order matters because some apps need the earlier ones to be running first.
 
+> 🔌 **Heads-up about downloads (mediastack).** For privacy, the **downloader**
+> sends its traffic through a **VPN** — and it **won't connect until you give it a
+> VPN account.** If downloads never start, this is almost always why. Two options:
+> - **Have a VPN?** (e.g. ProtonVPN) Put its details in the settings file — open
+>   `nano /opt/docker/stacks/.env`, fill in `WIREGUARD_PRIVATE_KEY` and
+>   `WIREGUARD_ADDRESSES` (your VPN provider's app/website gives you these), save,
+>   then run `hs restart mediastack`.
+> - **Don't have one / just testing?** That's fine — everything *except* the
+>   downloader still works. Set it up later when you're ready.
+
 > 🩺 Want to check everything is healthy? Back in the Terminal, type `hs doctor`
 > and press Enter. It checks everything and tells you, in plain English, if
 > anything needs fixing.
@@ -394,6 +404,7 @@ Try these in order — most problems are tiny:
 ```bash
 ssh youruser@YOUR_IP                  # connect (or just sit at the server)
 sudo apt update && sudo apt install -y git
+sudo mkdir -p /opt/docker && sudo chown -R $USER /opt/docker
 git clone https://github.com/mran116/homeserver.git /opt/docker/stacks
 cd /opt/docker/stacks && ./scripts/setup-fresh.sh   # answer questions, Enter = default
 # open http://YOUR_IP:3552 → turn on the stacks in order

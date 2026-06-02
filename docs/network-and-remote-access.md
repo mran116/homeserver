@@ -95,6 +95,26 @@ make it integrate cleanly:
   (Tunnel CNAMEs + the Jellyfin DNS-only A record). Admin tools resolve
   **internally only**, so they're invisible from outside.
 
+### AdGuard Home, click by click
+AdGuard is the load-bearing piece of the split-horizon design — the **wildcard
+rewrite** below is what makes every internal `*.example.com` name resolve to Caddy
+at home. Whether AdGuard runs on the Flint 3 (recommended — always-on) or as the
+Docker `adguard` stack, the setup is the same:
+1. **Free port 53.** On the Docker host, `systemd-resolved` usually holds `:53`
+   and AdGuard won't start until it's freed — `setup-fresh.sh` handles this; on
+   the router it's a non-issue.
+2. **First-run wizard** at `http://<server-ip>:${ADGUARD_PORT}` (Docker) or the
+   router's AdGuard UI — set the admin user/password, accept the default listen
+   interfaces.
+3. **Point clients at AdGuard:** set it as the DNS server in your **router's
+   DHCP** so every device uses it (built-in on the Flint 3).
+4. ⭐ **The wildcard rewrite (the important bit): Filters → DNS rewrites → Add** —
+   Domain `*.example.com`, Answer = the **server's LAN IP** (where Caddy listens).
+   Now every current *and future* service name resolves straight to the reverse
+   proxy at home — no per-service DNS entries, ever.
+5. *(Optional)* add a blocklist under **Filters → DNS blocklists** for
+   network-wide ad/tracker blocking.
+
 ## TLS (one wildcard cert, via DNS-01)
 
 - Domain registered/managed at **Cloudflare** (`example.com`).
@@ -126,6 +146,58 @@ Three coordinated paths:
    and risks account action). Instead: a **DNS-only (grey-cloud) A record** for
    `jellyfin.example.com` → your home IP, **port 443 forwarded** on the Flint 3
    to Caddy, kept current by **DDNS** (dynamic WAN IP). Hardened (below).
+
+## Cloudflare, click by click
+
+> ⚠️ Cloudflare relabels and relocates these menus often — the paths below were
+> current as of **mid-2026**. If a label has moved, the **bold keywords** still
+> find it via the dashboard search box. The two things you set up live in two
+> different places: the **DNS API token** (for Caddy's cert) is under your
+> **profile**; the **Tunnel** is under **Zero Trust**. They are unrelated.
+
+### A. DNS API token — for Caddy's wildcard cert → `CLOUDFLARE_DNS_API_TOKEN`
+Caddy proves it owns `*.example.com` via the DNS-01 challenge, so it needs a
+token that can touch your zone's DNS.
+1. Dashboard, top-right → **My Profile → API Tokens → Create Token**.
+2. Use the **"Edit zone DNS"** template (pre-fills **Zone → DNS → Edit**).
+3. **Add a second permission row: Zone → Zone → Read.** DNS-01 needs **both** —
+   with only DNS:Edit, Caddy can write the record but can't look the zone up, and
+   issuance fails silently. *(This is the #1 reason the cert never appears.)*
+4. **Zone Resources → Include → Specific zone → `example.com`** (scope it to just
+   your domain).
+5. **Continue to summary → Create Token**, then **copy the secret — shown once.**
+   Put it in `.env` as `CLOUDFLARE_DNS_API_TOKEN`.
+6. `hs up infrastructure`, then `hs logs caddy -f` and watch for
+   *"certificate obtained"*.
+
+### B. The Tunnel — for the public subset → `CLOUDFLARE_TUNNEL_TOKEN`
+1. Open the **Zero Trust** dashboard → **Networks → Connectors → Cloudflare
+   Tunnels → Create a tunnel**.
+   - *(This menu has moved repeatedly — once Access → Tunnels, then Networks →
+     Tunnels. "Connectors → Cloudflare Tunnels" is the mid-2026 spot.)*
+2. Connector type **Cloudflared** → name it (e.g. `home`) → **Save**.
+3. The install screen shows a command containing `--token eyJ...`. **You don't run
+   it** — the `cloudflared` container does. Just **copy the token value** into
+   `.env` as `CLOUDFLARE_TUNNEL_TOKEN`, add `tunnel` to `COMPOSE_PROFILES`, and
+   `hs up infrastructure`. The connector should flip to **Healthy / Connected**.
+4. Back on the tunnel → **Public Hostname** tab → **Add a public hostname**, once
+   per public service in the [matrix below](#exposure-matrix):
+   - **Subdomain** e.g. `requests`, **Domain** `example.com`
+   - **Service → Type `HTTP`**, **URL** = the **container name + internal port**,
+     e.g. `immich-server:2283` — **not** `localhost`, **not** the host `IP:port`.
+     cloudflared sits on the `home` Docker network and reaches services by
+     container name. *(Pointing at localhost is the classic "502 / origin
+     unreachable".)*
+5. **Jellyfin is NOT a tunnel hostname** — it uses the grey-cloud A record below.
+
+### C. Jellyfin's direct A record (DNS-only) → kept fresh by DDNS
+1. Dashboard → **your domain → DNS → Records → Add record**: Type **A**, Name
+   `jellyfin`, IPv4 = your home WAN IP, **Proxy status = DNS only (grey cloud)**.
+   The grey cloud is mandatory — an orange (proxied) cloud streams video through
+   Cloudflare and breaks the free-plan ToS.
+2. Forward **TCP 443** on the Flint 3 to the server's LAN IP (Caddy).
+3. Enable the `ddns` profile so `ddns-updater` keeps that record pointed at your
+   dynamic WAN IP (`DDNS_DOMAINS=jellyfin.example.com`).
 
 ## Exposure matrix
 
@@ -160,6 +232,31 @@ hardening note; wrapping the whole domain breaks the Bitwarden clients.
 - **Enforce 2FA** on Immich, Seerr, Jellyfin and Vaultwarden.
 - **Never expose** Arcane, Paperless, Actual Budget, or HA's
   admin — Tailscale only.
+
+## ntfy — alerts that reach your phone away from home
+
+Diun, Uptime Kuma, Pulse and the mount/SAB watchdogs all POST to the `ntfy`
+container, and the ntfy app turns those into push notifications. On the LAN that's
+instant. **Away from home, mobile push needs one extra hop** — and this stack is
+already configured for it (see `monitoring/docker-compose.yml`):
+
+- `NTFY_BASE_URL=https://ntfy.${DOMAIN}` — where your phone fetches the actual
+  message (reachable over **Tailscale** when you're out, or via the tunnel).
+- `NTFY_UPSTREAM_BASE_URL=https://ntfy.sh` — iOS only delivers background push
+  through Apple's **APNs**, which a self-hosted server can't reach directly. So
+  your server forwards a tiny wake-up **"poke"** through ntfy.sh's APNs. **Only a
+  *hashed* topic name goes upstream** — the message body and content never leave
+  your server; the phone then fetches the real thing from `NTFY_BASE_URL`.
+
+**Setup:**
+1. Install the **ntfy app** (iOS/Android) and add your server:
+   `https://ntfy.${DOMAIN}` (or `http://<server-ip>:${NTFY_PORT}` on LAN only).
+2. **Subscribe to the topics** things publish to — e.g. `diun-updates`, `uptime`,
+   and whatever you set for the watchdogs/Pulse.
+3. **iOS:** leave the default `ntfy.sh` as the **upstream** in the app settings so
+   the APNs poke works. Android (and self-hosted UnifiedPush) don't need it.
+4. **Test:** `curl -d "hello" https://ntfy.${DOMAIN}/diun-updates` — your phone
+   should buzz within seconds, even on cellular.
 
 ## Rollout checklist
 

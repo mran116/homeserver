@@ -55,13 +55,26 @@ The tables below document the underlying scripts (what each `hs` command runs).
 
 | Script | What it does |
 |---|---|
-| `doctor.sh` | Read-only health check (docker, `home` net, `.env` sync, symlinks, compose validity, blank required vars, port-53 conflict). Non-zero exit on hard failures. |
-| `update.sh` | `git pull` (autostash) then redeploy all stacks. |
-| `stack.sh` | Bulk `up`/`down`/`restart`/`pull`/`status` across stacks in dependency order. |
-| `harvest-keys.sh` | Collect app API keys into `.env` (auto-detects *arr keys; `--sync` recreates consumers on change). |
+| `doctor.sh` | Read-only health check (docker, `home` net, `.env` sync, symlinks, compose validity, blank required vars, port-53 conflict, container/recyclarr/decluttarr/qbit state). Non-zero exit on hard failures. Auto-escalates to `diagnose.sh` when interactive. |
+| `diagnose.sh` | Deep root-cause for one subsystem (`decluttarr`/`sonarr`/`radarr`/`recyclarr`/`qbit`/`all`). The detail behind a failed `doctor` check. |
+| `update.sh` | `git pull` (autostash) then reconcile + redeploy all stacks. Validates every compose before redeploying. Safe from cron with `--yes`. |
+| `stack.sh` | Bulk `up`/`down`/`restart`/`pull`/`status` across stacks in dependency order (or named stacks). |
+| `stacks.sh` | Choose which stacks this host deploys (a local profile in gitignored `.stacks.local`): `status`/`enable`/`disable`/`reconcile`. |
+| `enable.sh` | Guided enable/disable of an optional feature (adds/removes its compose profile, prompts for vars, fills secrets, redeploys, prints the verify step). `hs enable` lists features. |
+| `harvest-keys.sh` | Collect app API keys into `.env` (auto-detects *arr keys; `--sync` recreates consumers on change). Run nightly by cron. |
 | `sab-watchdog.sh` | Auto-recover a stalled SABnzbd (pause/resume, then container restart). Run by cron. |
+| `mount-watchdog.sh` | Detect, auto-heal (SCSI rescan + `mount -a` + restart the dependent stack), and ntfy-alert when a storage mount drops. Run by cron (`hs mounts` to run now). |
+| `mount-heal-root.sh` | The privileged recovery helper (SCSI rescan + `mount -a`) that `mount-watchdog.sh` invokes via a scoped passwordless-sudo rule. Not run directly. |
+| `patch-qbit-auth.sh` | Whitelist the docker subnet in qBittorrent's WebUI auth so the *arr apps/decluttarr can reach its API without credential drift. Idempotent; re-applied by `update`. |
+| `seed-arr-quality.sh` | Move new Sonarr/Radarr items onto the right quality profile. Soft-skips when the containers aren't up. Re-applied by `update`. |
+| `seed-uptime-kuma.sh` / `seed-uptime-kuma.py` | Seed Uptime Kuma's monitors from `monitoring/uptime-kuma/seed.json` and wire ntfy alerts (`hs seed-monitors`). |
+| `sonarr-bulk-import.py` | Force-import items Sonarr blocked with the parser/grab series-ID mismatch (`hs sonarr-fix`). |
+| `backup.sh` | Back up the irreplaceable data (logical DB dumps, configs, Immich/Paperless originals, `.env`) to the media array; writes `RECOVERY.md`. |
+| `install-crowdsec-bouncer.sh` | Install + wire the host CrowdSec firewall bouncer after the engine is up (`hs crowdsec-bouncer`). |
+| `notify.sh` / `notify-failure.sh` | Best-effort ntfy push helpers used by the watchdogs and the systemd failure handler. |
 | `setup-fresh.sh` | Full host prep for a brand-new Ubuntu/Debian box, then runs `bootstrap.sh`. |
 | `install-hooks.sh` | Install a git pre-push hook that validates every stack's compose locally before a push (same check as CI, caught earlier). |
+| `hs-completion.bash` | Bash tab-completion for the `hs` command (symlinked into place by `hs install`). |
 
 ## Scheduled jobs (installed by `schedule-maintenance.sh`)
 
@@ -73,6 +86,8 @@ re-running is idempotent. Logs land in the repo root.
 | `0 4 * * *` (daily 04:00) | *arr API key auto-sync | `harvest-keys.sh --sync` | `key-sync.log` | `# homestack-key-sync` |
 | `0 5 * * 0` (Sun 05:00) | Unused-image cleanup | `docker image prune -af` | `image-prune.log` | `# homestack-image-prune` |
 | `*/5 * * * *` (every 5 min) | SABnzbd stall watchdog | `sab-watchdog.sh` | `sab-watchdog.log` | `# homestack-sab-watchdog` |
+| `*/5 * * * *` (every 5 min) | Storage mount watchdog (auto-heal + alert) | `mount-watchdog.sh` | `mount-watchdog.log` | `# homestack-mount-watchdog` |
+| `30 3 * * *` (daily 03:30) | GitOps auto-deploy — *opt-in via `GITOPS_AUTOUPDATE`* | `update.sh --yes` | `update.log` | `# homestack-gitops-update` |
 
 Remove any of them with `crontab -e` (delete the line with the matching
 `homestack-*` marker). Re-add them anytime with `./scripts/schedule-maintenance.sh`.

@@ -38,15 +38,15 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 
 | Service | Purpose |
 |---|---|
-| Nginx Proxy Manager | Reverse proxy with SSL certificate management. Gives all services clean local URLs and HTTPS. |
-| AdGuard Home | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. |
-| Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
-| ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone. |
+| Caddy* | Reverse proxy with automatic HTTPS (one `*.${DOMAIN}` wildcard cert via Cloudflare DNS-01). Gives all services clean local URLs and HTTPS. The only proxy. |
+| AdGuard Home* | Network-wide DNS ad/tracker blocking for every device, plus local DNS rewrites for clean hostnames. Point your router's DNS here. Enable only if your router can't run DNS. |
+| CrowdSec* | Collaborative intrusion detection/prevention — parses logs for attacks and bans offenders via a host firewall bouncer. |
 | Tailscale* | Zero-config VPN built on WireGuard. Gives secure remote access to your entire home network from anywhere. |
 | Cloudflare Tunnel* | Exposes selected services publicly with zero open ports on your router. Works with a custom domain. |
+| DDNS* | Dynamic-DNS updater — keeps a domain's A record pointed at your dynamic WAN IP. |
 | Borgmatic* | Automated encrypted offsite backups to Backblaze B2 or any remote storage. |
 
-*Profile-gated/optional — enable when ready.
+*Profile-gated/optional — enable when ready (every service in this stack is opt-in via `COMPOSE_PROFILES`).
 
 ### Monitoring — Observability
 
@@ -55,6 +55,12 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 | Uptime Kuma | Heartbeat monitor for every service. Home Assistant reads this via the Uptime Kuma integration so "is X up?" surfaces on the family HA dashboard. |
 | Dozzle | Real-time Docker log viewer. Debugging tool — opened only when something is already known broken. |
 | Diun | Docker Image Update Notifier. Watches every running container and notifies when a new image is published. Does not auto-apply — pair with Arcane for one-click updates. |
+| ntfy | Self-hosted push-notification hub — POST from Proxmox, cron, scripts or the *arr stack and get a push on your phone (Diun, Uptime Kuma, and the mount/SAB watchdogs all publish here). |
+| Pulse* | Proxmox + Docker metrics and alerts to ntfy (no cloud, no cap). See [observability.md](observability.md). |
+| Vector* | Ships container logs to ndjson files for lightweight central retention, read with lnav. |
+| Loki + Grafana + Alloy* | Heavy indexed full-text log search — collects all container + host logs into Loki, browsed in Grafana. |
+
+*Profile-gated/optional — enable when ready.
 
 ### Dashboard
 
@@ -63,6 +69,9 @@ Deploy this second. Stores all secrets and API keys used across the rest of the 
 | Homepage | Service launcher with live stats widgets. Single bookmark to reach everything. |
 
 ### Mediastack — Media Server
+
+> 🎬 Wiring it up (Prowlarr → *arr → downloaders → root folders) is the fiddliest
+> setup in the stack — see **[mediastack-setup.md](mediastack-setup.md)**.
 
 | Service | Purpose |
 |---|---|
@@ -107,15 +116,26 @@ After deploy, register the first account, then (optionally) populate the exercis
 |---|---|
 | Paperless-ngx | Scan, store, and search all your important documents. OCR makes everything full-text searchable. Use the mobile app to scan with your phone. |
 | Stirling PDF | PDF toolkit — merge, split, compress, convert, and manipulate PDFs directly in the browser. |
+| DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. (Commented-out template in `records/docker-compose.yml`.) |
+
+### Knowledge — Notes and Bookmarks
+
+| Service | Purpose |
+|---|---|
 | Memos | Frictionless quick-capture notes — markdown + tags for "remember this" without ceremony. |
-| DocuSeal* | Legally binding document signing (ESIGN/UETA/eIDAS compliant). Self-hosted DocuSign alternative. Requires SMTP. |
+| Karakeep* | Bookmarks / read-later with full-text search and automatic archiving (formerly Hoarder). |
+
+### Syncthing — File Sync
+
+| Service | Purpose |
+|---|---|
+| Syncthing | Private peer-to-peer file sync across your PCs and phones — your Dropbox replacement, no cloud, no database. |
 
 ### Cloud — Private Cloud Storage
 
 | Service | Purpose |
 |---|---|
 | Immich | Self-hosted Google Photos replacement. Backs up photos and videos from all family phones automatically. Face recognition, shared albums, timeline view, and a great mobile app. |
-| Matrix/Synapse* | Private end-to-end encrypted messaging server. Use the Element app. Perfect for private family communication. |
 
 ### DevOps
 Empty placeholder for self-hosted developer tooling (Gitea + Actions runner) — populated in Phase 3.
@@ -135,7 +155,6 @@ One app per service — install these on family devices:
 | Mealie | Mealie | ✅ | ✅ |
 | Jellyseerr | Seerr | ✅ | ✅ |
 | Jellyfin | Jellyfin | ✅ | ✅ |
-| Element | Matrix | ✅ | ✅ |
 | Paperless-ngx | Paperless | ✅ | ✅ |
 | Home Assistant | Home Assistant | ✅ | ✅ |
 | Navidrome (Substreamer) | Navidrome | ✅ | ✅ |
@@ -170,13 +189,16 @@ Local Network (192.168.1.0/24)
   │     └── Docker home network
   │           ├── arcane
   │           ├── vaultwarden
-  │           ├── infrastructure (Caddy, Tailscale, Cloudflare, Borgmatic)
-  │           ├── monitoring (Uptime Kuma, Dozzle, Diun)
+  │           ├── infrastructure (Caddy, AdGuard, CrowdSec, Tailscale, Cloudflare, Borgmatic)
+  │           ├── monitoring (Uptime Kuma, Dozzle, Diun, ntfy, Pulse...)
   │           ├── dashboard (Homepage)
   │           ├── mediastack (Jellyfin, Sonarr, Radarr...)
   │           ├── household (Mealie, Donetick...)
+  │           ├── fitness (wger)
   │           ├── records (Paperless, Stirling PDF...)
-  │           ├── cloud (Immich, Matrix...)
+  │           ├── knowledge (Memos, Karakeep)
+  │           ├── syncthing
+  │           ├── cloud (Immich)
   │           └── devops (Gitea + Actions — Phase 3)
   │
   ├── Home Assistant OS (separate device or VM)

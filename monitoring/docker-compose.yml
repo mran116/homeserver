@@ -57,10 +57,9 @@ services:
   # NOTIFIES when image updates exist. Does NOT apply them — by design.
   # Pair with Arcane for a one-click "pull + recreate" workflow.
   #
-  # Notifications go to Home Assistant via webhook so all alerts land
-  # in one notification stream. Set DIUN_NOTIF_WEBHOOK_URL in .env to:
-  #   http://<ha-vm-ip>:8123/api/webhook/<your-webhook-id>
-  # Create the webhook in HA: Settings → Automations → New → Webhook trigger.
+  # Notifications go to ntfy (same stack) on the "diun-updates" topic — see the
+  # DIUN_NOTIF_NTFY_* env below. Subscribe to that topic in the ntfy app to get
+  # image-update alerts on your phone.
   # ===========================================================================
   diun:
     image: crazymax/diun:latest
