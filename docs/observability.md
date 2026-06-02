@@ -1,7 +1,7 @@
 # Observability — metrics, logs & alerts
 
 The monitoring stack is built from small, single-purpose pieces so you only run
-what you need. Three things are always on; the rest are opt-in profiles.
+what you need. Four things are always on; the rest are opt-in profiles.
 
 | Layer | Tool | Always on? | What it's for |
 |---|---|---|---|
