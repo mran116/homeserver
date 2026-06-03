@@ -21,8 +21,12 @@ sonarr:
     base_url: http://sonarr:8989
     api_key: !env_var SONARR_API_KEY
 
-    quality_definition:
-      type: series
+    # Quality-definition SIZE CAPS are deliberately NOT managed here. TRaSH's
+    # `type: series` definition leaves 1080p sizes "Unlimited", which lets big
+    # remuxes / over-bitrate WEB-DLs through. We own per-quality MB/min caps in
+    # scripts/seed-arr-quality.sh instead (global caps: Bluray-1080p -> ~x264
+    # encodes not DTS-HD MA remuxes; WEBDL/WEBRip-1080p bitrate-capped). Re-adding
+    # a quality_definition block here would reset those caps on the nightly sync.
 
     quality_profiles:
       # TRaSH WEB-1080p profile.  Single entry — overrides at this level

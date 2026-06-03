@@ -91,6 +91,26 @@ INSTANCES = [
     ('radarr', radarr_base, radarr_key, 'WEB-Only',  '/movie',   'qualityProfileId'),
 ]
 
+# Series on these profiles are intentional exceptions (e.g. Star Trek TNG and
+# other film-sourced shows that only exist as 1080p Bluray, not WEB-DL). The
+# migrate-to-target step below leaves them in place so they keep Bluray-1080p
+# access; the global size caps below still bound their bitrate.
+KEEP_PROFILES = {'sonarr': {'HD-1080p'}, 'radarr': set()}
+
+# Global Sonarr quality-definition size caps in MB/min: name -> (preferred, max).
+# min is left at the TRaSH/stock value. These bound episode bitrate across ALL
+# profiles: capping Bluray-1080p pulls film-sourced shows down from DTS-HD MA
+# remuxes to ~x264 encodes; the WEBDL/WEBRip caps trim over-bitrate WEB grabs.
+# ~90 MB/min ≈ a 4 GB ceiling / ~2.7 GB typical for a 45-min episode. recyclarr's
+# `quality_definition` (TRaSH) leaves these Unlimited, so it's removed from
+# recyclarr.yml and owned here instead (else the nightly sync would reset them).
+SONARR_QUALITY_CAPS = {
+    'WEBDL-1080p':  (60, 90),
+    'WEBRip-1080p': (60, 90),
+    'HDTV-1080p':   (50, 80),
+    'Bluray-1080p': (65, 90),
+}
+
 def api(base, key, method, path, body=None, query=None):
     url = base + path + (('?' + urllib.parse.urlencode(query)) if query else '')
     data = json.dumps(body).encode() if body is not None else None
@@ -124,8 +144,14 @@ for service, base, key, target_name, list_path, profile_field in INSTANCES:
 
     # Move items to target profile
     items = api(base, key, 'GET', list_path)
-    needs_move = [i for i in items if i.get(profile_field) != target_id]
-    print(f'  profile {target_name} id={target_id}; items needing move: {len(needs_move)}/{len(items)}')
+    keep_ids = {q['id'] for q in qps if q['name'] in KEEP_PROFILES.get(service, set())}
+    needs_move = [i for i in items
+                  if i.get(profile_field) != target_id and i.get(profile_field) not in keep_ids]
+    pinned = sum(1 for i in items if i.get(profile_field) in keep_ids)
+    msg = f'  profile {target_name} id={target_id}; items needing move: {len(needs_move)}/{len(items)}'
+    if pinned:
+        msg += f' ({pinned} pinned on {sorted(KEEP_PROFILES[service])})'
+    print(msg)
     if not DRY:
         for it in needs_move:
             it[profile_field] = target_id
@@ -146,6 +172,29 @@ for service, base, key, target_name, list_path, profile_field in INSTANCES:
             print(f'  profile language already {eng_name}')
     else:
         print('  language filter: applied via CF scoring (Sonarr v4 ignores profile.language)')
+
+    # Global quality-definition size caps (Sonarr only). Quality definitions are
+    # GLOBAL in Sonarr (not per-profile), so one cap per quality bounds bitrate
+    # everywhere — see SONARR_QUALITY_CAPS above.
+    if service == 'sonarr':
+        defs = api(base, key, 'GET', '/qualitydefinition')
+        changed = 0
+        for d in defs:
+            qn = (d.get('quality') or {}).get('name')
+            if qn not in SONARR_QUALITY_CAPS:
+                continue
+            pref, mx = SONARR_QUALITY_CAPS[qn]
+            if d.get('preferredSize') == pref and d.get('maxSize') == mx:
+                continue
+            print(f'  cap {qn}: preferred {d.get("preferredSize")}->{pref}, '
+                  f'max {d.get("maxSize")}->{mx} (MB/min)')
+            changed += 1
+            if not DRY:
+                d['preferredSize'] = pref
+                d['maxSize'] = mx
+                api(base, key, 'PUT', f'/qualitydefinition/{d["id"]}', body=d)
+        print(f'  quality-definition size caps: {changed} changed'
+              if changed else '  quality-definition size caps: already in place')
 
 print('\nDone' + (' (dry-run, no changes made)' if DRY else ''))
 PY
