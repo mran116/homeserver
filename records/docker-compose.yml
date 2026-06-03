@@ -10,6 +10,7 @@ services:
     image: redis:7
     container_name: paperless-broker
     restart: unless-stopped
+    mem_limit: 256m
     volumes:
       - ${CONFIG_PATH}/paperless/redis:/data
     healthcheck:
@@ -24,6 +25,7 @@ services:
     image: postgres:15
     container_name: paperless-db
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       - POSTGRES_DB=paperless
       - POSTGRES_USER=paperless
@@ -43,6 +45,7 @@ services:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     container_name: paperless
     restart: unless-stopped
+    mem_limit: 2g            # OCR / gotenberg spikes during ingest
     ports:
       - "${PAPERLESS_PORT}:8000"
     depends_on:
