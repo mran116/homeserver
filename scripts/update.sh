@@ -49,6 +49,8 @@ changed_stacks="$(git diff --name-only "HEAD..origin/$branch" 2>/dev/null | cut 
 [[ "$incoming" -gt 0 ]] && plan "git pull origin $branch ($incoming new commit(s))"
 [[ "$incoming" -gt 0 && -n "$(git status --porcelain)" ]] && plan "autostash local changes (Arcane edits) across the pull"
 plan "reconcile: env-sync + gen-secrets + link-env + Homepage config + new-stack check + cron/hooks"
+git diff --name-only "HEAD..origin/$branch" 2>/dev/null | grep -q 'mediastack/recyclarr/recyclarr.yml' \
+  && plan "restart + re-sync recyclarr (its single-file config mount changed)"
 [[ $PULL_IMAGES -eq 1 ]] && plan "docker compose pull (newer images)"
 plan "redeploy all stacks with --remove-orphans (applies .env, restarts anything stopped)"
 plan "run doctor (report)"
@@ -73,6 +75,26 @@ before_vars="$(grep -oE '^[A-Z0-9_]+=' "$ENV_FILE" 2>/dev/null | sort -u || true
 "$SCRIPT_DIR/gen-secrets.sh" --yes   # fill blank secrets a new stack added (DB-safe; no-op otherwise)
 "$SCRIPT_DIR/link-env.sh" --yes
 "$SCRIPT_DIR/make-dirs.sh" --yes
+# recyclarr.yml is bind-mounted as a single FILE, so a git pull/edit swaps the
+# file's inode and the RUNNING container keeps reading the OLD config — its next
+# sync then logs "all up to date" against a stale file (silent config drift). If
+# the config the container sees no longer matches the repo, restart it to re-bind
+# the fresh inode, then sync so the new formats/profiles land NOW instead of at
+# the nightly cron. `docker cp` reads the container fs via the daemon (no in-image
+# tools needed). Runs before seed-arr-quality so it can move items onto any
+# freshly-synced profile. Soft-skips when recyclarr isn't running (first-boot).
+if docker ps --format '{{.Names}}' | grep -qx recyclarr; then
+  _rcr_seen="$(mktemp)"
+  if docker cp recyclarr:/config/recyclarr.yml "$_rcr_seen" 2>/dev/null \
+     && ! cmp -s "$_rcr_seen" "$REPO_DIR/mediastack/recyclarr/recyclarr.yml"; then
+    say "recyclarr.yml changed — restarting recyclarr (re-bind single-file mount) + syncing"
+    docker restart recyclarr >/dev/null
+    sleep 3
+    docker exec recyclarr recyclarr sync 2>&1 \
+      | grep -iE 'custom format|profile|synced|error' || true
+  fi
+  rm -f "$_rcr_seen"
+fi
 # Drift-protection: re-apply qBit subnet whitelist + re-seed *arr quality
 # profiles.  Both soft-skip when their respective containers aren't running,
 # so update is safe even on a partially-deployed host.
