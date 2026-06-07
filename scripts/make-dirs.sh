@@ -67,19 +67,42 @@ new_app_dirs=(); for d in "${app_dirs[@]}"; do [[ -d "$d" ]] || new_app_dirs+=("
 shopt -s nullglob
 hp_all=(dashboard/homepage/*.yaml dashboard/homepage/*.css dashboard/homepage/*.js)
 shopt -u nullglob
-# bookmarks.local.yaml is a PRIVATE, gitignored overlay (personal bookmarks you
-# don't want in the public repo). It is NOT mirrored verbatim; instead its lines
-# are appended onto live bookmarks.yaml after each sync, so personal bookmarks
-# survive every update yet never enter git. Drop it from the mirror list here.
+# PRIVATE, gitignored overlays (personal config kept out of the public repo).
+# Neither is mirrored verbatim:
+#   - bookmarks.local.yaml : its lines are APPENDED onto live bookmarks.yaml
+#     (bookmarks.yaml is a top-level list, so append = add more groups).
+#   - settings.local.yaml  : DEEP-MERGED onto live settings.yaml (settings is a
+#     map, so a merge — not append — adds e.g. a private tab in `layout:`).
+# Both survive every sync yet never enter git. Drop them from the mirror list.
 hp_overlay="dashboard/homepage/bookmarks.local.yaml"
+hp_set_overlay="dashboard/homepage/settings.local.yaml"
+# Deep-merge helper: prints base settings with the overlay merged on top (overlay
+# wins for scalars; dicts merge recursively — e.g. extra `layout` keys for a tab).
+hp_merge_settings() {
+  python3 - "$1" "$2" <<'PY'
+import sys, yaml
+base = yaml.safe_load(open(sys.argv[1])) or {}
+over = yaml.safe_load(open(sys.argv[2])) or {}
+def deep(a, b):
+    for k, v in b.items():
+        a[k] = deep(a[k], v) if isinstance(v, dict) and isinstance(a.get(k), dict) else v
+    return a
+yaml.safe_dump(deep(base, over), sys.stdout, sort_keys=False, allow_unicode=True)
+PY
+}
 hp_files=()
-for f in "${hp_all[@]}"; do [[ "$f" == "$hp_overlay" ]] || hp_files+=("$f"); done
+for f in "${hp_all[@]}"; do
+  case "$f" in "$hp_overlay"|"$hp_set_overlay") ;; *) hp_files+=("$f") ;; esac
+done
 sync_homepage=0
 for f in "${hp_files[@]}"; do
   base="$(basename "$f")"
   if [[ "$base" == bookmarks.yaml && -s "$hp_overlay" ]]; then
     # live bookmarks should equal repo bookmarks + the private overlay
     cmp -s <(cat "$f" "$hp_overlay") "$CONFIG_PATH/homepage/$base" 2>/dev/null || sync_homepage=1
+  elif [[ "$base" == settings.yaml && -s "$hp_set_overlay" ]]; then
+    # live settings should equal repo settings deep-merged with the private overlay
+    cmp -s <(hp_merge_settings "$f" "$hp_set_overlay") "$CONFIG_PATH/homepage/$base" 2>/dev/null || sync_homepage=1
   else
     cmp -s "$f" "$CONFIG_PATH/homepage/$base" 2>/dev/null || sync_homepage=1
   fi
@@ -125,8 +148,14 @@ for d in "${missing_external[@]}"; do
 done
 if [[ $sync_homepage -eq 1 ]]; then
   cp "${hp_files[@]}" "$CONFIG_PATH/homepage/"
-  # Append the PRIVATE overlay (gitignored) onto live bookmarks.yaml so personal
-  # bookmarks persist across every sync without ever entering the public repo.
+  # Apply the PRIVATE overlays (gitignored) so personal config persists across
+  # every sync without ever entering the public repo:
+  #   bookmarks.local.yaml -> APPENDED onto live bookmarks.yaml (a list)
+  #   settings.local.yaml  -> DEEP-MERGED into live settings.yaml (a map; e.g. a private tab)
   [[ -s "$hp_overlay" ]] && cat "$hp_overlay" >> "$CONFIG_PATH/homepage/bookmarks.yaml"
+  if [[ -s "$hp_set_overlay" ]]; then
+    hp_merge_settings dashboard/homepage/settings.yaml "$hp_set_overlay" \
+      > "$CONFIG_PATH/homepage/settings.yaml"
+  fi
 fi
 say "Directory layout ready."
