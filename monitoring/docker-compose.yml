@@ -214,6 +214,7 @@ services:
     image: grafana/loki:latest
     container_name: loki
     restart: unless-stopped
+    mem_limit: 1g            # log ingestion/query buffers (heavy when enabled)
     profiles: ["logging"]
     command: -config.file=/etc/loki/config.yaml
     volumes:
@@ -226,6 +227,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
+    mem_limit: 512m
     profiles: ["logging"]
     depends_on:
       - loki

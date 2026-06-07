@@ -22,6 +22,7 @@ services:
     image: ghcr.io/immich-app/immich-server:release
     container_name: immich-server
     restart: unless-stopped
+    mem_limit: 3g            # cap blast radius: a runaway here can't OOM the whole VM
     ports:
       - "${IMMICH_PORT}:2283"
     volumes:
@@ -55,6 +56,7 @@ services:
     image: ghcr.io/immich-app/immich-machine-learning:release
     container_name: immich-machine-learning
     restart: unless-stopped
+    mem_limit: 3g            # loads ~2-4 GB of CV models into RAM while indexing
     volumes:
       - ${CONFIG_PATH}/immich/model-cache:/cache
     environment:
@@ -66,6 +68,7 @@ services:
     image: redis:7
     container_name: immich-redis
     restart: unless-stopped
+    mem_limit: 256m
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -78,6 +81,7 @@ services:
     image: tensorchord/pgvecto-rs:pg14-v0.2.0
     container_name: immich-db
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       - POSTGRES_DB=immich
       - POSTGRES_USER=immich
