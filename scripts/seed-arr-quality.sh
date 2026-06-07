@@ -111,6 +111,24 @@ SONARR_QUALITY_CAPS = {
     'Bluray-1080p': (65, 90),
 }
 
+# Global Radarr quality-definition size caps in MB/min: name -> (preferred, max).
+# Radarr definitions are GLOBAL too, so one cap per quality bounds bitrate across
+# every profile. 1080p capped to ~50 MB/min ~= ~6 GB for a 2 h film (still above
+# streaming-premium bitrate); 720p ~25. recyclarr's movie quality_definition
+# leaves max "Unlimited", so it's removed from recyclarr.yml and owned here (else
+# the nightly sync would reset these).
+RADARR_QUALITY_CAPS = {
+    'WEBDL-1080p':  (40, 50),
+    'WEBRip-1080p': (40, 50),
+    'HDTV-1080p':   (35, 50),
+    'WEBDL-720p':   (20, 25),
+    'WEBRip-720p':  (20, 25),
+    'HDTV-720p':    (18, 25),
+}
+
+# Per-service cap table consumed by the quality-definition pass below.
+QUALITY_CAPS = {'sonarr': SONARR_QUALITY_CAPS, 'radarr': RADARR_QUALITY_CAPS}
+
 def api(base, key, method, path, body=None, query=None):
     url = base + path + (('?' + urllib.parse.urlencode(query)) if query else '')
     data = json.dumps(body).encode() if body is not None else None
@@ -173,17 +191,18 @@ for service, base, key, target_name, list_path, profile_field in INSTANCES:
     else:
         print('  language filter: applied via CF scoring (Sonarr v4 ignores profile.language)')
 
-    # Global quality-definition size caps (Sonarr only). Quality definitions are
-    # GLOBAL in Sonarr (not per-profile), so one cap per quality bounds bitrate
-    # everywhere — see SONARR_QUALITY_CAPS above.
-    if service == 'sonarr':
+    # Global quality-definition size caps (Sonarr + Radarr). Quality definitions
+    # are GLOBAL in both apps (not per-profile), so one cap per quality bounds
+    # bitrate everywhere — see SONARR_QUALITY_CAPS / RADARR_QUALITY_CAPS above.
+    caps = QUALITY_CAPS.get(service)
+    if caps:
         defs = api(base, key, 'GET', '/qualitydefinition')
         changed = 0
         for d in defs:
             qn = (d.get('quality') or {}).get('name')
-            if qn not in SONARR_QUALITY_CAPS:
+            if qn not in caps:
                 continue
-            pref, mx = SONARR_QUALITY_CAPS[qn]
+            pref, mx = caps[qn]
             if d.get('preferredSize') == pref and d.get('maxSize') == mx:
                 continue
             print(f'  cap {qn}: preferred {d.get("preferredSize")}->{pref}, '
