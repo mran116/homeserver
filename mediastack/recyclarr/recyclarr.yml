@@ -72,12 +72,16 @@ sonarr:
         assign_scores_to:
           - name: WEB-1080p
             score: 50
+          - name: HD-1080p
+            score: 50
       # -10000 backstop: any release Sonarr tags as purely non-English gets
       # crushed, even if the per-series language filter somehow misses it.
       - trash_ids:
           - 69aa1e159f97d860440b04cd6d590c4f     # Language: Not English (Sonarr trash id)
         assign_scores_to:
           - name: WEB-1080p
+            score: -10000
+          - name: HD-1080p
             score: -10000
 
 radarr:
