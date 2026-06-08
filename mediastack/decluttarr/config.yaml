@@ -40,7 +40,9 @@ jobs:
   remove_stalled:
   remove_bad_files:         # torrent-only (needs qBittorrent)
   search_missing:           # proactively search for monitored-but-missing items
-  search_unmet_cutoff:      # search for items below their quality cutoff
+    min_days_between_searches: 1   # re-search missing items daily (was 7) to drain the backlog faster
+    max_concurrent_searches: 8     # up to 8 searches per run (was 3)
+  search_unmet_cutoff:      # search for items below their quality cutoff (kept on conservative job_defaults to limit indexer load)
   # ---- Opt-in (uncomment to enable) ----
   # remove_unmonitored:     # removes downloads for items you've unmonitored
   # remove_done_seeding:    # torrent seeding cleanup (needs target_tags/categories)
