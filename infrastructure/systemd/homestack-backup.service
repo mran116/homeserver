@@ -1,9 +1,12 @@
 [Unit]
-Description=Homestack backup — DB dumps + config/photo/document mirror to the media array
-Documentation=file:///mnt/media/backups/RECOVERY.md
-Wants=docker.service
-After=docker.service
-RequiresMountsFor=/mnt/media /opt/docker/data
+Description=Homestack backup — DB dumps + config/photo/document mirror to the backup share
+Documentation=file:///opt/docker/stacks/scripts/backup.sh
+Wants=docker.service network-online.target
+After=docker.service network-online.target remote-fs.target
+# NOTE: no RequiresMountsFor for the NFS share. It made a not-yet-ready mount
+# after a reboot a hard dependency failure that silently abandoned the night's
+# run. backup.sh now waits for its mounts (wait_mount) and aborts loudly if the
+# configured target isn't really mounted, so OnFailure still fires on real loss.
 OnFailure=homestack-notify-failure@%n.service
 
 [Service]
