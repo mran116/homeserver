@@ -84,6 +84,23 @@ sonarr:
           - name: HD-1080p
             score: -10000
 
+      # --- Anime profile: prefer English dub / dual-audio ---
+      # Japanese-only stays grabbable (to start) but BELOW the cutoff, so Sonarr
+      # keeps hunting; Anime Dual Audio (JP+EN) is the reliable "has English dub"
+      # signal and meets the 10000 cutoff. Low-quality / no-sub raws are crushed.
+      - trash_ids:
+          - 418f50b10f1907201b6cfdf881f467b7     # Anime Dual Audio
+        assign_scores_to:
+          - name: Anime
+            score: 10000
+      - trash_ids:
+          - e3515e519f3b1360cbfc17651944354c     # Anime LQ Groups
+          - 32b367365729d530ca1c124a0b180c64     # Bad Dual Groups
+          - b4a1b3d705159cdca36d71e57ca86871     # Anime Raws (no subs)
+        assign_scores_to:
+          - name: Anime
+            score: -10000
+
 radarr:
   movies:
     base_url: http://radarr:7878
