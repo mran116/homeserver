@@ -44,7 +44,7 @@ DATA="${CONFIG_PATH:-/opt/docker/data}"
 # *arr API keys read straight from their config.xml — always present once the
 # apps have booted, so no dependency on the keys being harvested into .env.
 arr_key() { sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' "$DATA/$1/config.xml" 2>/dev/null | head -1; }
-SONARR_KEY="$(arr_key sonarr)"; RADARR_KEY="$(arr_key radarr)"
+SONARR_KEY="$(arr_key sonarr)"; RADARR_KEY="$(arr_key radarr)"; PROWLARR_KEY="$(arr_key prowlarr)"
 
 # State dir lives beside every app's data, like sab-watchdog. mkdir is required:
 # the writes below are guarded with `|| true`, so a missing dir would silently
@@ -55,14 +55,19 @@ STATE="$STATE_DIR/state"
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
-# check — STALLED if Sonarr or Radarr report indexers unavailable; OK otherwise.
-# Symptom-based (their IndexerStatusCheck health), so the watchdog never issues
-# an indexer search itself. An *arr we can't reach is ignored (returns OK for
-# that one) so a Sonarr/Radarr outage can't trigger a needless Prowlarr restart.
+# check — two stage, so a single flaky indexer never triggers a restart:
+#   1. SYMPTOM: do Sonarr/Radarr report indexers unavailable? (cheap, no indexer
+#      load). If neither does -> OK, done.
+#   2. CONFIRM: only when (1) fires, run ONE Prowlarr search. If it RETURNS (even
+#      with some indexers erroring) the search funnel is healthy -> OK. If it
+#      HANGS/errors, the funnel itself is wedged -> STALLED.
+# Because the confirming search runs only while the *arr are complaining, the
+# watchdog adds ~zero indexer load in steady state. An *arr we can't reach is
+# ignored, so a Sonarr/Radarr outage can't trigger a needless Prowlarr restart.
 check() {
-  python3 - "$SONARR_KEY" "$RADARR_KEY" <<'PY'
-import sys, json, urllib.request
-sk, rk = sys.argv[1], sys.argv[2]
+  python3 - "$SONARR_KEY" "$RADARR_KEY" "$PROWLARR_KEY" <<'PY'
+import sys, json, urllib.request, urllib.parse
+sk, rk, pk = sys.argv[1], sys.argv[2], sys.argv[3]
 down = []
 for name, port, key in (("sonarr", "8989", sk), ("radarr", "7878", rk)):
     if not key:
@@ -75,7 +80,16 @@ for name, port, key in (("sonarr", "8989", sk), ("radarr", "7878", rk)):
             down.append(name)
     except Exception:
         pass  # arr unreachable = different problem; do not act on it
-print(("STALLED indexers-unavailable=" + ",".join(down)) if down else "OK")
+if not down:
+    print("OK"); sys.exit(0)
+if not pk:
+    print("STALLED indexers-unavailable=" + ",".join(down) + " (no prowlarr key to confirm)"); sys.exit(0)
+url = "http://localhost:9696/api/v1/search?" + urllib.parse.urlencode({"query": "the", "limit": "3", "apikey": pk})
+try:
+    urllib.request.urlopen(url, timeout=30).read()
+    print("OK arr-warned=" + ",".join(down) + " but prowlarr search returned (funnel healthy)")
+except Exception as e:
+    print("STALLED indexers-unavailable=" + ",".join(down) + " prowlarr-search-hung=" + type(e).__name__)
 PY
 }
 
