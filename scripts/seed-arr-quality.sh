@@ -109,6 +109,13 @@ SONARR_QUALITY_CAPS = {
     'WEBRip-1080p': (60, 90),
     'HDTV-1080p':   (50, 80),
     'Bluray-1080p': (65, 90),
+    'Bluray-1080p Remux': (90, 120),   # cap lossless remux episodes (~5.4 GB/45min)
+    # 2160p generally unused (profiles are 1080p) but capped as a backstop:
+    'WEBDL-2160p':  (80, 130),
+    'WEBRip-2160p': (80, 130),
+    'HDTV-2160p':   (70, 130),
+    'Bluray-2160p': (100, 160),
+    'Bluray-2160p Remux': (130, 200),
 }
 
 # Global Radarr quality-definition size caps in MB/min: name -> (preferred, max).
@@ -124,6 +131,15 @@ RADARR_QUALITY_CAPS = {
     'WEBDL-720p':   (20, 25),
     'WEBRip-720p':  (20, 25),
     'HDTV-720p':    (18, 25),
+    'Bluray-1080p': (60, 90),     # was uncapped — the 25 GB hole; ~10.8 GB/2h max
+    'Remux-1080p':  (90, 130),    # cap lossless remux; ~15.6 GB/2h max
+    'Bluray-720p':  (25, 40),
+    # 2160p generally unused (movie profiles are 1080p) but capped as a backstop:
+    'WEBDL-2160p':  (60, 120),
+    'WEBRip-2160p': (60, 120),
+    'HDTV-2160p':   (50, 120),
+    'Bluray-2160p': (90, 160),
+    'Remux-2160p':  (130, 220),
 }
 
 # Per-service cap table consumed by the quality-definition pass below.
@@ -209,6 +225,9 @@ for service, base, key, target_name, list_path, profile_field in INSTANCES:
                   f'max {d.get("maxSize")}->{mx} (MB/min)')
             changed += 1
             if not DRY:
+                # keep minSize <= preferred < max (some remux/2160p stock minSize
+                # exceeds the new cap, which the API rejects with HTTP 400)
+                d['minSize'] = min(d.get('minSize') or 0, pref)
                 d['preferredSize'] = pref
                 d['maxSize'] = mx
                 api(base, key, 'PUT', f'/qualitydefinition/{d["id"]}', body=d)
