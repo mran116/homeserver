@@ -40,6 +40,8 @@ jobs:
   remove_stalled:
   remove_bad_files:         # torrent-only (needs qBittorrent)
   search_missing:           # proactively search for monitored-but-missing items
+    min_days_between_searches: 2   # re-search missing items every 2 days (gentler on Prowlarr funnel)
+    max_concurrent_searches: 3     # 3 concurrent per run (gentler on Prowlarr funnel)
   search_unmet_cutoff:      # search for items below their quality cutoff
   # ---- Opt-in (uncomment to enable) ----
   # remove_unmonitored:     # removes downloads for items you've unmonitored
