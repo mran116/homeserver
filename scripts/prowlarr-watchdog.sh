@@ -84,7 +84,7 @@ if not down:
     print("OK"); sys.exit(0)
 if not pk:
     print("STALLED indexers-unavailable=" + ",".join(down) + " (no prowlarr key to confirm)"); sys.exit(0)
-url = "http://localhost:9696/api/v1/search?" + urllib.parse.urlencode({"query": "the", "limit": "3", "apikey": pk})
+url = "http://localhost:9696/api/v1/search?" + urllib.parse.urlencode({"query": "interstellar", "limit": "3", "apikey": pk})
 try:
     urllib.request.urlopen(url, timeout=30).read()
     print("OK arr-warned=" + ",".join(down) + " but prowlarr search returned (funnel healthy)")
