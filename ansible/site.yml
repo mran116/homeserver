@@ -16,4 +16,5 @@
     - cpu_turbo
     - smart_monitoring
     - nfs_mounts
+    - workstation
     - homeserver_stack

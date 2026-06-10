@@ -65,6 +65,7 @@ drift.
 | `cpu_turbo` | `cpu_turbo_disabled` | disable CPU turbo (thermal mitigation) |
 | `smart_monitoring` | `smart_monitoring_enabled` | smartd self-tests + optional ntfy alerts |
 | `nfs_mounts` | `nfs_mounts` | NFS shares via fstab |
+| `workstation` | `workstation_leak_guard_enabled` | control box: CLI packages + git leak-guard (block PII from a public repo) |
 | `homeserver_stack` | `homeserver_stack_enabled` | Docker + clone repo + hand off |
 
 See `host_vars/example.yml` for every knob.

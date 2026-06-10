@@ -1,0 +1,16 @@
+---
+# workstation — the control/dev box that drives this repo (clones it, runs git,
+# pushes). Opt-in. Its headline feature is a git LEAK-GUARD that blocks PII
+# (your domain, email, internal IPs) from reaching a public repo via commits,
+# tags, or `gh` commands.
+
+# Extra CLI packages for the box (optional; `base` also installs packages).
+workstation_packages: []
+
+# Leak-guard: a pre-commit hook + denylist that fails the commit when a staged
+# diff matches any pattern. Patterns are PII, so set workstation_leak_patterns
+# in your GITIGNORED host_vars, never here.
+workstation_leak_guard_enabled: false
+workstation_leak_guard_repos: []        # repo paths to install the hook into
+workstation_leak_patterns: []           # regexes to block (real values = host_vars)
+workstation_leak_guard_dir: "{{ ansible_user_dir | default('/root') }}/.local/share/leak-guard"
