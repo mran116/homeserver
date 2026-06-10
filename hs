@@ -33,6 +33,8 @@ EVERYDAY
   hs diagnose [area]           deep root-cause for one subsystem (decluttarr|sonarr|radarr|recyclarr|qbit|all)
   hs sonarr-fix [--apply]      force-import items Sonarr blocked with the parser/grab series-ID mismatch
   hs up|down|restart [stack]   start / stop / restart all stacks (or one)
+  hs startup [--install]       bring the stack up in ordered WAVES (avoids the
+                               boot I/O storm); --install wires the systemd unit
   hs status [stack]            docker compose ps for each stack
   hs enable|disable <feature>  guided turn-on/off of an optional feature (run `hs enable` to list)
   hs pull [stack]              pull newer images
@@ -100,6 +102,7 @@ case "$cmd" in
   diagnose)              run diagnose.sh "$@" ;;
   sonarr-fix)            exec "$S/sonarr-bulk-import.py" "$@" ;;
   up|down|restart|pull|status) exec "$S/stack.sh" "$cmd" "$@" ;;
+  startup)               run staggered-up.sh "$@" ;;
   enable|disable)        exec "$S/enable.sh" "$cmd" "$@" ;;
   logs)
     name="${1:-}"; shift 2>/dev/null || true
