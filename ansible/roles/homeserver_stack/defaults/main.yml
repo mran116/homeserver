@@ -1,0 +1,6 @@
+---
+homeserver_stack_enabled: false
+install_docker: false
+# Who owns the checkout (the user that will run `hs` / own /opt/docker/data).
+homeserver_stack_owner: "{{ ansible_user }}"
+# homeserver_repo_url + homeserver_stack_dir come from group_vars/all.yml.

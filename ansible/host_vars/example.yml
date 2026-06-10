@@ -1,0 +1,47 @@
+---
+# Per-host knobs — THE "fill out the env" file. Copy to host_vars/<name>.yml
+# (matching the inventory host name) and set only what that box needs. Every
+# toggle defaults OFF, so an empty file = provision nothing surprising.
+
+# ----------------------------------------------------------------------------
+# base — packages + timezone (light; safe on any box)
+# ----------------------------------------------------------------------------
+base_timezone: "America/Chicago"        # "" to leave the system's tz alone
+base_extra_packages: []                  # e.g. [htop, curl, jq]
+
+# ----------------------------------------------------------------------------
+# cpu_turbo — disable turbo on thermally-constrained chassis (e.g. laptops)
+# ----------------------------------------------------------------------------
+cpu_turbo_disabled: false
+# cpu_turbo_reason: "laptop chassis throttles instead of ramping fans"
+
+# ----------------------------------------------------------------------------
+# kernel_cmdline — extra GRUB kernel params (e.g. IOMMU passthrough, NVMe link
+# stability). Empty list = don't touch grub. A real change runs update-grub but
+# does NOT reboot — params apply on the next boot.
+# ----------------------------------------------------------------------------
+kernel_cmdline_params: []
+#   - intel_iommu=on
+#   - iommu=pt
+#   - nvme_core.default_ps_max_latency_us=0   # disable NVMe deep power-states
+#   - pcie_aspm=off                            # disable PCIe link ASPM
+
+# ----------------------------------------------------------------------------
+# smart_monitoring — active SMART self-tests + optional ntfy alerts
+# ----------------------------------------------------------------------------
+smart_monitoring_enabled: false
+smart_ntfy_enabled: false                # needs ntfy_base_url set (group_vars)
+
+# ----------------------------------------------------------------------------
+# nfs_mounts — NFS shares to mount via fstab (idempotent). Empty = none.
+# ----------------------------------------------------------------------------
+nfs_mounts: []
+#   - { src: "10.0.0.20:/volume1/media",   path: "/mnt/media" }
+#   - { src: "10.0.0.20:/volume1/backups", path: "/mnt/backups" }
+# nfs_mount_opts: "rw,hard,nofail,_netdev,noatime,vers=3"   # default
+
+# ----------------------------------------------------------------------------
+# homeserver_stack — clone THIS repo onto the host + prep it for `hs setup`
+# ----------------------------------------------------------------------------
+homeserver_stack_enabled: false
+install_docker: false                    # install Docker engine + log rotation

@@ -1,0 +1,13 @@
+---
+# Shared defaults for every host. Override per host in host_vars/<name>.yml.
+# Keep this file PII-free (it's committed). Put real endpoints/IPs in your
+# gitignored host_vars or inventory.
+
+# Where this repo gets cloned + bootstrapped on a managed host.
+homeserver_repo_url: "https://github.com/mran116/homeserver.git"
+homeserver_stack_dir: "/opt/docker/stacks"
+
+# Optional: ntfy endpoint for host-level alerts (smartd). Leave blank to skip
+# wiring alert hooks. Set in host_vars or here, e.g. "http://10.0.0.10:9933".
+ntfy_base_url: ""
+ntfy_alert_topic: "homestack"

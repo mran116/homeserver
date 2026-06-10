@@ -1,0 +1,65 @@
+---
+# Provisions the HOST to run this repo's stack, then hands off to the repo's own
+# turn-key tooling (bootstrap.sh / `hs setup`). It deliberately STOPS before
+# generating secrets or starting containers — those are interactive (and want
+# vaulted secrets), so they stay an explicit, eyes-on step. This gets a fresh
+# box (yours or a friend's) to "ready for `hs setup`" with one run.
+
+- name: Ensure git is installed
+  ansible.builtin.apt:
+    name: git
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: homeserver_stack_enabled
+
+# --- Docker engine (optional; same convenience script the repo's setup uses) --
+- name: Install Docker engine
+  ansible.builtin.shell:
+    cmd: "curl -fsSL https://get.docker.com | sh"
+    creates: /usr/bin/docker
+  when: homeserver_stack_enabled and install_docker
+
+- name: Add the stack owner to the docker group
+  ansible.builtin.user:
+    name: "{{ homeserver_stack_owner }}"
+    groups: docker
+    append: true
+  when: homeserver_stack_enabled and install_docker
+
+- name: Enable + start Docker
+  ansible.builtin.service:
+    name: docker
+    enabled: true
+    state: started
+  # Skip in --check: Docker was only simulated on a fresh box.
+  when: homeserver_stack_enabled and install_docker and not ansible_check_mode
+
+# --- Clone this repo, owned by the stack user --------------------------------
+- name: Ensure the checkout parent dir exists and is owned by the stack user
+  ansible.builtin.file:
+    path: "{{ homeserver_stack_dir | dirname }}"
+    state: directory
+    owner: "{{ homeserver_stack_owner }}"
+    group: "{{ homeserver_stack_owner }}"
+    mode: "0755"
+  when: homeserver_stack_enabled
+
+- name: Clone / update the homeserver repo
+  become_user: "{{ homeserver_stack_owner }}"
+  ansible.builtin.git:
+    repo: "{{ homeserver_repo_url }}"
+    dest: "{{ homeserver_stack_dir }}"
+    version: main
+    update: true
+  when: homeserver_stack_enabled
+
+- name: Next-step hand-off
+  ansible.builtin.debug:
+    msg:
+      - "Host is provisioned and {{ homeserver_stack_dir }} is cloned."
+      - "Finish the stack (interactive, eyes-on):"
+      - "  ssh {{ homeserver_stack_owner }}@{{ ansible_host | default(inventory_hostname) }}"
+      - "  cd {{ homeserver_stack_dir }} && ./bootstrap.sh    # creates .env, secrets, network, installs `hs`"
+      - "  hs up                                              # bring the stack up"
+  when: homeserver_stack_enabled

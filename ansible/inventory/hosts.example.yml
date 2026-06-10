@@ -1,0 +1,27 @@
+# Copy to inventory/hosts.yml (gitignored) and fill in YOUR machines.
+# Each host's behaviour is driven entirely by its host_vars/<name>.yml — see
+# host_vars/example.yml. A host with no vars opts into nothing (safe no-op).
+#
+#   cp inventory/hosts.example.yml inventory/hosts.yml
+#   cp host_vars/example.yml       host_vars/myhost.yml
+#   $EDITOR inventory/hosts.yml host_vars/myhost.yml
+#   ansible all -m ping
+#   ansible-playbook site.yml --check --diff
+all:
+  hosts:
+    # A box you want to stand up the full stack on (yours or a friend's).
+    myhost:
+      ansible_host: 10.0.0.10          # IP or DNS name
+      ansible_user: youruser            # SSH user
+      ansible_become: true              # sudo to root for system changes
+      ansible_become_method: sudo
+
+    # Example: a Proxmox/bare-metal node you SSH into as root (no become).
+    # node2:
+    #   ansible_host: 10.0.0.11
+    #   ansible_user: root
+    #   ansible_become: false
+
+    # Example: the machine you're running Ansible ON (manage it locally).
+    # hub:
+    #   ansible_connection: local
