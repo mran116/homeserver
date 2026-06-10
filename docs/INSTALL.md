@@ -267,6 +267,36 @@ Then in the browser:
 - **Uptime Kuma** (`http://YOUR_SERVER_IP:3001`) — import `monitoring/uptime-kuma/seed.json` (Settings → Backup → Import) and watch the monitors go green
 - If a container is restarting, check its logs in **Dozzle** (`http://YOUR_SERVER_IP:3002`) — usually a missing secret in `.env`
 
+### Staggered boot startup (optional — for I/O-constrained hosts)
+
+On a host with many containers and a single disk, a reboot fires every
+`restart:`-policy container at once — the Docker daemon auto-restarts them all
+concurrently (compose `depends_on` is a *`compose up`* construct; the daemon
+ignores it on boot). That simultaneous I/O storm can wedge a stressed disk/NFS
+mount on a big stack.
+
+`hs startup --install` wires this up so the daemon no longer does the storm:
+
+```bash
+sudo ./scripts/staggered-up.sh --install   # or: hs startup --install
+```
+
+It installs two things:
+
+- **`homestack-startup.service`** — a oneshot systemd unit that brings the stack
+  up in ordered **waves** (foundation → light apps + media → *arr → downloaders
+  → tdarr/decluttarr last) with a settle gap between them. Its `ExecStop` marks
+  every container user-stopped on shutdown, so on the next **clean** reboot the
+  daemon skips them and this unit is the sole, ordered starter.
+- **`docker.service.d/startup-delay.conf`** — holds dockerd 90s on boot so the
+  guest OS/NFS settle first. This is the fallback for **unclean** (power-loss)
+  reboots, where `ExecStop` didn't run and the daemon still auto-restarts
+  everything at once — just after a 90s breather.
+
+Wave gap is tunable via `STARTUP_WAVE_GAP=<seconds>` (default 20). Run the waves
+by hand anytime with `hs startup` (idempotent — already-running containers
+no-op). Full staggering applies once the unit has owned one clean shutdown.
+
 ---
 
 ## 📋 Post-Deploy Setup
