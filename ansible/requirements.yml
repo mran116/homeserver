@@ -1,0 +1,6 @@
+---
+# Collections used by the roles. Install once:
+#   ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: community.general   # timezone module
+  - name: ansible.posix       # mount module (NFS fstab)

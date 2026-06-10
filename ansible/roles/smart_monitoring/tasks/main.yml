@@ -1,0 +1,41 @@
+---
+- name: Ensure smartmontools is installed
+  ansible.builtin.apt:
+    name: smartmontools
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: smart_monitoring_enabled
+
+- name: Configure smartd
+  ansible.builtin.copy:
+    dest: /etc/smartd.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/smart_monitoring).
+      {{ smart_directive }}
+  when: smart_monitoring_enabled
+  notify: restart smartd
+
+- name: Install the ntfy SMART-alert hook
+  ansible.builtin.template:
+    src: ntfy-hook.j2
+    dest: /etc/smartmontools/run.d/50-ntfy
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - smart_monitoring_enabled
+    - smart_ntfy_enabled
+    - ntfy_base_url | length > 0
+
+- name: Enable smartd
+  ansible.builtin.service:
+    name: smartd
+    enabled: true
+    state: started
+  # Skip in --check: on a fresh box smartmontools was only simulated, so the
+  # service may not exist yet to enable.
+  when: smart_monitoring_enabled and not ansible_check_mode

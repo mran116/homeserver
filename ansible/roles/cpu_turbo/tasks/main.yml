@@ -1,0 +1,19 @@
+---
+- name: Install the disable-cpu-turbo systemd unit
+  ansible.builtin.template:
+    src: disable-cpu-turbo.service.j2
+    dest: /etc/systemd/system/disable-cpu-turbo.service
+    owner: root
+    group: root
+    mode: "0644"
+  when: cpu_turbo_disabled
+  notify: systemd daemon-reload
+
+- name: Enable disable-cpu-turbo (applies on boot)
+  ansible.builtin.systemd:
+    name: disable-cpu-turbo.service
+    enabled: true
+    state: started
+  # Skip in --check: the unit file isn't written in a dry-run, so there's
+  # nothing to enable yet (the template diff above already previews it).
+  when: cpu_turbo_disabled and not ansible_check_mode

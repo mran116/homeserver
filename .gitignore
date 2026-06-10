@@ -8,6 +8,13 @@
 *.private
 .envrc
 
+# Ansible — real (PII-bearing) inventory + host vars stay local; ship examples
+ansible/inventory/hosts.yml
+ansible/host_vars/*.yml
+!ansible/host_vars/example.yml
+ansible/*.retry
+ansible/collections/
+
 # =============================================================================
 # CERTIFICATES & KEYS — never commit
 # =============================================================================

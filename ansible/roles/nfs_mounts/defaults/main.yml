@@ -1,0 +1,6 @@
+---
+# List of NFS shares to mount, e.g.:
+#   nfs_mounts:
+#     - { src: "10.0.0.20:/volume1/media", path: "/mnt/media" }
+nfs_mounts: []
+nfs_mount_opts: "rw,hard,nofail,_netdev,noatime,vers=3"

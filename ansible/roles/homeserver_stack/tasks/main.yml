@@ -1,0 +1,94 @@
+---
+# Provisions the HOST to run this repo's stack, then hands off to the repo's own
+# turn-key tooling (bootstrap.sh / `hs setup`). It deliberately STOPS before
+# generating secrets or starting containers — those are interactive (and want
+# vaulted secrets), so they stay an explicit, eyes-on step. This gets a fresh
+# box (yours or a friend's) to "ready for `hs setup`" with one run.
+
+- name: Ensure git is installed
+  ansible.builtin.apt:
+    name: git
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: homeserver_stack_enabled
+
+# --- Docker engine (optional; same convenience script the repo's setup uses) --
+- name: Install Docker engine
+  ansible.builtin.shell:
+    cmd: "curl -fsSL https://get.docker.com | sh"
+    creates: /usr/bin/docker
+  when: homeserver_stack_enabled and install_docker
+
+- name: Add the stack owner to the docker group
+  ansible.builtin.user:
+    name: "{{ homeserver_stack_owner }}"
+    groups: docker
+    append: true
+  when: homeserver_stack_enabled and install_docker
+
+- name: Enable + start Docker
+  ansible.builtin.service:
+    name: docker
+    enabled: true
+    state: started
+  # Skip in --check: Docker was only simulated on a fresh box.
+  when: homeserver_stack_enabled and install_docker and not ansible_check_mode
+
+# --- Clone this repo, owned by the stack user --------------------------------
+- name: Ensure the checkout parent dir exists and is owned by the stack user
+  ansible.builtin.file:
+    path: "{{ homeserver_stack_dir | dirname }}"
+    state: directory
+    owner: "{{ homeserver_stack_owner }}"
+    group: "{{ homeserver_stack_owner }}"
+    mode: "0755"
+  when: homeserver_stack_enabled
+
+- name: Clone / update the homeserver repo
+  become_user: "{{ homeserver_stack_owner }}"
+  ansible.builtin.git:
+    repo: "{{ homeserver_repo_url }}"
+    dest: "{{ homeserver_stack_dir }}"
+    version: main
+    update: true
+  when: homeserver_stack_enabled
+
+# --- Hand-off (clone-only mode) ----------------------------------------------
+- name: Next-step hand-off (deploy left to you)
+  ansible.builtin.debug:
+    msg:
+      - "Host is provisioned and {{ homeserver_stack_dir }} is cloned."
+      - "Finish the stack (interactive, eyes-on):"
+      - "  ssh {{ homeserver_stack_owner }}@{{ ansible_host | default(inventory_hostname) }}"
+      - "  cd {{ homeserver_stack_dir }} && ./bootstrap.sh    # creates .env, secrets, network, installs `hs`"
+      - "  hs up                                              # bring the stack up"
+  when: homeserver_stack_enabled and not homeserver_deploy
+
+# --- Full deploy (homeserver_deploy: true) -----------------------------------
+- name: Bootstrap the stack non-interactively (.env, machine secrets, dirs, network, hs)
+  become_user: "{{ homeserver_stack_owner }}"
+  ansible.builtin.command:
+    cmd: ./bootstrap.sh --yes
+    chdir: "{{ homeserver_stack_dir }}"
+    creates: "{{ homeserver_stack_dir }}/.env"   # one-time; re-run via `hs update`
+  when: homeserver_stack_enabled and homeserver_deploy
+
+- name: Bring up every stack
+  become_user: "{{ homeserver_stack_owner }}"
+  ansible.builtin.command:
+    cmd: ./scripts/stack.sh up
+    chdir: "{{ homeserver_stack_dir }}"
+  register: _stack_up
+  changed_when: true
+  when: homeserver_stack_enabled and homeserver_deploy
+
+- name: Post-deploy reminder
+  ansible.builtin.debug:
+    msg:
+      - "Stack deployed from {{ homeserver_stack_dir }}."
+      - "Machine secrets were auto-generated. Still TODO (external tokens):"
+      - "  ssh {{ homeserver_stack_owner }}@{{ ansible_host | default(inventory_hostname) }}"
+      - "  cd {{ homeserver_stack_dir }} && hs keys     # *arr API keys + paste VPN/Cloudflare/Tailscale tokens into .env"
+      - "  hs up                                         # redeploy consumers once keys are in"
+  when: homeserver_stack_enabled and homeserver_deploy

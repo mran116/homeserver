@@ -1,0 +1,5 @@
+---
+# Regenerates grub.cfg. Does NOT reboot — new cmdline applies on next boot.
+- name: update grub
+  ansible.builtin.command: update-grub
+  changed_when: true
