@@ -41,6 +41,16 @@ nfs_mounts: []
 # nfs_mount_opts: "rw,hard,nofail,_netdev,noatime,vers=3"   # default
 
 # ----------------------------------------------------------------------------
+# workstation — a control/dev box: CLI packages + a git LEAK-GUARD that blocks
+# PII (domain/email/internal IPs) from reaching a public repo. Patterns are PII
+# → keep them in THIS gitignored file, never in the committed example.
+# ----------------------------------------------------------------------------
+workstation_packages: []                 # e.g. [git, jq, gh, ansible]
+workstation_leak_guard_enabled: false
+workstation_leak_guard_repos: []         # e.g. ["/opt/docker/stacks"]
+workstation_leak_patterns: []            # e.g. ["mydomain\\.com", "my@email", "10\\.0\\.0\\."]
+
+# ----------------------------------------------------------------------------
 # homeserver_stack — clone THIS repo onto the host + prep it for `hs setup`
 # ----------------------------------------------------------------------------
 homeserver_stack_enabled: false
