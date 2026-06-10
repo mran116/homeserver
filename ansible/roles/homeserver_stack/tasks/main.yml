@@ -54,7 +54,8 @@
     update: true
   when: homeserver_stack_enabled
 
-- name: Next-step hand-off
+# --- Hand-off (clone-only mode) ----------------------------------------------
+- name: Next-step hand-off (deploy left to you)
   ansible.builtin.debug:
     msg:
       - "Host is provisioned and {{ homeserver_stack_dir }} is cloned."
@@ -62,4 +63,32 @@
       - "  ssh {{ homeserver_stack_owner }}@{{ ansible_host | default(inventory_hostname) }}"
       - "  cd {{ homeserver_stack_dir }} && ./bootstrap.sh    # creates .env, secrets, network, installs `hs`"
       - "  hs up                                              # bring the stack up"
-  when: homeserver_stack_enabled
+  when: homeserver_stack_enabled and not homeserver_deploy
+
+# --- Full deploy (homeserver_deploy: true) -----------------------------------
+- name: Bootstrap the stack non-interactively (.env, machine secrets, dirs, network, hs)
+  become_user: "{{ homeserver_stack_owner }}"
+  ansible.builtin.command:
+    cmd: ./bootstrap.sh --yes
+    chdir: "{{ homeserver_stack_dir }}"
+    creates: "{{ homeserver_stack_dir }}/.env"   # one-time; re-run via `hs update`
+  when: homeserver_stack_enabled and homeserver_deploy
+
+- name: Bring up every stack
+  become_user: "{{ homeserver_stack_owner }}"
+  ansible.builtin.command:
+    cmd: ./scripts/stack.sh up
+    chdir: "{{ homeserver_stack_dir }}"
+  register: _stack_up
+  changed_when: true
+  when: homeserver_stack_enabled and homeserver_deploy
+
+- name: Post-deploy reminder
+  ansible.builtin.debug:
+    msg:
+      - "Stack deployed from {{ homeserver_stack_dir }}."
+      - "Machine secrets were auto-generated. Still TODO (external tokens):"
+      - "  ssh {{ homeserver_stack_owner }}@{{ ansible_host | default(inventory_hostname) }}"
+      - "  cd {{ homeserver_stack_dir }} && hs keys     # *arr API keys + paste VPN/Cloudflare/Tailscale tokens into .env"
+      - "  hs up                                         # redeploy consumers once keys are in"
+  when: homeserver_stack_enabled and homeserver_deploy

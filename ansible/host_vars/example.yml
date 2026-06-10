@@ -45,3 +45,6 @@ nfs_mounts: []
 # ----------------------------------------------------------------------------
 homeserver_stack_enabled: false
 install_docker: false                    # install Docker engine + log rotation
+homeserver_deploy: false                 # FULL deploy: bootstrap --yes + start every stack
+                                         # (auto machine-secrets only; fill VPN/API
+                                         # tokens after with `hs keys`)

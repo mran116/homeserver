@@ -41,16 +41,20 @@ drift.
 
 1. Add the box to `inventory/hosts.yml` (its IP + an SSH user with sudo).
 2. `cp host_vars/example.yml host_vars/<name>.yml` and set:
-   `homeserver_stack_enabled: true`, `install_docker: true`, plus any
-   `nfs_mounts` / tuning that box needs.
+   `homeserver_stack_enabled: true`, `install_docker: true`,
+   **`homeserver_deploy: true`**, plus any `nfs_mounts` / tuning that box needs.
 3. `ansible-playbook site.yml --limit <name>` → installs Docker, clones the repo
-   to `/opt/docker/stacks`, and prints the hand-off.
-4. On the box: `cd /opt/docker/stacks && ./bootstrap.sh` (creates `.env` +
-   secrets + network, installs `hs`), then `hs up`.
+   to `/opt/docker/stacks`, runs `bootstrap.sh --yes` (creates `.env`, generates
+   machine secrets, dirs, network, installs `hs`), and **brings every stack up**.
+4. Fill the external tokens it can't invent: `ssh` in, then `hs keys` (collects
+   *arr API keys; paste VPN/WireGuard, Cloudflare, Tailscale tokens into `.env`),
+   then `hs up` to redeploy the consumers.
 
-> The stack bring-up stays a deliberate, eyes-on step (it wants real secrets —
-> ideally `ansible-vault` / SOPS-managed, not plaintext). Ansible gets the box
-> to "ready for `hs setup`"; you pull the trigger.
+> **`homeserver_deploy: true` starts ~28 containers.** It auto-generates the
+> *machine* secrets (DB passwords etc.), but **external** tokens (VPN, Cloudflare,
+> indexer API keys) stay blank — so VPN-gated (qbittorrent) and cert/external
+> services aren't fully live until step 4. Leave `homeserver_deploy: false` to
+> stop at a cloned, ready-to-bootstrap checkout instead.
 
 ## Roles
 
