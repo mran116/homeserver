@@ -27,6 +27,10 @@
 #     cycle if SAB comes back.
 # After any action the strike counter resets (cooldown -> no restart loops).
 #
+# Separately, a par2-zombie guard kills any par2 repair running longer than
+# PAR2_MAX_MINUTES (default 60): SAB post-processes serially, so one doomed
+# repair otherwise blocks the whole unpack queue for hours (observed 8h+).
+#
 # Flags: --dry-run (detect + log, never act).
 # =============================================================================
 set -euo pipefail
@@ -125,6 +129,28 @@ try:
 except Exception: pass
 PY
 }
+
+# --- par2-zombie guard --------------------------------------------------------
+# SAB post-processes jobs ONE at a time, so a single doomed par2 repair (an
+# incomplete post that can never assemble) can spin at 100% CPU for hours while
+# every later job sits "Queued" — downloads keep landing but nothing completes.
+# This is invisible to the stall detector below (speed/mbleft keep moving), so
+# it gets its own check: kill any par2 inside the container that has been
+# running longer than PAR2_MAX_MINUTES. SAB then marks that one job as a failed
+# repair and the post-processing queue moves on. A legitimate repair of even a
+# multi-GB remux finishes well inside an hour; anything past that is wedged.
+PAR2_MAX_MINUTES="${PAR2_MAX_MINUTES:-60}"
+while read -r etimes pid comm; do
+  [[ "$comm" == *par2* && "$etimes" =~ ^[0-9]+$ && "$pid" =~ ^[0-9]+$ ]] || continue
+  (( etimes > PAR2_MAX_MINUTES * 60 )) || continue
+  if [[ $DRY_RUN -eq 1 ]]; then
+    log "[dry-run] par2 zombie pid=$pid ($(( etimes / 60 )) min) — would kill"
+    continue
+  fi
+  log "killing par2 zombie pid=$pid (running $(( etimes / 60 )) min > ${PAR2_MAX_MINUTES} min cap)"
+  docker exec sabnzbd kill -9 "$pid" >/dev/null 2>&1 || true
+  notify "SABnzbd: killed a par2 repair wedged for $(( etimes / 60 )) min — it was blocking all post-processing."
+done < <(docker exec sabnzbd ps -eo etimes=,pid=,comm= 2>/dev/null || true)
 
 # State carries "<strikes> <last_mbleft> <last_kbps>" — last_mbleft + last_kbps
 # both feed the next poll's stall detection. Old 2-field format reads cleanly
