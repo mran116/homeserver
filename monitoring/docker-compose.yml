@@ -114,6 +114,12 @@ services:
       - NTFY_UPSTREAM_BASE_URL=https://ntfy.sh
       - NTFY_CACHE_FILE=/var/cache/ntfy/cache.db
       - NTFY_AUTH_FILE=/var/lib/ntfy/auth.db
+      # Read-lockdown: anonymous can PUBLISH (all the LAN publishers — Sonarr, HA,
+      # DIUN, Netdata, Uptime-Kuma, watchdogs — post anonymously over the LAN, so
+      # they keep working) but CANNOT subscribe/read. Reading requires a login
+      # (APP_USERNAME/APP_PASSWORD, created in auth.db). Closes anonymous read of
+      # notifications over the public ntfy.${DOMAIN} endpoint.
+      - NTFY_AUTH_DEFAULT_ACCESS=write-only
       - NTFY_ATTACHMENT_CACHE_DIR=/var/cache/ntfy/attachments
       - NTFY_BEHIND_PROXY=true
     volumes:
