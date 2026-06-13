@@ -1,6 +1,0 @@
-[Unit]
-Description=ntfy alert for failed unit %i
-
-[Service]
-Type=oneshot
-ExecStart=/opt/docker/stacks/scripts/notify-failure.sh %i
