@@ -1,6 +1,0 @@
-#!/bin/sh
-# Push smartd SMART alerts to ntfy ({{ ntfy_alert_topic }} topic). Managed by
-# Ansible (roles/smart_monitoring).
-MSG="${SMARTD_MESSAGE:-SMART alert on $(hostname)}"
-DEV="${SMARTD_DEVICESTRING:-${SMARTD_DEVICE:-unknown}}"
-curl -s -m 10 -H "Title: SMART ALERT - {{ inventory_hostname }} ${DEV}" -H "Priority: urgent" -H "Tags: rotating_light,floppy_disk" -d "${MSG}" "{{ ntfy_base_url }}/{{ ntfy_alert_topic }}" >/dev/null 2>&1 || true

@@ -1,5 +1,0 @@
----
-# Extra kernel params appended to GRUB_CMDLINE_LINUX_DEFAULT. Empty = leave grub
-# alone. `quiet` is kept first if present already; we ensure each param is set.
-kernel_cmdline_params: []
-kernel_cmdline_keep_quiet: true     # keep a leading `quiet` in the cmdline
