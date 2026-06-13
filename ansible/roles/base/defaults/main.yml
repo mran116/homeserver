@@ -1,3 +1,0 @@
----
-base_timezone: ""            # "" = leave system timezone unchanged
-base_extra_packages: []      # additional apt packages to ensure present

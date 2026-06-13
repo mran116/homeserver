@@ -1,7 +1,0 @@
----
-smart_monitoring_enabled: false
-# Default smartd directive: scan all disks, daily short self-test at ~02:xx,
-# run the run.d alert scripts on a SMART event. Override per host if needed.
-smart_directive: "DEVICESCAN -d removable -n standby -m root -s S/../.././02 -M exec /usr/share/smartmontools/smartd-runner"
-# Push SMART events to ntfy (needs ntfy_base_url set in group_vars/host_vars).
-smart_ntfy_enabled: false

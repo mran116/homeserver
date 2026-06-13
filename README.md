@@ -1,5 +1,21 @@
 # 🏠 Homeserver Docker Stack
 
+> ## ⚠️ ARCHIVED — this repo has been split into focused, shareable repos.
+> The monolith is retired. Everything now lives in purpose-built repos under
+> [`github.com/mran116`](https://github.com/mran116), each clone-and-run on its own:
+>
+> | Repo | What |
+> |---|---|
+> | [**corestack**](https://github.com/mran116/corestack) | shared tooling (`hs`, bootstrap, edge module, **ansible** host-provisioning, the `install.sh` meta-installer) — **start here** |
+> | [**mediastack**](https://github.com/mran116/mediastack) | Jellyfin + the *arr chain + downloaders |
+> | [**homestack**](https://github.com/mran116/homestack) | household apps, photos, docs, dashboard |
+> | [**infrastack**](https://github.com/mran116/infrastack) | Vaultwarden, monitoring, CrowdSec, Arcane |
+> | [**HAstack**](https://github.com/mran116/HAstack) | Home Assistant |
+>
+> To stand up a host from scratch: clone **corestack** and follow its README
+> (provision → install → bootstrap → operate). This repo is kept read-only for
+> history; the `docs/` and `reference/` here may still be a useful background read.
+
 A complete self-hosted homeserver stack built with Docker Compose and managed via Arcane. Designed for families who want to own their data, reduce reliance on cloud subscriptions, and run a capable home server with minimal ongoing maintenance.
 
 Covers media streaming, household management, photo backup, document storage, password management, budget tracking, private messaging, monitoring, and automation — all self-hosted, all free (or nearly free).

@@ -1,5 +1,0 @@
----
-# Disable CPU turbo boost. Opt-in. For thermally-constrained chassis where turbo
-# just means throttle/overheat (laptops whose fans don't ramp under load).
-cpu_turbo_disabled: false
-cpu_turbo_reason: "thermal/stability mitigation"
